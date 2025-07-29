@@ -1,81 +1,99 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface Level {
-  id: string
-  name: string
-  count: number
-  description: string
-  color: string
-  textColor: string
-  bgColor: string
-  category: string
+  id: string;
+  name: string;
+  count: number;
+  description: string;
+  color: string;
+  textColor: string;
+  bgColor: string;
+  category: string;
 }
 
 interface NetworkDiagramProps {
-  levels: Level[]
-  selectedLevel: string | null
-  onLevelSelect: (levelId: string | null) => void
+  levels: Level[];
+  selectedLevel: string | null;
+  onLevelSelect: (levelId: string | null) => void;
 }
 
-export function NetworkDiagram({ levels, selectedLevel, onLevelSelect }: NetworkDiagramProps) {
-  const [hoveredLevel, setHoveredLevel] = useState<string | null>(null)
+export function NetworkDiagram({
+  levels,
+  selectedLevel,
+  onLevelSelect,
+}: NetworkDiagramProps) {
+  const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
 
   const getCircleSize = (count: number) => {
-    if (count <= 5) return 40
-    if (count <= 15) return 60
-    if (count <= 50) return 80
-    if (count <= 150) return 100
-    if (count <= 500) return 120
-    if (count <= 1500) return 140
-    if (count <= 5000) return 160
-    if (count <= 15000) return 180
-    return 200
-  }
+    if (count <= 5) return 40;
+    if (count <= 15) return 60;
+    if (count <= 50) return 80;
+    if (count <= 150) return 100;
+    if (count <= 500) return 120;
+    if (count <= 1500) return 140;
+    if (count <= 5000) return 160;
+    if (count <= 15000) return 180;
+    return 200;
+  };
 
   const getPosition = (index: number, total: number) => {
-    const angle = (index * 2 * Math.PI) / total
-    const radius = 200 + index * 20
+    const angle = (index * 2 * Math.PI) / total;
+    const radius = 200 + index * 20;
+    const toFixed = (n: number) => Number(n.toFixed(3));
     return {
-      x: 300 + radius * Math.cos(angle),
-      y: 300 + radius * Math.sin(angle),
-    }
-  }
+      x: toFixed(300 + radius * Math.cos(angle)),
+      y: toFixed(300 + radius * Math.sin(angle)),
+    };
+  };
 
   return (
     <div className="relative w-full h-[600px] bg-white rounded-lg border overflow-hidden">
       <svg width="100%" height="100%" viewBox="0 0 800 600">
         {/* Center point */}
-        <circle cx="400" cy="300" r="20" fill="#1f2937" className="cursor-pointer" />
-        <text x="400" y="305" textAnchor="middle" className="text-xs fill-white font-medium">
+        <circle
+          cx={400}
+          cy={300}
+          r={20}
+          fill="#1f2937"
+          className="cursor-pointer"
+        />
+        <text
+          x={400}
+          y={305}
+          textAnchor="middle"
+          className="text-xs fill-white font-medium"
+        >
           YOU
         </text>
 
         {/* Connection lines */}
         {levels.map((level, index) => {
-          const pos = getPosition(index, levels.length)
+          const pos = getPosition(index, levels.length);
           return (
             <line
               key={`line-${level.id}`}
-              x1="400"
-              y1="300"
+              x1={400}
+              y1={300}
               x2={pos.x}
               y2={pos.y}
               stroke="#e5e7eb"
-              strokeWidth="2"
-              strokeDasharray={level.category === "extended" ? "5,5" : "none"}
+              strokeWidth={2}
+              strokeDasharray={
+                level.category === "extended" ? "5,5" : undefined
+              }
             />
-          )
+          );
         })}
 
         {/* Level circles */}
         {levels.map((level, index) => {
-          const pos = getPosition(index, levels.length)
-          const size = getCircleSize(level.count)
-          const isSelected = selectedLevel === level.id
-          const isHovered = hoveredLevel === level.id
+          const pos = getPosition(index, levels.length);
+          const size = getCircleSize(level.count);
+          const isSelected = selectedLevel === level.id;
+          const isHovered = hoveredLevel === level.id;
 
           return (
             <g key={level.id}>
@@ -109,7 +127,7 @@ export function NetworkDiagram({ levels, selectedLevel, onLevelSelect }: Network
                 {level.name.split(" ")[0]}
               </text>
             </g>
-          )
+          );
         })}
       </svg>
 
@@ -136,21 +154,23 @@ export function NetworkDiagram({ levels, selectedLevel, onLevelSelect }: Network
       {selectedLevel && (
         <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg max-w-xs">
           {(() => {
-            const level = levels.find((l) => l.id === selectedLevel)
-            if (!level) return null
+            const level = levels.find((l) => l.id === selectedLevel);
+            if (!level) return null;
             return (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-4 h-4 ${level.color} rounded-full`}></div>
                   <h3 className="font-semibold text-sm">{level.name}</h3>
-                  <Badge variant="secondary">{level.count.toLocaleString()}</Badge>
+                  <Badge variant="secondary">
+                    {level.count.toLocaleString()}
+                  </Badge>
                 </div>
                 <p className="text-xs text-gray-600">{level.description}</p>
               </div>
-            )
+            );
           })()}
         </div>
       )}
     </div>
-  )
+  );
 }

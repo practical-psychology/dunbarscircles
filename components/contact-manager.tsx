@@ -1,14 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Plus, User, Trash2 } from "lucide-react"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, User, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,27 +29,27 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface Level {
-  id: string
-  name: string
-  count: number
-  color: string
-  textColor: string
-  bgColor: string
+  id: string;
+  name: string;
+  count: number;
+  color: string;
+  textColor: string;
+  bgColor: string;
 }
 
 interface Contact {
-  id: string
-  name: string
-  levelId: string
-  notes: string
-  lastContact: string
+  id: string;
+  name: string;
+  levelId: string;
+  notes: string;
+  lastContact: string;
 }
 
 interface ContactManagerProps {
-  levels: Level[]
+  levels: Level[];
 }
 
 export function ContactManager({ levels }: ContactManagerProps) {
@@ -63,56 +75,51 @@ export function ContactManager({ levels }: ContactManagerProps) {
       notes: "Friend from book club",
       lastContact: "2024-01-05",
     },
-  ])
+  ]);
 
   const [newContact, setNewContact] = useState({
     name: "",
     levelId: "",
     notes: "",
     lastContact: "",
-  })
+  });
 
-  const [isAddingContact, setIsAddingContact] = useState(false)
+  const [isAddingContact, setIsAddingContact] = useState(false);
 
   const addContact = () => {
     if (newContact.name && newContact.levelId) {
       const contact: Contact = {
         id: Date.now().toString(),
         ...newContact,
-      }
-      setContacts([...contacts, contact])
-      setNewContact({ name: "", levelId: "", notes: "", lastContact: "" })
-      setIsAddingContact(false)
+      };
+      setContacts([...contacts, contact]);
+      setNewContact({ name: "", levelId: "", notes: "", lastContact: "" });
+      setIsAddingContact(false);
     }
-  }
+  };
 
   const removeContact = (id: string) => {
-    setContacts(contacts.filter((c) => c.id !== id))
-  }
-
-  const getContactsByLevel = (levelId: string) => {
-    return contacts.filter((c) => c.levelId === levelId)
-  }
-
-  const getLevelById = (levelId: string) => {
-    return levels.find((l) => l.id === levelId)
-  }
+    setContacts(contacts.filter((c) => c.id !== id));
+  };
 
   const getContactStats = () => {
     const stats = levels.map((level) => ({
       level,
-      actual: getContactsByLevel(level.id).length,
+      actual: contacts.filter((c) => c.levelId === level.id).length,
       capacity: level.count,
-    }))
-    return stats
-  }
+    }));
+    return stats;
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">My Social Network</h2>
-          <p className="text-gray-600">Manage and track your relationships according to Dunbar's hierarchy</p>
+          <p className="text-gray-600">
+            Manage and track your relationships according to Dunbar&apos;s
+            hierarchy
+          </p>
         </div>
 
         <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
@@ -126,7 +133,8 @@ export function ContactManager({ levels }: ContactManagerProps) {
             <DialogHeader>
               <DialogTitle>Add New Contact</DialogTitle>
               <DialogDescription>
-                Add someone to your social network and categorize them according to Dunbar's hierarchy.
+                Add someone to your social network and categorize them according
+                to Dunbar&apos;s hierarchy.
               </DialogDescription>
             </DialogHeader>
 
@@ -136,7 +144,9 @@ export function ContactManager({ levels }: ContactManagerProps) {
                 <Input
                   id="name"
                   value={newContact.name}
-                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewContact({ ...newContact, name: e.target.value })
+                  }
                   placeholder="Enter contact name"
                 />
               </div>
@@ -145,7 +155,9 @@ export function ContactManager({ levels }: ContactManagerProps) {
                 <Label htmlFor="level">Relationship Level</Label>
                 <Select
                   value={newContact.levelId}
-                  onValueChange={(value) => setNewContact({ ...newContact, levelId: value })}
+                  onValueChange={(value) =>
+                    setNewContact({ ...newContact, levelId: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select relationship level" />
@@ -165,7 +177,9 @@ export function ContactManager({ levels }: ContactManagerProps) {
                 <Textarea
                   id="notes"
                   value={newContact.notes}
-                  onChange={(e) => setNewContact({ ...newContact, notes: e.target.value })}
+                  onChange={(e) =>
+                    setNewContact({ ...newContact, notes: e.target.value })
+                  }
                   placeholder="Add notes about this relationship"
                 />
               </div>
@@ -176,13 +190,21 @@ export function ContactManager({ levels }: ContactManagerProps) {
                   id="lastContact"
                   type="date"
                   value={newContact.lastContact}
-                  onChange={(e) => setNewContact({ ...newContact, lastContact: e.target.value })}
+                  onChange={(e) =>
+                    setNewContact({
+                      ...newContact,
+                      lastContact: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddingContact(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddingContact(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={addContact}>Add Contact</Button>
@@ -195,14 +217,19 @@ export function ContactManager({ levels }: ContactManagerProps) {
       <Card>
         <CardHeader>
           <CardTitle>Network Statistics</CardTitle>
-          <CardDescription>Your current network distribution vs. Dunbar's theoretical limits</CardDescription>
+          <CardDescription>
+            Your current network distribution vs. Dunbar&apos;s theoretical
+            limits
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {getContactStats().map(({ level, actual, capacity }) => (
               <div key={level.id} className={`p-4 rounded-lg ${level.bgColor}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className={`font-medium ${level.textColor}`}>{level.name}</h3>
+                  <h3 className={`font-medium ${level.textColor}`}>
+                    {level.name}
+                  </h3>
                   <Badge variant="secondary">
                     {actual}/{capacity}
                   </Badge>
@@ -210,7 +237,9 @@ export function ContactManager({ levels }: ContactManagerProps) {
                 <div className="w-full bg-white/50 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${level.color}`}
-                    style={{ width: `${Math.min((actual / capacity) * 100, 100)}%` }}
+                    style={{
+                      width: `${Math.min((actual / capacity) * 100, 100)}%`,
+                    }}
                   ></div>
                 </div>
               </div>
@@ -222,31 +251,43 @@ export function ContactManager({ levels }: ContactManagerProps) {
       {/* Contact Lists by Level */}
       <div className="space-y-6">
         {levels.map((level) => {
-          const levelContacts = getContactsByLevel(level.id)
-          if (levelContacts.length === 0) return null
+          const levelContacts = contacts.filter((c) => c.levelId === level.id);
+          if (levelContacts.length === 0) return null;
 
           return (
             <Card key={level.id}>
               <CardHeader className={level.bgColor}>
                 <div className="flex items-center justify-between">
-                  <CardTitle className={level.textColor}>{level.name}</CardTitle>
-                  <Badge variant="secondary">{levelContacts.length} contacts</Badge>
+                  <CardTitle className={level.textColor}>
+                    {level.name}
+                  </CardTitle>
+                  <Badge variant="secondary">
+                    {levelContacts.length} contacts
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y">
                   {levelContacts.map((contact) => (
-                    <div key={contact.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div
+                      key={contact.id}
+                      className="p-4 flex items-center justify-between hover:bg-gray-50"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                           <User className="w-5 h-5 text-gray-600" />
                         </div>
                         <div>
                           <h3 className="font-medium">{contact.name}</h3>
-                          <p className="text-sm text-gray-600">{contact.notes}</p>
+                          <p className="text-sm text-gray-600">
+                            {contact.notes}
+                          </p>
                           {contact.lastContact && (
                             <p className="text-xs text-gray-500">
-                              Last contact: {new Date(contact.lastContact).toLocaleDateString()}
+                              Last contact:{" "}
+                              {new Date(
+                                contact.lastContact,
+                              ).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -264,9 +305,9 @@ export function ContactManager({ levels }: ContactManagerProps) {
                 </div>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
