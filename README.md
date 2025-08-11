@@ -16,8 +16,9 @@ The app explores Dunbar's hierarchy of social relationships, which categorizes h
 
 ### Frontend Framework
 
-- Next.js 15.2.4 with App Router
+- Vite 5.1.4 for fast development and building
 - React 19 with TypeScript
+- React Router DOM for client-side routing
 - Modern ES6+ features
 
 ### Styling & UI
@@ -31,38 +32,44 @@ The app explores Dunbar's hierarchy of social relationships, which categorizes h
 
 - react-hook-form + zod for form validation
 - recharts for data visualization
-- next-themes for theme switching
+- Custom theme implementation
 - date-fns for date manipulation
 - embla-carousel for carousels
 
 ## 📁 Project Structure
 
 ```text
-/app/
-├── layout.tsx     # Root layout with fonts and metadata
-├── page.tsx       # Main application component
-└── globals.css    # Global styles
-
-/components/
-├── ui/            # 50+ Radix UI-based design system components
-├── network-diagram.tsx        # Interactive network visualization
-├── radial-diagram.tsx         # Concentric circles view
-├── level-details.tsx          # Detailed level information
-├── relationship-inventory.tsx # Personal relationship tracker
-├── digital-parallels-explorer.tsx # Digital age comparisons
-└── life-stage-comparison.tsx  # Lifecycle relationship changes
+src/
+├── main.tsx           # App entry point
+├── App.tsx            # Main app with routing
+├── index.css          # Global styles
+├── vite-env.d.ts      # Vite environment types
+├── components/        # Shared components
+│   └── PageLayout.tsx # Consistent page layout wrapper
+├── data/              # Shared data
+│   └── dunbarLevels.ts # Dunbar hierarchy definitions
+└── pages/             # Route components
+    ├── HomePage.tsx       # Overview page (main landing)
+    ├── RadialPage.tsx     # Radial diagram visualization
+    ├── LevelsPage.tsx     # Detailed level breakdown
+    ├── NetworkPage.tsx    # Network graph and inventory
+    ├── DigitalPage.tsx    # Digital parallels exploration
+    ├── LifecyclePage.tsx  # Life stage comparisons
+    ├── DashboardPage.tsx  # User authentication dashboard
+    ├── SitemapPage.tsx    # Site navigation overview
+    └── NotFoundPage.tsx   # 404 error page
 ```
 
 ## 🌟 Key Features
 
-### Multiple Visualization Modes
+### Dedicated Pages for Each Visualization
 
-- Network diagram showing relationship connections
-- Radial diagram with concentric circles
-- Detailed level information
-- Personal relationship inventory
-- Digital age parallels
-- Life stage comparisons
+- **Overview** (`/`) - Interactive network diagram and relationship category overview
+- **Radial View** (`/radial`) - Concentric circles visualization with cognitive load mapping
+- **Levels** (`/levels`) - Detailed breakdown of each relationship level
+- **Network Graph** (`/network`) - Personal relationship inventory and network visualization
+- **Digital Parallels** (`/digital`) - How Dunbar's hierarchy translates to digital relationships
+- **Life Stages** (`/lifecycle`) - Relationship patterns across different life stages
 
 ### Interactive Elements
 
@@ -82,3 +89,64 @@ The project is set up with:
 
 - TypeScript for type safety
 - ESLint and Prettier for code quality
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   - Copy `.env.example` to `.env` (if available)
+   - Configure Firebase credentials with `VITE_` prefix
+
+### Development
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:3000`
+
+### Building for Production
+
+Build the application:
+
+```bash
+npm run build
+```
+
+Preview the production build:
+
+```bash
+npm run start
+```
+
+### Other Commands
+
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript compiler check
+- `npm run format` - Format code with Prettier
+- `npm run screenshots` - Generate screenshots of all pages
+
+## 🔧 Migration from Next.js
+
+This project has been migrated from Next.js to Vite for improved development experience and faster builds. Key changes include:
+
+- Replaced Next.js App Router with React Router DOM
+- Updated environment variables from `NEXT_PUBLIC_` to `VITE_` prefix
+- Converted Next.js pages to React Router route components
+- Updated build configuration from Next.js to Vite
+- Maintained 100% functionality and UI consistency

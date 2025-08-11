@@ -1,11 +1,8 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 import { app as firebaseApp } from "@/firebase-config";
-import Image from "next/image";
-import { signInWithGoogle, signOut } from "@/lib/auth-utils";
+import { signInWithGoogle } from "@/lib/auth-utils";
 import {
   Card,
   CardContent,
@@ -58,16 +55,22 @@ export default function DashboardPage() {
     }
   };
 
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">User Dashboard</h1>
-          <Link href="/" className="text-sm text-indigo-600 hover:underline">
-            ← Back to Home
-          </Link>
+          <div className="space-x-4">
+            <Link to="/" className="text-sm text-indigo-600 hover:underline">
+              ← Back to Overview
+            </Link>
+            <Link
+              to="/sitemap"
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              Sitemap
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-3">
@@ -107,13 +110,10 @@ export default function DashboardPage() {
                       value={
                         user.photoURL ? (
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                            <Image
+                            <img
                               src={user.photoURL}
                               alt="User avatar"
-                              fill
-                              className="object-cover"
-                              sizes="40px"
-                              priority
+                              className="object-cover w-full h-full"
                             />
                           </div>
                         ) : null

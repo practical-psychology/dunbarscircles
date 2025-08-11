@@ -112,7 +112,7 @@ async function takeScreenshots() {
             console.log("No main content selector found, continuing...");
           }
 
-          function sanitizeRoute(route) {
+          const sanitizeRoute = (route) => {
             if (route === "/") return "home";
             // Remove leading/trailing slashes, replace non-alphanumeric with dashes
             return route
@@ -120,7 +120,7 @@ async function takeScreenshots() {
               .replace(/\/+$/g, "")
               .replace(/[?=&/]+/g, "-")
               .replace(/^-+|-+$/g, "");
-          }
+          };
           const safeRoute = sanitizeRoute(route);
           const fileName = `${device.name}-${safeRoute || "home"}.png`;
           const filePath = join(SCREENSHOTS_DIR, fileName);
