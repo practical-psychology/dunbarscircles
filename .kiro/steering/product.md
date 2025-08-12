@@ -1,27 +1,37 @@
 # Product Overview
 
-Dunbar's Number Visualization is a sophisticated people connection-making platform that combines cognitive science with modern web technologies to help users make better people connections through structured frameworks and intelligent recommendations.
+## YAKW - Dunbar's Number Visualization
 
-## Core Purpose
+A modern React web application that visualizes Robin Dunbar's theory of social relationships, exploring the cognitive limits to stable social relationships humans can maintain.
 
-Dunbar's Number Visualization helps individuals and teams make more informed, consistent, and value-aligned people connections by:
+### Core Concept
 
-- Tracking people connection patterns, cognitive states, and outcomes
-- Providing actionable insights and recommendations to improve people connection quality over time
-- Supporting multiple people connection-making modes (analytical, heuristic, value-based, collaborative, etc.)
-- Offering cognitive state awareness and adaptive learning
+The app explores Dunbar's hierarchy of social relationships across five main categories:
 
-## Key Components
+- **Inner Circle (5 people)** - Daily contact, high emotional investment
+- **Sympathy Group (15 people)** - Weekly contact, close friends
+- **Affinity Group (50 people)** - Monthly contact, party invitees
+- **Active Network (150 people)** - Quarterly contact, meaningful conversations
+- **Recognition Group (500 people)** - Yearly contact, faces and names
 
-- **people connection Kernel**: Central component coordinating all people connection-making processes
-- **Cognitive State Management**: Tracks and adapts to user's mental state and energy levels
-- **Analytics & Insights**: Comprehensive metrics on people connection patterns and quality reports
-- **Recommendation Engine**: AI-powered suggestions for people connection optimization
-- **Value Arbitration**: Resolves conflicts between competing values and priorities
+### Key Features
 
-## Target Users
+- **Interactive Visualizations**: Network diagrams, radial views, relationship inventories
+- **Data Import**: Facebook friends JSON and LinkedIn connections CSV support
+- **Relationship Management**: Personal relationship tracking with decay indicators
+- **Digital Parallels**: How Dunbar's hierarchy translates to digital relationships
+- **Life Stage Analysis**: Relationship patterns across different life stages
 
-- Individuals seeking to improve their people connection-making consistency and quality
-- Teams requiring collaborative people connection-making tools
-- Organizations wanting to track and optimize people connection processes
-- Anyone interested in cognitive science-based people connection support
+### Target Users
+
+- Individuals interested in understanding their social networks
+- Researchers studying social relationships and network theory
+- People looking to optimize their relationship management
+- Users wanting to visualize imported social media data
+
+### Privacy-First Approach
+
+- Client-side only processing (no backend server)
+- Local data storage and processing
+- No user registration required
+- Social media data never leaves the user's device

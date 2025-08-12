@@ -2,7 +2,7 @@ import PageLayout from "../components/PageLayout";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 import { app as firebaseApp } from "@/firebase-config";
-import { signInWithGoogle } from "@/lib/auth-utils";
+import { signInWithGoogle, signOut } from "@/lib/auth-utils";
 import {
   Card,
   CardContent,
@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ContactsDashboard } from "@/components/contacts-dashboard";
+import { dunbarLevels } from "../data/dunbarLevels";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -55,11 +57,30 @@ export default function DashboardPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Sign out error:", error);
+      setAuthError(
+        error instanceof Error ? error.message : "Failed to sign out",
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   return (
     <PageLayout
       title="User Dashboard"
       description="Overview of your social relationships and Dunbar's Number"
     >
+      {/* Contacts Dashboard */}
+      <ContactsDashboard levels={dunbarLevels} />
+      
+      {/* Authentication Section */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-3">
         <Card>
           <CardHeader>
@@ -146,6 +167,50 @@ export default function DashboardPage() {
                     )}
                   </pre>
                 </details>
+
+                <button
+                  onClick={handleSignOut}
+                  disabled={authLoading}
+                  className="flex items-center justify-center w-full px-4 py-2 space-x-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {authLoading ? (
+                    <svg
+                      className="w-5 h-5 text-white animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                  )}
+                  <span>{authLoading ? "Signing out..." : "Sign Out"}</span>
+                </button>
               </div>
             ) : (
               <div className="space-y-4">

@@ -1,65 +1,67 @@
----
-inclusion: always
----
+# Technology Stack & Build System
 
-# Technology Stack & Development Guidelines
+## Core Technologies
 
-## Core Stack
+### Frontend Framework
 
-- **Backend**: Flask 3.0.2 with application factory pattern
-- **Database**: Supabase (PostgreSQL) - use `utils/supabase_client.py` for all DB operations
-- **Authentication**: OAuth (Google/GitHub) via Authlib + Flask-Login sessions
-- **Frontend**: Jinja2 templates + Tailwind CSS + vanilla JavaScript/Chart.js
-- **Testing**: pytest with coverage reporting
+- **React 19** with TypeScript for type safety
+- **Vite 5.1.4** as build tool for fast development and optimized builds
+- **React Router DOM** for client-side routing (migrated from Next.js App Router)
 
-## Code Style Requirements
+### Styling & UI
 
-- **Python**: Use black formatting, isort for imports, type hints required
-- **Functions**: Snake_case naming, descriptive names indicating purpose
-- **Classes**: PascalCase, dataclasses for models
-- **Files**: Snake*case with purpose suffix (`*\_routes.py`, `_\_service.py`, `test_\*.py`)
-- **Templates**: Match route names (`create_people connection.html`)
+- **Tailwind CSS** with utility-first approach
+- **Radix UI** component library for accessible primitives
+- **Lucide React** for consistent iconography
+- **tailwindcss-animate** for smooth animations
+- CSS custom properties for theming (light/dark mode support)
 
-## Architecture Patterns
+### Key Libraries
 
-- **Service Layer**: Business logic in `*_service.py` files, not in routes
-- **Blueprints**: Separate route files (`auth_routes.py`, `analytics_routes.py`, etc.)
-- **Error Handling**: Use structured logging via `utils/logger.py`, graceful degradation
-- **Data Models**: Dataclasses in `models.py` with Supabase integration
+- **react-hook-form + Zod** for form validation and type-safe schemas
+- **Recharts** for data visualization and charts
+- **date-fns** for date manipulation
+- **Firebase** for optional authentication
+- **class-variance-authority** and **clsx** for conditional styling
+- **embla-carousel-react** for carousel components
 
-## Development Commands (Windows)
+### Development Tools
+
+- **TypeScript** with strict mode enabled
+- **ESLint** with React and TypeScript plugins
+- **Prettier** for code formatting
+- **Puppeteer** for automated screenshot generation
+
+## Build Commands
 
 ```bash
-# Setup
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-
-# Run development
-python app.py
-flask run --debug
-
-# Testing
-pytest
-pytest --cov=app tests/
-
-# Code quality (run before commits)
-black .
-isort .
-flake8
-mypy app/
+# Development
+npm run dev          # Start development server on port 3000
+npm run build        # Build for production
+npm run start        # Preview production build
+npm run lint         # Run ESLint
+npm run type-check   # TypeScript type checking
+npm run format       # Format code with Prettier
+npm run screenshots  # Generate screenshots of all pages
 ```
 
-## Key Libraries & Usage
+## Environment Configuration
 
-- **Analytics**: NumPy/Pandas for data processing, scikit-learn for ML
-- **HTTP**: Use httpx for async requests, requests for sync
-- **Scheduling**: schedule library for task automation
-- **Security**: Flask-WTF for CSRF, validate all user inputs
+- Environment variables use `VITE_` prefix (migrated from `NEXT_PUBLIC_`)
+- Firebase configuration through environment variables
+- Development server runs on port 3000 with auto-open
 
-## Common Patterns
+## Build Configuration
 
-- Import Supabase client: `from utils.supabase_client import get_supabase_client`
-- Logging: `from utils.logger import get_logger; logger = get_logger(__name__)`
-- Route protection: Use `@login_required` decorator from Flask-Login
-- Error responses: Return JSON with consistent structure `{"error": "message", "code": 400}`
+- **Output directory**: `dist/`
+- **Source maps** enabled for debugging
+- **Path alias**: `@/*` maps to project root
+- **Module resolution**: bundler mode for optimal tree-shaking
+- **Target**: ES2020 with modern browser support
+
+## Code Quality Standards
+
+- **Strict TypeScript** with no unused locals/parameters
+- **ESLint rules** for React hooks and refresh
+- **Prettier formatting** with consistent style
+- **No emit** TypeScript compilation (Vite handles bundling)

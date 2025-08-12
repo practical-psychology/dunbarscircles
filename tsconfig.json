@@ -30,6 +30,7 @@
     "components",
     "lib",
     "hooks",
+    "types",
     "firebase-config.ts",
     "vite.config.ts"
   ]

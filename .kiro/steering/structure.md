@@ -1,96 +1,126 @@
-# Project Structure
+# Project Structure & Organization
 
-## Architecture Patterns
-
-### Flask Application Factory Pattern
-
-- Main app creation in `app.py` using `create_app()` function
-- Blueprints for route organization (`app_routes.py`, `auth_routes.py`, `profile_routes.py`, `analytics_routes.py`)
-- Configuration management via `app/config.py` with environment-based settings
-
-### Service Layer Architecture
-
-- Business logic separated into service classes (`analytics_service.py`, `recommendation_engine.py`)
-- Core people connection-making components as standalone modules (`people connection_kernel.py`, `cognitive_currency.py`)
-- Data models using dataclasses with Supabase integration (`models.py`)
-
-### Component-Based Frontend
-
-- Reusable template components in `templates/components/`
-- Base template inheritance pattern with `base.html`
-- Responsive design with Tailwind CSS utilities
-
-## Directory Organization
+## Root Directory Layout
 
 ```
-people connection-os/
-├── app/                    # Main application package
-│   ├── __init__.py        # App factory and initialization
-│   ├── config.py          # Configuration settings
-│   ├── models.py          # Data models and database schemas
-│   ├── *_routes.py        # Route blueprints (auth, app, profile, analytics)
-│   ├── *_service.py       # Business logic services
-│   ├── people connection_kernel.py # Core people connection engine
-│   ├── cognitive_*.py     # Cognitive processing modules
-│   └── uploads/           # User file uploads
-├── templates/             # Jinja2 HTML templates
-│   ├── base.html         # Base template
-│   ├── components/       # Reusable template components
-│   └── *.html           # Page-specific templates
-├── static/               # Static assets
-│   ├── css/             # Stylesheets
-│   ├── js/              # JavaScript files
-│   └── images/          # Image assets
-├── tests/               # Test suite
-│   ├── test_*.py       # Unit and integration tests
-│   └── __init__.py     # Test package initialization
-├── utils/               # Utility modules
-│   ├── logger.py       # Custom logging implementation
-│   ├── supabase_client.py # Database client wrapper
-│   └── *.py           # Other utilities
-├── data/               # Static data files (JSON configs)
-├── config/             # Configuration files
-├── logs/               # Application log files
-└── flask_session/      # Session storage directory
+├── src/                    # Main application source
+├── components/             # Shared React components (root level)
+├── hooks/                  # Custom React hooks
+├── lib/                    # Utility libraries and helpers
+├── data/                   # Static data files (JSON, CSV)
+├── public/                 # Static assets and images
+├── styles/                 # Global CSS files
+├── .kiro/                  # Kiro IDE configuration and steering
+├── dist/                   # Build output directory
+└── node_modules/           # Dependencies
 ```
 
-## Naming Conventions
+## Source Directory (`src/`)
 
-### Files and Modules
+```
+src/
+├── main.tsx               # Application entry point with React Router
+├── App.tsx                # Main app component with route definitions
+├── index.css              # Global styles and Tailwind imports
+├── vite-env.d.ts          # Vite environment type definitions
+├── components/            # Duplicate component structure (legacy)
+├── data/                  # Duplicate data structure (legacy)
+└── pages/                 # Page components for routing
+    ├── HomePage.tsx       # Landing page (/)
+    ├── RadialPage.tsx     # Radial visualization (/radial)
+    ├── LevelsPage.tsx     # Level details (/levels)
+    ├── NetworkPage.tsx    # Network diagram (/network)
+    ├── DigitalPage.tsx    # Digital parallels (/digital)
+    ├── LifecyclePage.tsx  # Life stage analysis (/lifecycle)
+    ├── DashboardPage.tsx  # User dashboard (/dashboard)
+    ├── SitemapPage.tsx    # Site navigation (/sitemap)
+    └── NotFoundPage.tsx   # 404 error page
+```
 
-- Snake_case for Python files: `analytics_service.py`, `people connection_kernel.py`
-- Descriptive names indicating purpose: `*_routes.py`, `*_service.py`, `test_*.py`
-- Template files match their route/function: `create_people connection.html`, `analytics_dashboard.html`
+## Component Organization
 
-### Classes and Functions
+### Root Components (`components/`)
 
-- PascalCase for classes: `people connectionKernel`, `AnalyticsService`, `User`
-- Snake_case for functions and methods: `get_next_task()`, `calculate_quality_score()`
-- Dataclasses for data models: `people connection`, `people connectionOption`, `QualityMetric`
+- **Primary location** for all shared components
+- Each component in its own `.tsx` file
+- UI primitives in `components/ui/` subdirectory (Radix UI components)
 
-### Database and API
+### Key Components
 
-- Snake_case for database tables and columns
-- RESTful API endpoints: `/api/people connections`, `/analytics/dashboard`
-- Consistent error handling and response formats
+- `network-diagram.tsx` - Force-directed graph visualization
+- `radial-diagram.tsx` - Concentric circles relationship view
+- `relationship-inventory.tsx` - Personal relationship management
+- `digital-parallels-explorer.tsx` - Digital relationship mapping
+- `life-stage-comparison.tsx` - Life stage analysis
+- `level-details.tsx` - Dunbar level breakdowns
+- `contact-manager.tsx` - Contact management functionality
+- `theme-provider.tsx` - Dark/light theme context
 
-## Code Organization Principles
+## Hooks Directory (`hooks/`)
 
-### Separation of Concerns
+- `use-mobile.tsx` - Mobile device detection
+- `use-toast.ts` - Toast notification management
+- Custom hooks follow `use-*` naming convention
 
-- Routes handle HTTP requests/responses only
-- Services contain business logic
-- Models define data structures and database interactions
-- Utilities provide cross-cutting functionality
+## Library Directory (`lib/`)
 
-### Dependency Injection
+- `utils.ts` - General utility functions and helpers
+- `auth-utils.ts` - Firebase authentication utilities
+- Shared business logic and helper functions
 
-- Services injected into routes via blueprints
-- Database client as singleton pattern
-- Configuration passed through app factory
+## Data Directory (`data/`)
 
-### Error Handling
+- `facebook_friends.json` - Sample Facebook data format
+- `linkedin_connections.csv` - Sample LinkedIn data format
+- Static configuration and sample data files
 
-- Centralized error handlers in main app
-- Structured logging with categories and levels
-- Graceful degradation for external service failures
+## Styling Conventions
+
+### File Organization
+
+- `src/index.css` - Global styles and Tailwind imports
+- `styles/globals.css` - Additional global styles
+- Component-specific styles use Tailwind classes inline
+- CSS custom properties for theme variables
+
+### Naming Conventions
+
+- **Components**: PascalCase (e.g., `NetworkDiagram.tsx`)
+- **Hooks**: camelCase with `use` prefix (e.g., `useMobile`)
+- **Utilities**: camelCase (e.g., `formatDate`)
+- **Types/Interfaces**: PascalCase (e.g., `Person`, `Level`)
+
+## Configuration Files
+
+### Build & Development
+
+- `vite.config.ts` - Vite build configuration
+- `tsconfig.json` - TypeScript compiler options
+- `tailwind.config.ts` - Tailwind CSS configuration
+- `postcss.config.js` - PostCSS processing
+
+### Code Quality
+
+- `.eslintrc.json` - ESLint rules and configuration
+- `package.json` - Dependencies and npm scripts
+
+### Deployment
+
+- `firebase.json` - Firebase hosting configuration
+- `firestore.rules` - Firestore security rules
+- `_redirects` - Netlify redirect rules
+
+## Import Conventions
+
+### Path Aliases
+
+- `@/*` - Maps to project root for clean imports
+- Relative imports for local files
+- Absolute imports for shared utilities
+
+### Import Order
+
+1. React and external libraries
+2. Internal components and hooks
+3. Utilities and types
+4. Relative imports

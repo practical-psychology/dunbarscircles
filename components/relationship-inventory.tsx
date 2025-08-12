@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ContactStorage } from "@/lib/contact-storage";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -109,58 +110,69 @@ interface RelationshipInventoryProps {
 
 export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [people, setPeople] = useState<Person[]>([
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      levelId: "inner-circle",
-      lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      contactFrequency: 1,
-      strength: 0.95,
-      decayRate: 0.001,
-      platform: "Real Life",
-    },
-    {
-      id: "2",
-      name: "Mike Chen",
-      levelId: "sympathy-group",
-      lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      contactFrequency: 7,
-      strength: 0.8,
-      decayRate: 0.005,
-      platform: "Work",
-    },
-    {
-      id: "3",
-      name: "Emma Davis",
-      levelId: "affinity-group",
-      lastContact: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      contactFrequency: 30,
-      strength: 0.6,
-      decayRate: 0.01,
-      platform: "Social Media",
-    },
-    {
-      id: "4",
-      name: "John Smith",
-      levelId: "active-network",
-      lastContact: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-      contactFrequency: 90,
-      strength: 0.4,
-      decayRate: 0.02,
-      platform: "LinkedIn",
-    },
-    {
-      id: "5",
-      name: "Lisa Wong",
-      levelId: "recognition-group",
-      lastContact: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-      contactFrequency: 365,
-      strength: 0.2,
-      decayRate: 0.03,
-      platform: "Conference",
-    },
-  ]);
+  const [people, setPeople] = useState<Person[]>([]);
+
+  // Load stored contacts on component mount
+  useEffect(() => {
+    const storedContacts = ContactStorage.loadContacts();
+    if (storedContacts.length > 0) {
+      setPeople(storedContacts);
+    } else {
+      // Default sample data if no stored contacts
+      setPeople([
+        {
+          id: "1",
+          name: "Sarah Johnson",
+          levelId: "inner-circle",
+          lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+          contactFrequency: 1,
+          strength: 0.95,
+          decayRate: 0.001,
+          platform: "Real Life",
+        },
+        {
+          id: "2",
+          name: "Mike Chen",
+          levelId: "sympathy-group",
+          lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+          contactFrequency: 7,
+          strength: 0.8,
+          decayRate: 0.005,
+          platform: "Work",
+        },
+        {
+          id: "3",
+          name: "Emma Davis",
+          levelId: "affinity-group",
+          lastContact: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          contactFrequency: 30,
+          strength: 0.6,
+          decayRate: 0.01,
+          platform: "Social Media",
+        },
+        {
+          id: "4",
+          name: "John Smith",
+          levelId: "active-network",
+          lastContact: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+          contactFrequency: 90,
+          strength: 0.4,
+          decayRate: 0.02,
+          platform: "LinkedIn",
+        },
+        {
+          id: "5",
+          name: "Lisa Wong",
+          levelId: "recognition-group",
+          lastContact: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
+          contactFrequency: 365,
+          strength: 0.2,
+          decayRate: 0.03,
+          platform: "Conference",
+        },
+      ]);
+    }
+  }, []);
 
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>("all");
@@ -414,6 +426,10 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
         setImportedData((prev) => ({ ...prev, facebook: facebookData }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
+        
+        // Store contacts in localStorage
+        ContactStorage.addContacts(newPeople, "facebook");
+        
         setImportStatus(
           `Successfully imported ${newPeople.length} Facebook friends`,
         );
@@ -469,6 +485,10 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
         setImportedData((prev) => ({ ...prev, linkedin: connections }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
+        
+        // Store contacts in localStorage
+        ContactStorage.addContacts(newPeople, "linkedin");
+        
         setImportStatus(
           `Successfully imported ${newPeople.length} LinkedIn connections`,
         );
