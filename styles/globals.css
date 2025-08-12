@@ -43,6 +43,15 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Liquid Animation Variables */
+    --liquid-primary: 220 70% 50%;
+    --liquid-secondary: 160 60% 45%;
+    --liquid-accent: 280 65% 60%;
+    --liquid-flow-speed: 8s;
+    --liquid-ripple-speed: 0.6s;
+    --liquid-wave-speed: 4s;
+    --liquid-blob-speed: 12s;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -77,6 +86,145 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark mode liquid colors */
+    --liquid-primary: 220 70% 60%;
+    --liquid-secondary: 160 60% 55%;
+    --liquid-accent: 280 65% 70%;
+  }
+}
+
+/* Liquid Animation Keyframes */
+@keyframes liquidFlow {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    transform: translate(10px, -10px) rotate(90deg);
+  }
+  50% {
+    border-radius: 70% 30% 40% 60% / 40% 70% 60% 30%;
+    transform: translate(-10px, 10px) rotate(180deg);
+  }
+  75% {
+    border-radius: 40% 70% 60% 30% / 70% 40% 50% 70%;
+    transform: translate(-10px, -10px) rotate(270deg);
+  }
+}
+
+@keyframes liquidRipple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes liquidWave {
+  0%, 100% {
+    clip-path: polygon(
+      0% 45%,
+      15% 44%,
+      32% 50%,
+      54% 60%,
+      70% 61%,
+      84% 59%,
+      100% 52%,
+      100% 100%,
+      0% 100%
+    );
+  }
+  50% {
+    clip-path: polygon(
+      0% 60%,
+      16% 65%,
+      34% 66%,
+      51% 62%,
+      67% 50%,
+      84% 45%,
+      100% 46%,
+      100% 100%,
+      0% 100%
+    );
+  }
+}
+
+@keyframes liquidBlob {
+  0%, 100% {
+    border-radius: 63% 37% 54% 46% / 55% 48% 52% 45%;
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  14% {
+    border-radius: 40% 60% 54% 46% / 49% 60% 40% 51%;
+    transform: translate(0px, 5px) rotate(50deg);
+  }
+  28% {
+    border-radius: 54% 46% 38% 62% / 49% 70% 30% 51%;
+    transform: translate(5px, 0px) rotate(100deg);
+  }
+  42% {
+    border-radius: 61% 39% 55% 45% / 61% 38% 62% 39%;
+    transform: translate(0px, -3px) rotate(150deg);
+  }
+  56% {
+    border-radius: 61% 39% 67% 33% / 70% 50% 50% 30%;
+    transform: translate(-5px, 0px) rotate(200deg);
+  }
+  70% {
+    border-radius: 50% 50% 33% 67% / 55% 68% 32% 45%;
+    transform: translate(0px, 3px) rotate(250deg);
+  }
+  84% {
+    border-radius: 46% 54% 50% 50% / 35% 61% 39% 65%;
+    transform: translate(0px, -2px) rotate(300deg);
+  }
+}
+
+@keyframes liquidGradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes liquidPour {
+  0% {
+    transform: translateY(-100%) scaleY(0);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(-50%) scaleY(0.3);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(0%) scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0%) scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes liquidDroplet {
+  0% {
+    transform: scale(0) translateY(-20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) translateY(0px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
   }
 }
 
@@ -86,5 +234,198 @@
   }
   body {
     @apply bg-background text-foreground;
+    position: relative;
+    overflow-x: hidden;
   }
+  
+  /* Liquid Background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      45deg,
+      hsla(var(--liquid-primary), 0.03),
+      hsla(var(--liquid-secondary), 0.03),
+      hsla(var(--liquid-accent), 0.03)
+    );
+    background-size: 400% 400%;
+    animation: liquidGradientShift var(--liquid-flow-speed) ease-in-out infinite;
+    z-index: -1;
+    pointer-events: none;
+  }
+}
+/* Liquid Animation Utility Classes */
+@layer components {
+  .liquid-button {
+    @apply relative overflow-hidden transition-all duration-300 ease-out;
+    border-radius: 20px;
+    background: linear-gradient(
+      135deg,
+      hsla(var(--liquid-primary), 0.1),
+      hsla(var(--liquid-secondary), 0.1)
+    );
+  }
+  
+  .liquid-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(
+      circle,
+      hsla(var(--liquid-primary), 0.3) 0%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease-out, height 0.6s ease-out;
+    pointer-events: none;
+  }
+  
+  .liquid-button:hover::before {
+    width: 300px;
+    height: 300px;
+    animation: liquidRipple var(--liquid-ripple-speed) ease-out;
+  }
+  
+  .liquid-card {
+    @apply relative overflow-hidden;
+    background: linear-gradient(
+      135deg,
+      hsla(var(--background), 0.95),
+      hsla(var(--card), 0.98)
+    );
+    border-radius: 24px;
+    backdrop-filter: blur(10px);
+    border: 1px solid hsla(var(--border), 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .liquid-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+      45deg,
+      hsla(var(--liquid-primary), 0.3),
+      hsla(var(--liquid-secondary), 0.3),
+      hsla(var(--liquid-accent), 0.3)
+    );
+    border-radius: 26px;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  
+  .liquid-card:hover::before {
+    opacity: 1;
+    animation: liquidFlow var(--liquid-blob-speed) ease-in-out infinite;
+  }
+  
+  .liquid-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px hsla(var(--liquid-primary), 0.15);
+  }
+  
+  .liquid-blob {
+    animation: liquidBlob var(--liquid-blob-speed) ease-in-out infinite;
+  }
+  
+  .liquid-wave {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .liquid-wave::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to top,
+      hsla(var(--liquid-primary), 0.1) 0%,
+      transparent 100%
+    );
+    animation: liquidWave var(--liquid-wave-speed) ease-in-out infinite;
+  }
+  
+  .liquid-pour {
+    animation: liquidPour 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  .liquid-droplet {
+    animation: liquidDroplet 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  .liquid-gradient-bg {
+    background: linear-gradient(
+      -45deg,
+      hsla(var(--liquid-primary), 0.1),
+      hsla(var(--liquid-secondary), 0.1),
+      hsla(var(--liquid-accent), 0.1),
+      hsla(var(--liquid-primary), 0.05)
+    );
+    background-size: 400% 400%;
+    animation: liquidGradientShift var(--liquid-flow-speed) ease-in-out infinite;
+  }
+  
+  .liquid-ripple-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .liquid-ripple-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(
+      circle,
+      hsla(var(--liquid-primary), 0.4) 0%,
+      hsla(var(--liquid-secondary), 0.2) 50%,
+      transparent 100%
+    );
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+  }
+  
+  .liquid-ripple-effect:active::after {
+    width: 200px;
+    height: 200px;
+    opacity: 1;
+    animation: liquidRipple var(--liquid-ripple-speed) ease-out;
+  }
+}
+
+/* Liquid Page Transitions */
+@layer utilities {
+  .page-enter {
+    animation: liquidPour 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  .stagger-children > * {
+    animation: liquidDroplet 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  .stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
 }

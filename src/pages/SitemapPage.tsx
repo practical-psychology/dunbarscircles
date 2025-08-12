@@ -30,10 +30,11 @@ export default function SitemapPage() {
         "/network",
         "/digital",
         "/lifecycle",
+        "/dashboard",
       ].includes(route.path),
     ),
     utility: routes.filter((route) =>
-      ["/dashboard", "/firebase-test", "/sitemap"].includes(route.path),
+      ["/firebase-test", "/sitemap"].includes(route.path),
     ),
   };
 
@@ -103,10 +104,6 @@ export default function SitemapPage() {
               </CardContent>
             </Card>
           )}
-
-          <div className="text-sm text-gray-500 text-center pt-4">
-            Last updated: {new Date().toLocaleDateString()}
-          </div>
         </div>
       </div>
     </PageLayout>

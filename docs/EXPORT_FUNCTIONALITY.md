@@ -1,9 +1,5 @@
 # Export Functionality
 
-## Overview
-
-Added comprehensive export functionality to the YAKW application, allowing users to export their relationship data in multiple formats from both the Dashboard and Relationship Inventory pages.
-
 ## Export Options
 
 ### 1. JSON Format

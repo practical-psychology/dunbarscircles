@@ -2,7 +2,7 @@
 
 ## Overview
 
-The YAKW application now supports saving imported contacts to Firebase Firestore, providing cloud-based storage and synchronization across devices.
+The application supports saving imported contacts to Firebase Firestore, providing cloud-based storage and synchronization across devices.
 
 ## Features
 
