@@ -1,0 +1,129 @@
+{
+  "friends": {
+    "data": [
+      {
+        "name": "John Smith",
+        "timestamp": 1625097600,
+        "contact_info": {
+          "email": "john.smith@example.com"
+        },
+        "about": "Software engineer at Tech Corp",
+        "hometown": {
+          "name": "New York, NY"
+        }
+      },
+      {
+        "name": "Sarah Johnson",
+        "timestamp": 1619827200,
+        "contact_info": {
+          "email": "sarah.j@example.com"
+        },
+        "about": "Marketing specialist | Digital nomad",
+        "hometown": {
+          "name": "Chicago, IL"
+        }
+      },
+      {
+        "name": "Michael Brown",
+        "timestamp": 1609459200,
+        "contact_info": {
+          "email": "michael.b@example.com"
+        },
+        "about": "Photographer | Travel enthusiast",
+        "hometown": {
+          "name": "San Francisco, CA"
+        }
+      },
+      {
+        "name": "Emily Davis",
+        "timestamp": 1598918400,
+        "contact_info": {
+          "email": "emily.d@example.com"
+        },
+        "about": "Graphic designer | Art lover",
+        "hometown": {
+          "name": "Austin, TX"
+        }
+      },
+      {
+        "name": "David Wilson",
+        "timestamp": 1588291200,
+        "contact_info": {
+          "email": "david.w@example.com"
+        },
+        "about": "Student at State University",
+        "hometown": {
+          "name": "Boston, MA"
+        }
+      },
+      {
+        "name": "Jessica Lee",
+        "timestamp": 1577836800,
+        "contact_info": {
+          "email": "jessica.lee@example.com"
+        },
+        "about": "Doctor | Healthcare professional",
+        "hometown": {
+          "name": "Seattle, WA"
+        }
+      },
+      {
+        "name": "Robert Garcia",
+        "timestamp": 1567296000,
+        "contact_info": {
+          "email": "robert.g@example.com"
+        },
+        "about": "Chef | Food blogger",
+        "hometown": {
+          "name": "Miami, FL"
+        }
+      },
+      {
+        "name": "Jennifer Martinez",
+        "timestamp": 1556668800,
+        "contact_info": {
+          "email": "jennifer.m@example.com"
+        },
+        "about": "Financial analyst | Investor",
+        "hometown": {
+          "name": "Denver, CO"
+        }
+      },
+      {
+        "name": "Thomas Robinson",
+        "timestamp": 1546128000,
+        "contact_info": {
+          "email": "tom.robinson@example.com"
+        },
+        "about": "Teacher | Education advocate",
+        "hometown": {
+          "name": "Philadelphia, PA"
+        }
+      },
+      {
+        "name": "Lisa Clark",
+        "timestamp": 1535587200,
+        "contact_info": {
+          "email": "lisa.clark@example.com"
+        },
+        "about": "Freelance writer | Bookworm",
+        "hometown": {
+          "name": "Portland, OR"
+        }
+      }
+    ],
+    "paging": {
+      "cursors": {
+        "before": "QVFIUjRsc2ZA...",
+        "after": "QVFIUjRsc2ZA..."
+      }
+    },
+    "summary": {
+      "total_count": 10
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "export_date": "2023-04-15T14:30:00+0000"
+  }
+}
