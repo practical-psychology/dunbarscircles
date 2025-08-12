@@ -1,4 +1,5 @@
 import type React from "react";
+import type { Level, Person } from "@/types/relationships";
 
 import { useState, useEffect, useRef } from "react";
 import {
@@ -9,6 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ContactStorage } from "@/lib/contact-storage";
+import {
+  exportToJSON,
+  exportToCSV,
+  printReport,
+  shareData,
+  generateFilename,
+  type ExportData,
+} from "@/lib/export-utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -28,6 +37,10 @@ import {
   Zap,
   Facebook,
   Linkedin,
+  Download,
+  FileText,
+  Image,
+  Share2,
 } from "lucide-react";
 import {
   Dialog,
@@ -80,29 +93,7 @@ interface LinkedInConnection {
   [key: string]: string;
 }
 
-interface Level {
-  id: string;
-  name: string;
-  count: number;
-  color: string;
-  textColor: string;
-  bgColor: string;
-}
-
-interface Person {
-  id: string;
-  name: string;
-  levelId: string;
-  lastContact: Date;
-  contactFrequency: number; // days between contacts
-  strength: number; // 0-1
-  decayRate: number; // how fast relationship decays
-  platform: string; // where you know them from
-  x?: number;
-  y?: number;
-  vx?: number;
-  vy?: number;
-}
+// Level and Person interfaces imported from types
 
 interface RelationshipInventoryProps {
   levels: Level[];
@@ -114,10 +105,26 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
   // Load stored contacts on component mount
   useEffect(() => {
-    const storedContacts = ContactStorage.loadContacts();
-    if (storedContacts.length > 0) {
-      setPeople(storedContacts);
-    } else {
+    const loadContacts = async () => {
+      try {
+        const storedContacts = await ContactStorage.loadAllContacts();
+        if (storedContacts.length > 0) {
+          setPeople(storedContacts);
+          return;
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load contacts from Firebase, trying localStorage:",
+          error,
+        );
+        const localContacts = ContactStorage.loadContacts();
+        if (localContacts.length > 0) {
+          setPeople(localContacts);
+          return;
+        }
+      }
+
+      // Default sample data if no stored contacts
       // Default sample data if no stored contacts
       setPeople([
         {
@@ -171,13 +178,16 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
           platform: "Conference",
         },
       ]);
-    }
+    };
+
+    loadContacts();
   }, []);
 
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>("all");
   const [showDecayWarnings, setShowDecayWarnings] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [importedData, setImportedData] = useState<{
     facebook?: FacebookData;
     linkedin?: LinkedInConnection[];
@@ -426,13 +436,19 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
         setImportedData((prev) => ({ ...prev, facebook: facebookData }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
-        
-        // Store contacts in localStorage
-        ContactStorage.addContacts(newPeople, "facebook");
-        
-        setImportStatus(
-          `Successfully imported ${newPeople.length} Facebook friends`,
-        );
+
+        // Store contacts in Firebase and localStorage
+        try {
+          await ContactStorage.addAllContacts(newPeople, "facebook");
+          setImportStatus(
+            `Successfully imported ${newPeople.length} Facebook friends to Firebase`,
+          );
+        } catch (error) {
+          console.error("Failed to save to Firebase:", error);
+          setImportStatus(
+            `Imported ${newPeople.length} Facebook friends locally (Firebase save failed)`,
+          );
+        }
       } else if (type === "linkedin") {
         // Handle LinkedIn CSV
         const text = await file.text();
@@ -485,13 +501,19 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
         setImportedData((prev) => ({ ...prev, linkedin: connections }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
-        
-        // Store contacts in localStorage
-        ContactStorage.addContacts(newPeople, "linkedin");
-        
-        setImportStatus(
-          `Successfully imported ${newPeople.length} LinkedIn connections`,
-        );
+
+        // Store contacts in Firebase and localStorage
+        try {
+          await ContactStorage.addAllContacts(newPeople, "linkedin");
+          setImportStatus(
+            `Successfully imported ${newPeople.length} LinkedIn connections to Firebase`,
+          );
+        } catch (error) {
+          console.error("Failed to save to Firebase:", error);
+          setImportStatus(
+            `Imported ${newPeople.length} LinkedIn connections locally (Firebase save failed)`,
+          );
+        }
       }
 
       setTimeout(() => setImportStatus(""), 3000);
@@ -502,6 +524,57 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         `Error importing ${type} data: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setTimeout(() => setImportStatus(""), 5000);
+    }
+  };
+
+  const getNetworkHealth = () => {
+    if (people.length === 0) return 0;
+    const healthyContacts = people.filter(
+      (person) => !isRelationshipDecaying(person),
+    );
+    return (healthyContacts.length / people.length) * 100;
+  };
+
+  const prepareExportData = (): ExportData => {
+    return {
+      people,
+      levels,
+      metadata: {
+        exportDate: new Date().toISOString(),
+        version: "1.0.0",
+        totalContacts: people.length,
+        networkHealth: getNetworkHealth(),
+      },
+    };
+  };
+
+  const handleExportJSON = () => {
+    const data = prepareExportData();
+    const filename = generateFilename("yakw_relationships", "json");
+    exportToJSON(data, filename);
+    setShowExportDialog(false);
+  };
+
+  const handleExportCSV = () => {
+    const filename = generateFilename("yakw_relationships", "csv");
+    exportToCSV(people, levels, filename);
+    setShowExportDialog(false);
+  };
+
+  const handlePrintReport = () => {
+    const data = prepareExportData();
+    printReport(data);
+    setShowExportDialog(false);
+  };
+
+  const handleShareData = async () => {
+    try {
+      const data = prepareExportData();
+      await shareData(data, "My YAKW Relationship Network");
+      setShowExportDialog(false);
+    } catch (error) {
+      console.error("Share failed:", error);
+      alert("Sharing failed. Please try again.");
     }
   };
 
@@ -572,6 +645,21 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Message */}
+      {importStatus && (
+        <Card
+          className={`${importStatus.includes("Error") || importStatus.includes("Failed") ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}
+        >
+          <CardContent className="py-3">
+            <div
+              className={`text-sm ${importStatus.includes("Error") || importStatus.includes("Failed") ? "text-red-700" : "text-green-700"}`}
+            >
+              {importStatus}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-4">
@@ -733,6 +821,117 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsImporting(false)}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            try {
+              await ContactStorage.saveContactsToFirebase(
+                people.map((person) => ({
+                  ...person,
+                  importDate: new Date(),
+                  source: "manual" as const,
+                })),
+              );
+              setImportStatus("Successfully saved all contacts to Firebase!");
+              setTimeout(() => setImportStatus(""), 3000);
+            } catch (error) {
+              console.error("Failed to save contacts:", error);
+              setImportStatus("Failed to save contacts to Firebase");
+              setTimeout(() => setImportStatus(""), 3000);
+            }
+          }}
+          disabled={people.length === 0}
+          className="text-green-600 hover:text-green-700"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Save Contacts
+        </Button>
+
+        <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" disabled={people.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Data
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Export Relationship Data</DialogTitle>
+              <DialogDescription>
+                Export your {people.length} relationships and network analysis
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <Button
+                onClick={handleExportJSON}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <FileText className="w-4 h-4 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">JSON Format</div>
+                  <div className="text-xs text-gray-500">
+                    Complete data with metadata
+                  </div>
+                </div>
+              </Button>
+
+              <Button
+                onClick={handleExportCSV}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <FileText className="w-4 h-4 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">CSV Format</div>
+                  <div className="text-xs text-gray-500">
+                    Spreadsheet compatible
+                  </div>
+                </div>
+              </Button>
+
+              <Button
+                onClick={handlePrintReport}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Image className="w-4 h-4 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">Print Report</div>
+                  <div className="text-xs text-gray-500">
+                    Formatted for printing
+                  </div>
+                </div>
+              </Button>
+
+              <Button
+                onClick={handleShareData}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Share2 className="w-4 h-4 mr-3" />
+                <div className="text-left">
+                  <div className="font-medium">Share Summary</div>
+                  <div className="text-xs text-gray-500">
+                    Share network statistics
+                  </div>
+                </div>
+              </Button>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowExportDialog(false)}
+              >
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>

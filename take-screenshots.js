@@ -19,13 +19,14 @@ if (!existsSync(SCREENSHOTS_DIR)) {
 }
 
 const ROUTES = [
-  "/", // Default landing (Overview tab)
-  "/?tab=overview", // Explicit overview
-  "/?tab=radial", // Radial diagram
-  "/?tab=levels", // Level details
-  "/?tab=inventory", // Relationship inventory
-  "/?tab=digital", // Digital parallels
-  "/?tab=lifecycle", // Life stage comparison
+  "/", // Overview page
+  "/radial", // Radial visualization page
+  "/levels", // Level details page
+  "/network", // Network diagram page
+  "/digital", // Digital parallels page
+  "/lifecycle", // Life stage comparison page
+  "/dashboard", // User dashboard page
+  "/sitemap", // Site navigation page
 ];
 
 const DEVICES = [

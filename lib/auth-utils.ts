@@ -2,16 +2,16 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
-  getAuth,
   type UserCredential,
   type User,
 } from "firebase/auth";
-import { app as firebaseApp } from "@/firebase-config";
-
-// Initialize Firebase Auth
-const auth = getAuth(firebaseApp);
+import { auth } from "@/firebase-config";
 
 export async function signInWithGoogle(): Promise<UserCredential> {
+  if (!auth) {
+    throw new Error("Firebase Auth is not initialized");
+  }
+
   const provider = new GoogleAuthProvider();
   // Add any additional scopes here if needed
   // provider.addScope('https://www.googleapis.com/auth/userinfo.email');
@@ -25,6 +25,10 @@ export async function signInWithGoogle(): Promise<UserCredential> {
 }
 
 export async function signOut(): Promise<void> {
+  if (!auth) {
+    throw new Error("Firebase Auth is not initialized");
+  }
+
   try {
     await firebaseSignOut(auth);
   } catch (error) {

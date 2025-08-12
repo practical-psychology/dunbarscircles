@@ -16,6 +16,7 @@ const routes = [
   { path: "/digital", label: "Digital Parallels", icon: "📱" },
   { path: "/lifecycle", label: "Life Stages", icon: "🕐" },
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
+  { path: "/firebase-test", label: "Firebase Test", icon: "🔥" },
   { path: "/sitemap", label: "Sitemap", icon: "🗺️" },
 ];
 
@@ -32,7 +33,7 @@ export default function SitemapPage() {
       ].includes(route.path),
     ),
     utility: routes.filter((route) =>
-      ["/dashboard", "/sitemap"].includes(route.path),
+      ["/dashboard", "/firebase-test", "/sitemap"].includes(route.path),
     ),
   };
 

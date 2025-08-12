@@ -1,7 +1,7 @@
 import PageLayout from "../components/PageLayout";
 import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
-import { app as firebaseApp } from "@/firebase-config";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { auth } from "@/firebase-config";
 import { signInWithGoogle, signOut } from "@/lib/auth-utils";
 import {
   Card,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ContactsDashboard } from "@/components/contacts-dashboard";
+import { FirebaseStatus } from "@/components/firebase-status";
 import { dunbarLevels } from "../data/dunbarLevels";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -32,7 +33,11 @@ export default function DashboardPage() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const auth = getAuth(firebaseApp);
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
@@ -79,7 +84,12 @@ export default function DashboardPage() {
     >
       {/* Contacts Dashboard */}
       <ContactsDashboard levels={dunbarLevels} />
-      
+
+      {/* Firebase Status */}
+      <div className="flex justify-center">
+        <FirebaseStatus />
+      </div>
+
       {/* Authentication Section */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-3">
         <Card>

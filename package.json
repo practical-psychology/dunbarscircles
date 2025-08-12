@@ -10,7 +10,8 @@
     "start": "vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "screenshots": "node take-screenshots.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check-firebase": "node scripts/check-firebase.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

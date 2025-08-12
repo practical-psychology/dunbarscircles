@@ -6,6 +6,7 @@ import NetworkPage from "./pages/NetworkPage";
 import DigitalPage from "./pages/DigitalPage";
 import LifecyclePage from "./pages/LifecyclePage";
 import DashboardPage from "./pages/DashboardPage";
+import FirebaseTestPage from "./pages/FirebaseTestPage";
 import SitemapPage from "./pages/SitemapPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -20,6 +21,7 @@ function App() {
         <Route path="/digital" element={<DigitalPage />} />
         <Route path="/lifecycle" element={<LifecyclePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/firebase-test" element={<FirebaseTestPage />} />
         <Route path="/sitemap" element={<SitemapPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

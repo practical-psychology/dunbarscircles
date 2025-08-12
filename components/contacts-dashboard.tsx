@@ -27,8 +27,32 @@ import {
   Calendar,
   TrendingUp,
   AlertTriangle,
+  RefreshCw,
+  Download,
+  FileText,
+  Image,
+  Share2,
+  Upload,
 } from "lucide-react";
 import { ContactStorage, type StoredContact } from "@/lib/contact-storage";
+import { testFirebaseConnection, addTestContact } from "@/lib/firebase-test";
+import {
+  exportToJSON,
+  exportToCSV,
+  printReport,
+  shareData,
+  generateFilename,
+  type ExportData,
+} from "@/lib/export-utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { Level } from "@/types/relationships";
 
 interface ContactsDashboardProps {
@@ -41,6 +65,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     bySource: { facebook: 0, linkedin: 0, manual: 0 },
@@ -49,11 +76,57 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
 
   // Load contacts and stats
   useEffect(() => {
-    const loadedContacts = ContactStorage.loadContacts();
-    const contactStats = ContactStorage.getContactStats();
-    
-    setContacts(loadedContacts);
-    setStats(contactStats);
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Try Firebase first
+        const firebaseContacts =
+          await ContactStorage.loadContactsFromFirebase();
+        const firebaseStats = await ContactStorage.getAllContactStats();
+
+        if (firebaseContacts.length > 0) {
+          setContacts(firebaseContacts);
+          setStats(firebaseStats);
+          console.log(
+            `Loaded ${firebaseContacts.length} contacts from Firebase`,
+          );
+        } else {
+          // Fallback to localStorage if Firebase is empty
+          const localContacts = ContactStorage.loadContacts();
+          const localStats = ContactStorage.getContactStats();
+          setContacts(localContacts);
+          setStats(localStats);
+
+          if (localContacts.length === 0) {
+            setError("No contacts found in Firebase or local storage");
+          } else {
+            setError("No contacts in Firebase, loaded from local storage");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load contacts from Firebase:", error);
+        setError("Failed to connect to Firebase, using local storage");
+
+        // Fallback to localStorage
+        try {
+          const loadedContacts = ContactStorage.loadContacts();
+          const contactStats = ContactStorage.getContactStats();
+          setContacts(loadedContacts);
+          setStats(contactStats);
+        } catch (localError) {
+          console.error("Failed to load from localStorage:", localError);
+          setError(
+            "Failed to load contacts from both Firebase and local storage",
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   // Apply filters
@@ -62,20 +135,21 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(contact =>
-        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.platform.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          contact.platform.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Source filter
     if (sourceFilter !== "all") {
-      filtered = filtered.filter(contact => contact.source === sourceFilter);
+      filtered = filtered.filter((contact) => contact.source === sourceFilter);
     }
 
     // Level filter
     if (levelFilter !== "all") {
-      filtered = filtered.filter(contact => contact.levelId === levelFilter);
+      filtered = filtered.filter((contact) => contact.levelId === levelFilter);
     }
 
     setFilteredContacts(filtered);
@@ -93,242 +167,541 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   };
 
   const getRelationshipHealth = (contact: StoredContact) => {
-    const daysSinceContact = (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceContact =
+      (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
     const isDecaying = daysSinceContact > contact.contactFrequency * 1.5;
     return { daysSinceContact: Math.floor(daysSinceContact), isDecaying };
   };
 
-  const clearAllContacts = () => {
-    if (confirm("Are you sure you want to clear all imported contacts? This action cannot be undone.")) {
-      ContactStorage.clearContacts();
-      setContacts([]);
-      setStats({ total: 0, bySource: { facebook: 0, linkedin: 0, manual: 0 }, byLevel: {} });
+  const clearAllContacts = async () => {
+    if (
+      confirm(
+        "Are you sure you want to clear all imported contacts? This action cannot be undone.",
+      )
+    ) {
+      try {
+        await ContactStorage.clearAllContacts();
+        setContacts([]);
+        setStats({
+          total: 0,
+          bySource: { facebook: 0, linkedin: 0, manual: 0 },
+          byLevel: {},
+        });
+      } catch (error) {
+        console.error("Failed to clear contacts:", error);
+        alert("Failed to clear contacts. Please try again.");
+      }
+    }
+  };
+
+  const refreshContacts = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const loadedContacts = await ContactStorage.loadAllContacts();
+      const contactStats = await ContactStorage.getAllContactStats();
+
+      setContacts(loadedContacts);
+      setStats(contactStats);
+    } catch (error) {
+      console.error("Failed to refresh contacts:", error);
+      setError("Failed to refresh contacts from Firebase");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testFirebase = async () => {
+    try {
+      const isConnected = await testFirebaseConnection();
+      if (isConnected) {
+        await addTestContact();
+        await refreshContacts();
+        alert("Firebase test successful! Added a test contact.");
+      } else {
+        alert("Firebase connection test failed. Check console for details.");
+      }
+    } catch (error) {
+      console.error("Firebase test error:", error);
+      alert("Firebase test failed. Check console for details.");
+    }
+  };
+
+  const getNetworkHealth = () => {
+    if (contacts.length === 0) return 0;
+    const healthyContacts = contacts.filter((contact) => {
+      const daysSinceContact =
+        (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+      return daysSinceContact <= contact.contactFrequency * 1.5;
+    });
+    return (healthyContacts.length / contacts.length) * 100;
+  };
+
+  const prepareExportData = (): ExportData => {
+    return {
+      people: contacts,
+      levels,
+      metadata: {
+        exportDate: new Date().toISOString(),
+        version: "1.0.0",
+        totalContacts: contacts.length,
+        networkHealth: getNetworkHealth(),
+      },
+    };
+  };
+
+  const handleExportJSON = () => {
+    const data = prepareExportData();
+    const filename = generateFilename("yakw_contacts", "json");
+    exportToJSON(data, filename);
+    setShowExportDialog(false);
+  };
+
+  const handleExportCSV = () => {
+    const filename = generateFilename("yakw_contacts", "csv");
+    exportToCSV(contacts, levels, filename);
+    setShowExportDialog(false);
+  };
+
+  const handlePrintReport = () => {
+    const data = prepareExportData();
+    printReport(data);
+    setShowExportDialog(false);
+  };
+
+  const handleShareData = async () => {
+    try {
+      const data = prepareExportData();
+      await shareData(data, "My YAKW Relationship Network");
+      setShowExportDialog(false);
+    } catch (error) {
+      console.error("Share failed:", error);
+      alert("Sharing failed. Please try again.");
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Loading State */}
+      {loading && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Total Contacts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              Imported from all sources
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Facebook className="w-4 h-4 text-blue-600" />
-              Facebook
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.bySource.facebook}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              Friends imported
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Linkedin className="w-4 h-4 text-blue-700" />
-              LinkedIn
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{stats.bySource.linkedin}</div>
-            <p className="text-xs text-gray-500 mt-1">
-              Connections imported
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Avg. Strength
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {contacts.length > 0 
-                ? Math.round((contacts.reduce((sum, c) => sum + c.strength, 0) / contacts.length) * 100)
-                : 0}%
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span>Loading contacts from Firebase...</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Relationship strength
-            </p>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm">{error}</span>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                Using Local Storage
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Firebase Status */}
+      {!loading && !error && contacts.length > 0 && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-green-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Connected to Firebase</span>
+              </div>
+              <Badge
+                variant="secondary"
+                className="text-xs bg-green-100 text-green-700"
+              >
+                Cloud Storage Active
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Overview */}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Contacts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Imported from all sources
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Facebook className="w-4 h-4 text-blue-600" />
+                Facebook
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.bySource.facebook}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Friends imported</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Linkedin className="w-4 h-4 text-blue-700" />
+                LinkedIn
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-700">
+                {stats.bySource.linkedin}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Connections imported</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Avg. Strength
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {contacts.length > 0
+                  ? Math.round(
+                      (contacts.reduce((sum, c) => sum + c.strength, 0) /
+                        contacts.length) *
+                        100,
+                    )
+                  : 0}
+                %
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Relationship strength
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filter & Search Contacts
-          </CardTitle>
-          <CardDescription>
-            Search and filter your imported contacts by source, level, or name
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Search contacts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+      {!loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filter & Search Contacts
+            </CardTitle>
+            <CardDescription>
+              Search and filter your imported contacts by source, level, or name
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Search contacts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Source</Label>
+                <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Dunbar Level</Label>
+                <Select value={levelFilter} onValueChange={setLevelFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    {levels.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Actions</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={refreshContacts}
+                    disabled={loading}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                    />
+                    Refresh
+                  </Button>
+                  <Dialog
+                    open={showExportDialog}
+                    onOpenChange={setShowExportDialog}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        disabled={contacts.length === 0 || loading}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Export Contacts</DialogTitle>
+                        <DialogDescription>
+                          Choose how you'd like to export your {contacts.length}{" "}
+                          contacts
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="space-y-3">
+                        <Button
+                          onClick={handleExportJSON}
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <FileText className="w-4 h-4 mr-3" />
+                          <div className="text-left">
+                            <div className="font-medium">JSON Format</div>
+                            <div className="text-xs text-gray-500">
+                              Complete data with metadata
+                            </div>
+                          </div>
+                        </Button>
+
+                        <Button
+                          onClick={handleExportCSV}
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <FileText className="w-4 h-4 mr-3" />
+                          <div className="text-left">
+                            <div className="font-medium">CSV Format</div>
+                            <div className="text-xs text-gray-500">
+                              Spreadsheet compatible
+                            </div>
+                          </div>
+                        </Button>
+
+                        <Button
+                          onClick={handlePrintReport}
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <Image className="w-4 h-4 mr-3" />
+                          <div className="text-left">
+                            <div className="font-medium">Print Report</div>
+                            <div className="text-xs text-gray-500">
+                              Formatted for printing
+                            </div>
+                          </div>
+                        </Button>
+
+                        <Button
+                          onClick={handleShareData}
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <Share2 className="w-4 h-4 mr-3" />
+                          <div className="text-left">
+                            <div className="font-medium">Share Summary</div>
+                            <div className="text-xs text-gray-500">
+                              Share network statistics
+                            </div>
+                          </div>
+                        </Button>
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowExportDialog(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        await ContactStorage.saveContactsToFirebase(contacts);
+                        setError(null);
+                        alert("Successfully saved all contacts to Firebase!");
+                      } catch (error) {
+                        console.error("Failed to save to Firebase:", error);
+                        alert(
+                          "Failed to save contacts to Firebase. Check console for details.",
+                        );
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={contacts.length === 0 || loading}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Save to Firebase
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={testFirebase}
+                    disabled={loading}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Test Firebase
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={clearAllContacts}
+                    className="text-red-600 hover:text-red-700"
+                    disabled={contacts.length === 0 || loading}
+                  >
+                    Clear All
+                  </Button>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Source</Label>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="facebook">Facebook</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                  <SelectItem value="manual">Manual</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Dunbar Level</Label>
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  {levels.map((level) => (
-                    <SelectItem key={level.id} value={level.id}>
-                      {level.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Actions</Label>
-              <Button
-                variant="outline"
-                onClick={clearAllContacts}
-                className="w-full text-red-600 hover:text-red-700"
-                disabled={contacts.length === 0}
-              >
-                Clear All Contacts
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Contacts List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Contacts ({filteredContacts.length})
-          </CardTitle>
-          <CardDescription>
-            All your imported contacts with relationship details
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredContacts.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
-              <p className="text-gray-500">
-                {contacts.length === 0 
-                  ? "Import contacts from the Network page to see them here."
-                  : "Try adjusting your search or filter criteria."
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredContacts.map((contact) => {
-                const level = levels.find(l => l.id === contact.levelId);
-                const health = getRelationshipHealth(contact);
-                
-                return (
-                  <div
-                    key={contact.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        {getSourceIcon(contact.source)}
-                        <div className={`w-3 h-3 ${level?.color} rounded-full`}></div>
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h4 className="font-medium">{contact.name}</h4>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>{contact.platform}</span>
-                          <span>•</span>
-                          <span>{level?.name}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {health.daysSinceContact}d ago
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+      {!loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Contacts ({filteredContacts.length})</CardTitle>
+            <CardDescription>
+              All your imported contacts with relationship details
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredContacts.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No contacts found
+                </h3>
+                <p className="text-gray-500">
+                  {contacts.length === 0
+                    ? "Import contacts from the Network page to see them here."
+                    : "Try adjusting your search or filter criteria."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredContacts.map((contact) => {
+                  const level = levels.find((l) => l.id === contact.levelId);
+                  const health = getRelationshipHealth(contact);
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="text-sm font-medium">
-                          {Math.round(contact.strength * 100)}%
+                  return (
+                    <div
+                      key={contact.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          {getSourceIcon(contact.source)}
+                          <div
+                            className={`w-3 h-3 ${level?.color} rounded-full`}
+                          ></div>
                         </div>
-                        <div className="text-xs text-gray-500">strength</div>
+
+                        <div className="flex-1">
+                          <h4 className="font-medium">{contact.name}</h4>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>{contact.platform}</span>
+                            <span>•</span>
+                            <span>{level?.name}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {health.daysSinceContact}d ago
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      {health.isDecaying && (
-                        <Badge variant="destructive" className="flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          Decaying
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {Math.round(contact.strength * 100)}%
+                          </div>
+                          <div className="text-xs text-gray-500">strength</div>
+                        </div>
+
+                        {health.isDecaying && (
+                          <Badge
+                            variant="destructive"
+                            className="flex items-center gap-1"
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            Decaying
+                          </Badge>
+                        )}
+
+                        <Badge variant="secondary" className="capitalize">
+                          {contact.source}
                         </Badge>
-                      )}
-                      
-                      <Badge variant="secondary" className="capitalize">
-                        {contact.source}
-                      </Badge>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
