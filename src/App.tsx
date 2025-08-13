@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider } from "@/components/theme-provider";
 import HomePage from "./pages/HomePage";
+import OnboardingPage from "./pages/OnboardingPage";
 import RadialPage from "./pages/RadialPage";
 import LevelsPage from "./pages/LevelsPage";
 import NetworkPage from "./pages/NetworkPage";
@@ -91,6 +92,7 @@ function AppContent() {
         >
           <Routes location={location}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/radial" element={<RadialPage />} />
             <Route path="/levels" element={<LevelsPage />} />
             <Route path="/network" element={<NetworkPage />} />

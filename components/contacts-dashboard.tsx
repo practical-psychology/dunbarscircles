@@ -34,7 +34,9 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
-import { ContactStorage, type StoredContact } from "@/lib/contact-storage";
+import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+import type { StoredContact } from "@/lib/contact-storage";
+import { auth } from "@/firebase-config";
 import { testFirebaseConnection, addTestContact } from "@/lib/firebase-test";
 import {
   exportToJSON,
@@ -73,6 +75,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     bySource: { facebook: 0, linkedin: 0, manual: 0 },
     byLevel: {} as Record<string, number>,
   });
+  const [, setDataSource] = useState<string>("loading");
 
   // Load contacts and stats
   useEffect(() => {
@@ -81,46 +84,78 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       setError(null);
 
       try {
-        // Try Firebase first
-        const firebaseContacts =
-          await ContactStorage.loadContactsFromFirebase();
-        const firebaseStats = await ContactStorage.getAllContactStats();
+        const result = await EnhancedContactStorage.loadContacts();
+        const statsResult = await EnhancedContactStorage.getStats();
 
-        if (firebaseContacts.length > 0) {
-          setContacts(firebaseContacts);
-          setStats(firebaseStats);
+        if (result.success && result.data) {
+          setContacts(result.data);
+          setDataSource(result.source);
+
+          if (result.fallbackUsed) {
+            setError(
+              `Loaded ${result.data.length} contacts from ${result.source} (some sample data included)`,
+            );
+          } else if (result.error) {
+            setError(result.error);
+          } else {
+            setError(null);
+          }
+
+          if (statsResult.success && statsResult.data) {
+            // Ensure the stats match our expected structure
+            const statsData = statsResult.data;
+            setStats({
+              total: statsData.total,
+              bySource: {
+                facebook: statsData.bySource.facebook || 0,
+                linkedin: statsData.bySource.linkedin || 0,
+                manual: statsData.bySource.manual || 0,
+              },
+              byLevel: statsData.byLevel,
+            });
+          } else {
+            // Calculate basic stats from loaded contacts
+            const contacts = result.data;
+            const total = contacts.length;
+            const bySource = { facebook: 0, linkedin: 0, manual: 0 };
+            const byLevel: Record<string, number> = {};
+
+            contacts.forEach((contact) => {
+              if (contact.source === "facebook") bySource.facebook++;
+              else if (contact.source === "linkedin") bySource.linkedin++;
+              else if (contact.source === "manual") bySource.manual++;
+
+              byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
+            });
+
+            setStats({ total, bySource, byLevel });
+          }
+
           console.log(
-            `Loaded ${firebaseContacts.length} contacts from Firebase`,
+            `Loaded ${result.data.length} contacts from ${result.source}`,
           );
         } else {
-          // Fallback to localStorage if Firebase is empty
-          const localContacts = ContactStorage.loadContacts();
-          const localStats = ContactStorage.getContactStats();
-          setContacts(localContacts);
-          setStats(localStats);
-
-          if (localContacts.length === 0) {
-            setError("No contacts found in Firebase or local storage");
-          } else {
-            setError("No contacts in Firebase, loaded from local storage");
-          }
+          setError(result.error || "Failed to load contacts");
+          setContacts([]);
+          setStats({
+            total: 0,
+            bySource: { facebook: 0, linkedin: 0, manual: 0 },
+            byLevel: {},
+          });
+          setDataSource("none");
         }
       } catch (error) {
-        console.error("Failed to load contacts from Firebase:", error);
-        setError("Failed to connect to Firebase, using local storage");
-
-        // Fallback to localStorage
-        try {
-          const loadedContacts = ContactStorage.loadContacts();
-          const contactStats = ContactStorage.getContactStats();
-          setContacts(loadedContacts);
-          setStats(contactStats);
-        } catch (localError) {
-          console.error("Failed to load from localStorage:", localError);
-          setError(
-            "Failed to load contacts from both Firebase and local storage",
-          );
-        }
+        console.error("Failed to load contacts:", error);
+        setError(
+          `Failed to load contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        setContacts([]);
+        setStats({
+          total: 0,
+          bySource: { facebook: 0, linkedin: 0, manual: 0 },
+          byLevel: {},
+        });
+        setDataSource("none");
       } finally {
         setLoading(false);
       }
@@ -180,7 +215,12 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       )
     ) {
       try {
-        await ContactStorage.clearAllContacts();
+        const userId = auth?.currentUser?.uid;
+        if (userId) {
+          await EnhancedContactStorage.clearAllContacts(
+            `CONFIRM_DELETE_${userId}`,
+          );
+        }
         setContacts([]);
         setStats({
           total: 0,
@@ -199,11 +239,26 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     setError(null);
 
     try {
-      const loadedContacts = await ContactStorage.loadAllContacts();
-      const contactStats = await ContactStorage.getAllContactStats();
+      const result = await EnhancedContactStorage.loadContacts();
+      const statsResult = await EnhancedContactStorage.getStats();
+
+      const loadedContacts = result.data || [];
+      const contactStats = statsResult.data || {
+        total: 0,
+        bySource: { facebook: 0, linkedin: 0, manual: 0 },
+        byLevel: {},
+      };
 
       setContacts(loadedContacts);
-      setStats(contactStats);
+      setStats({
+        total: contactStats.total,
+        bySource: {
+          facebook: contactStats.bySource.facebook || 0,
+          linkedin: contactStats.bySource.linkedin || 0,
+          manual: contactStats.bySource.manual || 0,
+        },
+        byLevel: contactStats.byLevel,
+      });
     } catch (error) {
       console.error("Failed to refresh contacts:", error);
       setError("Failed to refresh contacts from Firebase");
@@ -575,7 +630,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     onClick={async () => {
                       try {
                         setLoading(true);
-                        await ContactStorage.saveContactsToFirebase(contacts);
+                        await EnhancedContactStorage.saveContacts(contacts);
                         setError(null);
                         alert("Successfully saved all contacts to Firebase!");
                       } catch (error) {

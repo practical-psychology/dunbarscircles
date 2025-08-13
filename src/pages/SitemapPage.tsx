@@ -10,6 +10,7 @@ import PageLayout from "../components/PageLayout";
 
 const routes = [
   { path: "/", label: "Overview", icon: "🏠" },
+  { path: "/onboarding", label: "Tutorial & Guide", icon: "📚" },
   { path: "/radial", label: "Radial View", icon: "👁️" },
   { path: "/levels", label: "Levels", icon: "👥" },
   { path: "/network", label: "Network Graph", icon: "❤️" },
@@ -25,6 +26,7 @@ export default function SitemapPage() {
     main: routes.filter((route) =>
       [
         "/",
+        "/onboarding",
         "/radial",
         "/levels",
         "/network",

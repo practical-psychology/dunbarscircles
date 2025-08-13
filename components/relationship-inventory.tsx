@@ -9,7 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ContactStorage } from "@/lib/contact-storage";
+import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+import { ErrorBoundary, DataErrorFallback } from "@/components/error-boundary";
+import { DataStatus } from "@/components/data-status";
 import {
   exportToJSON,
   exportToCSV,
@@ -103,81 +105,34 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [people, setPeople] = useState<Person[]>([]);
 
-  // Load stored contacts on component mount
+  // Load stored contacts on component mount with enhanced error handling
   useEffect(() => {
     const loadContacts = async () => {
       try {
-        const storedContacts = await ContactStorage.loadAllContacts();
-        if (storedContacts.length > 0) {
-          setPeople(storedContacts);
-          return;
+        const result = await EnhancedContactStorage.loadContacts();
+        if (result.success && result.data) {
+          setPeople(result.data);
+
+          // Show status message if fallback was used
+          if (result.fallbackUsed) {
+            setImportStatus(
+              `Loaded ${result.data.length} contacts from ${result.source} (some sample data included)`,
+            );
+            setTimeout(() => setImportStatus(""), 5000);
+          }
+        } else {
+          setImportStatus(
+            `Failed to load contacts: ${result.error || "Unknown error"}`,
+          );
+          setTimeout(() => setImportStatus(""), 5000);
         }
       } catch (error) {
-        console.error(
-          "Failed to load contacts from Firebase, trying localStorage:",
-          error,
+        console.error("Failed to load contacts:", error);
+        setImportStatus(
+          `Error loading contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
-        const localContacts = ContactStorage.loadContacts();
-        if (localContacts.length > 0) {
-          setPeople(localContacts);
-          return;
-        }
+        setTimeout(() => setImportStatus(""), 5000);
       }
-
-      // Default sample data if no stored contacts
-      // Default sample data if no stored contacts
-      setPeople([
-        {
-          id: "1",
-          name: "Sarah Johnson",
-          levelId: "inner-circle",
-          lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-          contactFrequency: 1,
-          strength: 0.95,
-          decayRate: 0.001,
-          platform: "Real Life",
-        },
-        {
-          id: "2",
-          name: "Mike Chen",
-          levelId: "sympathy-group",
-          lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          contactFrequency: 7,
-          strength: 0.8,
-          decayRate: 0.005,
-          platform: "Work",
-        },
-        {
-          id: "3",
-          name: "Emma Davis",
-          levelId: "affinity-group",
-          lastContact: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          contactFrequency: 30,
-          strength: 0.6,
-          decayRate: 0.01,
-          platform: "Social Media",
-        },
-        {
-          id: "4",
-          name: "John Smith",
-          levelId: "active-network",
-          lastContact: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-          contactFrequency: 90,
-          strength: 0.4,
-          decayRate: 0.02,
-          platform: "LinkedIn",
-        },
-        {
-          id: "5",
-          name: "Lisa Wong",
-          levelId: "recognition-group",
-          lastContact: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-          contactFrequency: 365,
-          strength: 0.2,
-          decayRate: 0.03,
-          platform: "Conference",
-        },
-      ]);
     };
 
     loadContacts();
@@ -437,16 +392,18 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         setImportedData((prev) => ({ ...prev, facebook: facebookData }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
 
-        // Store contacts in Firebase and localStorage
-        try {
-          await ContactStorage.addAllContacts(newPeople, "facebook");
+        // Store contacts using enhanced storage
+        const addResult = await EnhancedContactStorage.addContacts(
+          newPeople,
+          "facebook",
+        );
+        if (addResult.success) {
           setImportStatus(
-            `Successfully imported ${newPeople.length} Facebook friends to Firebase`,
+            `Successfully imported ${addResult.data?.added || 0} Facebook friends (${addResult.data?.skipped || 0} duplicates skipped)`,
           );
-        } catch (error) {
-          console.error("Failed to save to Firebase:", error);
+        } else {
           setImportStatus(
-            `Imported ${newPeople.length} Facebook friends locally (Firebase save failed)`,
+            `Import failed: ${addResult.error || "Unknown error"}`,
           );
         }
       } else if (type === "linkedin") {
@@ -502,16 +459,18 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         setImportedData((prev) => ({ ...prev, linkedin: connections }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
 
-        // Store contacts in Firebase and localStorage
-        try {
-          await ContactStorage.addAllContacts(newPeople, "linkedin");
+        // Store contacts using enhanced storage
+        const addResult = await EnhancedContactStorage.addContacts(
+          newPeople,
+          "linkedin",
+        );
+        if (addResult.success) {
           setImportStatus(
-            `Successfully imported ${newPeople.length} LinkedIn connections to Firebase`,
+            `Successfully imported ${addResult.data?.added || 0} LinkedIn connections (${addResult.data?.skipped || 0} duplicates skipped)`,
           );
-        } catch (error) {
-          console.error("Failed to save to Firebase:", error);
+        } else {
           setImportStatus(
-            `Imported ${newPeople.length} LinkedIn connections locally (Firebase save failed)`,
+            `Import failed: ${addResult.error || "Unknown error"}`,
           );
         }
       }
@@ -579,486 +538,542 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Total Contacts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{people.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4" />
-              Network Health
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {getRelationshipHealth().toFixed(0)}%
-            </div>
-            <Progress value={getRelationshipHealth()} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <TrendingDown className="w-4 h-4" />
-              Decaying
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {getDecayingRelationships().length}
-            </div>
-            <span className="text-xs text-gray-500">
-              You haven&apos;t added any notes yet. Click to add one.
-            </span>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              Avg. Strength
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {(
-                (people.reduce((sum, p) => sum + p.strength, 0) /
-                  people.length) *
-                100
-              ).toFixed(0)}
-              %
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Status Message */}
-      {importStatus && (
-        <Card
-          className={`${importStatus.includes("Error") || importStatus.includes("Failed") ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}
-        >
-          <CardContent className="py-3">
-            <div
-              className={`text-sm ${importStatus.includes("Error") || importStatus.includes("Failed") ? "text-red-700" : "text-green-700"}`}
-            >
-              {importStatus}
-            </div>
-          </CardContent>
-        </Card>
+    <ErrorBoundary
+      fallback={({ error, retry }) => (
+        <DataErrorFallback
+          error={error}
+          retry={retry}
+          showSampleData={() => {
+            // Load sample data as fallback
+            setPeople([
+              {
+                id: "sample_1",
+                name: "Sarah Johnson",
+                levelId: "inner-circle",
+                lastContact: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+                contactFrequency: 1,
+                strength: 0.95,
+                decayRate: 0.001,
+                platform: "Real Life",
+              },
+              {
+                id: "sample_2",
+                name: "Mike Chen",
+                levelId: "sympathy-group",
+                lastContact: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                contactFrequency: 7,
+                strength: 0.8,
+                decayRate: 0.005,
+                platform: "Work",
+              },
+            ]);
+          }}
+        />
       )}
+    >
+      <div className="space-y-6">
+        {/* Data Status Component */}
+        <DataStatus
+          onImportClick={() => setIsImporting(true)}
+          onRefresh={() => window.location.reload()}
+        />
+        {/* Header with stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Contacts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{people.length}</div>
+            </CardContent>
+          </Card>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="filter">Filter by level:</Label>
-          <Select value={filterLevel} onValueChange={setFilterLevel}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              {levels.map((level) => (
-                <SelectItem key={level.id} value={level.id}>
-                  {level.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                Network Health
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {getRelationshipHealth().toFixed(0)}%
+              </div>
+              <Progress value={getRelationshipHealth()} className="mt-2" />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingDown className="w-4 h-4" />
+                Decaying
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {getDecayingRelationships().length}
+              </div>
+              <span className="text-xs text-gray-500">
+                You haven&apos;t added any notes yet. Click to add one.
+              </span>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Avg. Strength
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {(
+                  (people.reduce((sum, p) => sum + p.strength, 0) /
+                    people.length) *
+                  100
+                ).toFixed(0)}
+                %
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowDecayWarnings(!showDecayWarnings)}
-          className={showDecayWarnings ? "bg-red-50 text-red-700" : ""}
-        >
-          <AlertTriangle className="w-4 h-4 mr-2" />
-          Decay Warnings
-        </Button>
-
-        <Dialog open={isImporting} onOpenChange={setIsImporting}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Upload className="w-4 h-4 mr-2" />
-              Import Contacts
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Import Social Graph Data</DialogTitle>
-              <DialogDescription>
-                Upload your Facebook friends export (JSON) or LinkedIn
-                connections (CSV) to automatically map your network.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              {importStatus && (
-                <div
-                  className={`p-3 rounded-lg ${importStatus.includes("Error") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
-                >
-                  {importStatus}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Facebook Import */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 border-2 border-dashed border-blue-200 rounded-lg">
-                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <Facebook className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">Facebook Friends</h3>
-                      <p className="text-sm text-gray-600">
-                        Upload friends.json from Facebook data export
-                      </p>
-                    </div>
-                  </div>
-
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={(e) => handleFileUpload(e, "facebook")}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    id="facebook-upload"
-                  />
-                  <label
-                    htmlFor="facebook-upload"
-                    className="text-xs text-gray-500"
-                  >
-                    Expected format: Facebook JSON export with friends data
-                  </label>
-
-                  {importedData.facebook && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm font-medium text-blue-700">
-                        &quot;Imported{" "}
-                        {importedData.facebook.friends.data.length}&quot;{" "}
-                        Facebook friends
-                      </p>
-                      <p className="text-xs text-blue-600">
-                        Export date:{" "}
-                        {importedData.facebook.metadata?.export_date ||
-                          "Unknown"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* LinkedIn Import */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 border-2 border-dashed border-blue-200 rounded-lg">
-                    <div className="w-12 h-12 bg-blue-700 rounded-lg flex items-center justify-center">
-                      <Linkedin className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">LinkedIn Connections</h3>
-                      <p className="text-sm text-gray-600">
-                        Upload connections.csv from LinkedIn export
-                      </p>
-                    </div>
-                  </div>
-
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, "linkedin")}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    id="linkedin-upload"
-                  />
-                  <label
-                    htmlFor="linkedin-upload"
-                    className="text-xs text-gray-500"
-                  >
-                    Expected format: CSV with First Name, Last Name, Email,
-                    Company, Position, Connected On
-                  </label>
-
-                  {importedData.linkedin && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm font-medium text-blue-700">
-                        &quot;Imported {importedData.linkedin.length}&quot;
-                        LinkedIn connections
-                      </p>
-                    </div>
-                  )}
-                </div>
+        {/* Status Message */}
+        {importStatus && (
+          <Card
+            className={`${importStatus.includes("Error") || importStatus.includes("Failed") ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}
+          >
+            <CardContent className="py-3">
+              <div
+                className={`text-sm ${importStatus.includes("Error") || importStatus.includes("Failed") ? "text-red-700" : "text-green-700"}`}
+              >
+                {importStatus}
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Import Instructions */}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">How to get your data:</h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div>
-                    <strong>Facebook:</strong> Settings → Your Facebook
-                    Information → Download Your Information → Select
-                    &quot;&quot;Friends&quot;&quot; → JSON format
-                  </div>
-                  <div>
-                    <strong>LinkedIn:</strong> Settings → Data Privacy → Get a
-                    copy of your data → Select
-                    &quot;&quot;Connections&quot;&quot; → Download CSV
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="filter">Filter by level:</Label>
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Levels</SelectItem>
+                {levels.map((level) => (
+                  <SelectItem key={level.id} value={level.id}>
+                    {level.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsImporting(false)}>
-                Close
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDecayWarnings(!showDecayWarnings)}
+            className={showDecayWarnings ? "bg-red-50 text-red-700" : ""}
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Decay Warnings
+          </Button>
+
+          <Dialog open={isImporting} onOpenChange={setIsImporting}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4 mr-2" />
+                Import Contacts
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Import Social Graph Data</DialogTitle>
+                <DialogDescription>
+                  Upload your Facebook friends export (JSON) or LinkedIn
+                  connections (CSV) to automatically map your network.
+                </DialogDescription>
+              </DialogHeader>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            try {
-              await ContactStorage.saveContactsToFirebase(
-                people.map((person) => ({
-                  ...person,
-                  importDate: new Date(),
-                  source: "manual" as const,
-                })),
-              );
-              setImportStatus("Successfully saved all contacts to Firebase!");
-              setTimeout(() => setImportStatus(""), 3000);
-            } catch (error) {
-              console.error("Failed to save contacts:", error);
-              setImportStatus("Failed to save contacts to Firebase");
-              setTimeout(() => setImportStatus(""), 3000);
-            }
-          }}
-          disabled={people.length === 0}
-          className="text-green-600 hover:text-green-700"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Save Contacts
-        </Button>
-
-        <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" disabled={people.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Export Data
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Export Relationship Data</DialogTitle>
-              <DialogDescription>
-                Export your {people.length} relationships and network analysis
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3">
-              <Button
-                onClick={handleExportJSON}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <FileText className="w-4 h-4 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">JSON Format</div>
-                  <div className="text-xs text-gray-500">
-                    Complete data with metadata
-                  </div>
-                </div>
-              </Button>
-
-              <Button
-                onClick={handleExportCSV}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <FileText className="w-4 h-4 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">CSV Format</div>
-                  <div className="text-xs text-gray-500">
-                    Spreadsheet compatible
-                  </div>
-                </div>
-              </Button>
-
-              <Button
-                onClick={handlePrintReport}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <Image className="w-4 h-4 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Print Report</div>
-                  <div className="text-xs text-gray-500">
-                    Formatted for printing
-                  </div>
-                </div>
-              </Button>
-
-              <Button
-                onClick={handleShareData}
-                variant="outline"
-                className="w-full justify-start"
-              >
-                <Share2 className="w-4 h-4 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Share Summary</div>
-                  <div className="text-xs text-gray-500">
-                    Share network statistics
-                  </div>
-                </div>
-              </Button>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowExportDialog(false)}
-              >
-                Cancel
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Main network graph */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Force-Directed Network Graph</CardTitle>
-          <CardDescription>
-            Interactive visualization of your personal relationships. Click on
-            nodes to see details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <canvas
-            ref={canvasRef}
-            width={800}
-            height={500}
-            className="border rounded-lg cursor-pointer bg-gradient-to-br from-blue-50 to-purple-50"
-            onClick={handleCanvasClick}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Relationship decay warnings */}
-      {getDecayingRelationships().length > 0 && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-700 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Relationships Needing Attention
-            </CardTitle>
-            <CardDescription className="text-red-600">
-              These relationships haven&apos;t been maintained according to
-              their expected frequency.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {getDecayingRelationships().map((person) => {
-                const daysSinceContact = Math.floor(
-                  (Date.now() - person.lastContact.getTime()) /
-                    (1000 * 60 * 60 * 24),
-                );
-                const level = levels.find((l) => l.id === person.levelId);
-                return (
+              <div className="space-y-6">
+                {importStatus && (
                   <div
-                    key={person.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    className={`p-3 rounded-lg ${importStatus.includes("Error") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 ${level?.color} rounded-full`}
-                      ></div>
-                      <div>
-                        <h4 className="font-medium">{person.name}</h4>
+                    {importStatus}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Facebook Import */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 border-2 border-dashed border-blue-200 rounded-lg">
+                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Facebook className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">Facebook Friends</h3>
                         <p className="text-sm text-gray-600">
-                          Last contact: {daysSinceContact} days ago • Expected:
-                          every {person.contactFrequency} days
+                          Upload friends.json from Facebook data export
                         </p>
                       </div>
                     </div>
-                    <Badge variant="destructive">Overdue</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Selected person details */}
-      {selectedPerson && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              {selectedPerson.name}
-            </CardTitle>
-            <CardDescription>
-              Relationship details and maintenance history
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Relationship Level</Label>
-                <p className="text-sm font-medium">
-                  {levels.find((l) => l.id === selectedPerson.levelId)?.name}
-                </p>
-              </div>
-              <div>
-                <Label>Platform</Label>
-                <p className="text-sm font-medium">{selectedPerson.platform}</p>
-              </div>
-              <div>
-                <Label>Relationship Strength</Label>
-                <div className="flex items-center gap-2">
-                  <Progress
-                    value={selectedPerson.strength * 100}
-                    className="flex-1"
-                  />
-                  <span className="text-sm">
-                    {(selectedPerson.strength * 100).toFixed(0)}%
-                  </span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={(e) => handleFileUpload(e, "facebook")}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      id="facebook-upload"
+                    />
+                    <label
+                      htmlFor="facebook-upload"
+                      className="text-xs text-gray-500"
+                    >
+                      Expected format: Facebook JSON export with friends data
+                    </label>
+
+                    {importedData.facebook && (
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm font-medium text-blue-700">
+                          &quot;Imported{" "}
+                          {importedData.facebook.friends.data.length}&quot;{" "}
+                          Facebook friends
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          Export date:{" "}
+                          {importedData.facebook.metadata?.export_date ||
+                            "Unknown"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LinkedIn Import */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 border-2 border-dashed border-blue-200 rounded-lg">
+                      <div className="w-12 h-12 bg-blue-700 rounded-lg flex items-center justify-center">
+                        <Linkedin className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">LinkedIn Connections</h3>
+                        <p className="text-sm text-gray-600">
+                          Upload connections.csv from LinkedIn export
+                        </p>
+                      </div>
+                    </div>
+
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => handleFileUpload(e, "linkedin")}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      id="linkedin-upload"
+                    />
+                    <label
+                      htmlFor="linkedin-upload"
+                      className="text-xs text-gray-500"
+                    >
+                      Expected format: CSV with First Name, Last Name, Email,
+                      Company, Position, Connected On
+                    </label>
+
+                    {importedData.linkedin && (
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm font-medium text-blue-700">
+                          &quot;Imported {importedData.linkedin.length}&quot;
+                          LinkedIn connections
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Import Instructions */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-2">How to get your data:</h4>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div>
+                      <strong>Facebook:</strong> Settings → Your Facebook
+                      Information → Download Your Information → Select
+                      &quot;&quot;Friends&quot;&quot; → JSON format
+                    </div>
+                    <div>
+                      <strong>LinkedIn:</strong> Settings → Data Privacy → Get a
+                      copy of your data → Select
+                      &quot;&quot;Connections&quot;&quot; → Download CSV
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label>Last Contact</Label>
-                <p className="text-sm font-medium">
-                  {selectedPerson.lastContact.toLocaleDateString()}
-                </p>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsImporting(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                const saveResult = await EnhancedContactStorage.saveContacts(
+                  people.map((person) => ({
+                    ...person,
+                    importDate: new Date(),
+                    source: "manual" as const,
+                  })),
+                );
+
+                if (saveResult.success) {
+                  setImportStatus(
+                    `Successfully saved ${saveResult.data?.saved || 0} contacts!`,
+                  );
+                } else {
+                  setImportStatus(
+                    `Save failed: ${saveResult.error || "Unknown error"}`,
+                  );
+                }
+                setTimeout(() => setImportStatus(""), 3000);
+              } catch (error) {
+                console.error("Failed to save contacts:", error);
+                setImportStatus(
+                  `Error saving contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
+                );
+                setTimeout(() => setImportStatus(""), 3000);
+              }
+            }}
+            disabled={people.length === 0}
+            className="text-green-600 hover:text-green-700"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Save Contacts
+          </Button>
+
+          <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={people.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Data
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Export Relationship Data</DialogTitle>
+                <DialogDescription>
+                  Export your {people.length} relationships and network analysis
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={handleExportJSON}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <FileText className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">JSON Format</div>
+                    <div className="text-xs text-gray-500">
+                      Complete data with metadata
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={handleExportCSV}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <FileText className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">CSV Format</div>
+                    <div className="text-xs text-gray-500">
+                      Spreadsheet compatible
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={handlePrintReport}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Image className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">Print Report</div>
+                    <div className="text-xs text-gray-500">
+                      Formatted for printing
+                    </div>
+                  </div>
+                </Button>
+
+                <Button
+                  onClick={handleShareData}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Share2 className="w-4 h-4 mr-3" />
+                  <div className="text-left">
+                    <div className="font-medium">Share Summary</div>
+                    <div className="text-xs text-gray-500">
+                      Share network statistics
+                    </div>
+                  </div>
+                </Button>
               </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedPerson(null)}
-              className="w-full"
-            >
-              Close Details
-            </Button>
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowExportDialog(false)}
+                >
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Main network graph */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Force-Directed Network Graph</CardTitle>
+            <CardDescription>
+              Interactive visualization of your personal relationships. Click on
+              nodes to see details.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={500}
+              className="border rounded-lg cursor-pointer bg-gradient-to-br from-blue-50 to-purple-50"
+              onClick={handleCanvasClick}
+            />
           </CardContent>
         </Card>
-      )}
-    </div>
+
+        {/* Relationship decay warnings */}
+        {getDecayingRelationships().length > 0 && (
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <CardTitle className="text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Relationships Needing Attention
+              </CardTitle>
+              <CardDescription className="text-red-600">
+                These relationships haven&apos;t been maintained according to
+                their expected frequency.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {getDecayingRelationships().map((person) => {
+                  const daysSinceContact = Math.floor(
+                    (Date.now() - person.lastContact.getTime()) /
+                      (1000 * 60 * 60 * 24),
+                  );
+                  const level = levels.find((l) => l.id === person.levelId);
+                  return (
+                    <div
+                      key={person.id}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-3 h-3 ${level?.color} rounded-full`}
+                        ></div>
+                        <div>
+                          <h4 className="font-medium">{person.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            Last contact: {daysSinceContact} days ago •
+                            Expected: every {person.contactFrequency} days
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">Overdue</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Selected person details */}
+        {selectedPerson && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                {selectedPerson.name}
+              </CardTitle>
+              <CardDescription>
+                Relationship details and maintenance history
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Relationship Level</Label>
+                  <p className="text-sm font-medium">
+                    {levels.find((l) => l.id === selectedPerson.levelId)?.name}
+                  </p>
+                </div>
+                <div>
+                  <Label>Platform</Label>
+                  <p className="text-sm font-medium">
+                    {selectedPerson.platform}
+                  </p>
+                </div>
+                <div>
+                  <Label>Relationship Strength</Label>
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={selectedPerson.strength * 100}
+                      className="flex-1"
+                    />
+                    <span className="text-sm">
+                      {(selectedPerson.strength * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <Label>Last Contact</Label>
+                  <p className="text-sm font-medium">
+                    {selectedPerson.lastContact.toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedPerson(null)}
+                className="w-full"
+              >
+                Close Details
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

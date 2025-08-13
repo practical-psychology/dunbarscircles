@@ -1,0 +1,212 @@
+import '@testing-library/jest-dom'
+import { vi } from 'vitest'
+import { firebaseMocks } from './firebase-mocks'
+
+// Mock window.matchMedia for responsive design testing
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}))
+
+// Mock IntersectionObserver
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}))
+
+// Mock HTMLCanvasElement.getContext for Canvas API testing
+const mockCanvasContext = {
+  fillRect: vi.fn(),
+  clearRect: vi.fn(),
+  getImageData: vi.fn(() => ({ data: new Array(4) })),
+  putImageData: vi.fn(),
+  createImageData: vi.fn(() => ({ data: new Array(4) })),
+  setTransform: vi.fn(),
+  drawImage: vi.fn(),
+  save: vi.fn(),
+  fillText: vi.fn(),
+  restore: vi.fn(),
+  beginPath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  closePath: vi.fn(),
+  stroke: vi.fn(),
+  translate: vi.fn(),
+  scale: vi.fn(),
+  rotate: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
+  measureText: vi.fn(() => ({ width: 0 })),
+  transform: vi.fn(),
+  rect: vi.fn(),
+  clip: vi.fn(),
+  createLinearGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
+  })),
+  createRadialGradient: vi.fn(() => ({
+    addColorStop: vi.fn(),
+  })),
+  strokeText: vi.fn(),
+  quadraticCurveTo: vi.fn(),
+  bezierCurveTo: vi.fn(),
+  arcTo: vi.fn(),
+  ellipse: vi.fn(),
+  // Canvas properties
+  fillStyle: '#000000',
+  strokeStyle: '#000000',
+  lineWidth: 1,
+  lineCap: 'butt',
+  lineJoin: 'miter',
+  miterLimit: 10,
+  font: '10px sans-serif',
+  textAlign: 'start',
+  textBaseline: 'alphabetic',
+  globalAlpha: 1,
+  globalCompositeOperation: 'source-over',
+}
+
+HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextType) => {
+  if (contextType === '2d') {
+    return mockCanvasContext
+  }
+  return null
+})
+
+// Mock Canvas toDataURL method
+HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock')
+
+// Mock Canvas toBlob method
+HTMLCanvasElement.prototype.toBlob = vi.fn((callback) => {
+  const blob = new Blob(['mock'], { type: 'image/png' })
+  callback?.(blob)
+})
+
+// Enhanced localStorage and sessionStorage mocks with realistic behavior
+const createStorageMock = () => {
+  let store: Record<string, string> = {}
+  
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value)
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key]
+    }),
+    clear: vi.fn(() => {
+      store = {}
+    }),
+    get length() {
+      return Object.keys(store).length
+    },
+    key: vi.fn((index: number) => {
+      const keys = Object.keys(store)
+      return keys[index] || null
+    }),
+  }
+}
+
+const localStorageMock = createStorageMock()
+const sessionStorageMock = createStorageMock()
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+})
+
+Object.defineProperty(window, 'sessionStorage', {
+  value: sessionStorageMock
+})
+
+// Mock Firebase modules
+vi.mock('firebase/app', () => ({
+  initializeApp: firebaseMocks.initializeApp,
+}))
+
+vi.mock('firebase/auth', () => ({
+  getAuth: firebaseMocks.getAuth,
+  signInWithPopup: firebaseMocks.signInWithPopup,
+  signOut: firebaseMocks.signOut,
+  onAuthStateChanged: firebaseMocks.onAuthStateChanged,
+  GoogleAuthProvider: vi.fn().mockImplementation(() => firebaseMocks.googleAuthProvider),
+}))
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: firebaseMocks.getFirestore,
+  collection: firebaseMocks.collection,
+  doc: firebaseMocks.doc,
+  addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
+  setDoc: vi.fn(() => Promise.resolve()),
+  updateDoc: vi.fn(() => Promise.resolve()),
+  deleteDoc: vi.fn(() => Promise.resolve()),
+  getDoc: vi.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({ test: 'data' }),
+    id: 'mock-doc-id',
+  })),
+  getDocs: vi.fn(() => Promise.resolve({
+    docs: [],
+    forEach: vi.fn(),
+    empty: true,
+    size: 0,
+  })),
+  query: vi.fn(),
+  where: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+}))
+
+// Mock URL.createObjectURL for file handling
+global.URL.createObjectURL = vi.fn(() => 'mock-object-url')
+global.URL.revokeObjectURL = vi.fn()
+
+// Mock File and FileReader for file upload testing
+global.File = vi.fn().mockImplementation((chunks, filename, options) => ({
+  name: filename,
+  size: chunks.reduce((acc: number, chunk: any) => acc + chunk.length, 0),
+  type: options?.type || '',
+  lastModified: Date.now(),
+})) as any
+
+global.FileReader = vi.fn().mockImplementation(() => ({
+  readAsText: vi.fn(function(this: any) {
+    this.onload?.({ target: { result: 'mock file content' } })
+  }),
+  readAsDataURL: vi.fn(function(this: any) {
+    this.onload?.({ target: { result: 'data:text/plain;base64,bW9jayBmaWxlIGNvbnRlbnQ=' } })
+  }),
+  onload: null,
+  onerror: null,
+  result: null,
+})) as any
+
+// Mock requestAnimationFrame for animations
+global.requestAnimationFrame = vi.fn((callback) => {
+  setTimeout(callback, 16) // ~60fps
+  return 1
+})
+
+global.cancelAnimationFrame = vi.fn()
+
+// Reset all mocks before each test
+beforeEach(() => {
+  vi.clearAllMocks()
+  localStorageMock.clear()
+  sessionStorageMock.clear()
+})

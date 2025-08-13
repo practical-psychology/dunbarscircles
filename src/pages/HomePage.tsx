@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
 import { NetworkDiagram } from "@/components/network-diagram";
-import { Eye, Users, Heart, Globe } from "lucide-react";
+import { Eye, Users, Heart, Globe, BookOpen } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import { dunbarLevels } from "../data/dunbarLevels";
 
@@ -210,12 +211,17 @@ export default function HomePage() {
             Ready to explore your social network?
           </motion.h3>
           <div className="flex flex-wrap justify-center gap-4">
-            <LiquidButton variant="primary" size="lg">
-              Start Visualization
-            </LiquidButton>
-            <LiquidButton variant="ghost" size="lg">
-              Learn More
-            </LiquidButton>
+            <Link to="/dashboard">
+              <LiquidButton variant="primary" size="lg">
+                Start Visualization
+              </LiquidButton>
+            </Link>
+            <Link to="/onboarding">
+              <LiquidButton variant="ghost" size="lg" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Tutorial & Guide
+              </LiquidButton>
+            </Link>
           </div>
         </motion.div>
       </motion.div>
