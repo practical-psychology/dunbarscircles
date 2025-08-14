@@ -10,6 +10,7 @@ import {
   Clock,
   Book,
   Plane,
+  UserCheck,
 } from "lucide-react";
 
 interface PageLayoutProps {
@@ -25,6 +26,7 @@ const navigationItems = [
   { path: "/network", label: "Network Graph", icon: Heart },
   { path: "/digital", label: "Digital", icon: Smartphone },
   { path: "/lifecycle", label: "Life Stages", icon: Clock },
+  { path: "/contacts", label: "Contacts", icon: UserCheck },
   { path: "/dashboard", label: "Dashboard", icon: Book },
   { path: "/sitemap", label: "Sitemap", icon: Plane },
 ];

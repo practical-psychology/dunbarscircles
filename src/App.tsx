@@ -11,6 +11,9 @@ import LifecyclePage from "./pages/LifecyclePage";
 import DashboardPage from "./pages/DashboardPage";
 import FirebaseTestPage from "./pages/FirebaseTestPage";
 import SitemapPage from "./pages/SitemapPage";
+import ContactsPage from "./pages/ContactsPage";
+import ContactEditPage from "./pages/ContactEditPage";
+import ContactImportPage from "./pages/ContactImportPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
@@ -99,6 +102,9 @@ function AppContent() {
             <Route path="/digital" element={<DigitalPage />} />
             <Route path="/lifecycle" element={<LifecyclePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
+            <Route path="/contacts/import" element={<ContactImportPage />} />
             <Route path="/firebase-test" element={<FirebaseTestPage />} />
             <Route path="/sitemap" element={<SitemapPage />} />
             <Route path="*" element={<NotFoundPage />} />

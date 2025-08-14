@@ -21,6 +21,9 @@ export interface Person {
   strength: number; // 0-1
   decayRate: number; // how fast relationship decays
   platform: string; // where you know them from
+  email?: string; // optional email address
+  phone?: string; // optional phone number
+  notes?: string; // optional notes about the relationship
   x?: number;
   y?: number;
   vx?: number;
