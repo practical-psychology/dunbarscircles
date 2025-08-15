@@ -1,22 +1,28 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Users, 
-  Network, 
-  Target, 
-  Upload, 
-  Download, 
-  Eye, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Network,
+  Target,
+  Upload,
+  Download,
+  Eye,
   Settings,
   Play,
   CheckCircle,
-  Home
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
@@ -26,7 +32,11 @@ interface TutorialStep {
   description: string;
   content: React.ReactNode;
   icon: React.ReactNode;
-  category: "getting-started" | "visualization" | "data-management" | "advanced";
+  category:
+    | "getting-started"
+    | "visualization"
+    | "data-management"
+    | "advanced";
 }
 
 const tutorialSteps: TutorialStep[] = [
@@ -43,41 +53,59 @@ const tutorialSteps: TutorialStep[] = [
             <Users className="w-10 h-10 text-white" />
           </div>
           <h3 className="text-2xl font-bold mb-2">Welcome to YAKW</h3>
-          <p className="text-muted-foreground">Your personal relationship visualization tool</p>
+          <p className="text-muted-foreground">
+            Your personal relationship visualization tool
+          </p>
         </div>
-        
+
         <div className="bg-muted/50 rounded-lg p-6">
           <h4 className="font-semibold mb-3">What is Dunbar's Number?</h4>
           <p className="text-sm text-muted-foreground mb-4">
-            Dunbar's Number suggests that humans can maintain stable social relationships with approximately 150 people. 
-            This theory breaks down into five distinct layers of social connection.
+            Dunbar's Number suggests that humans can maintain stable social
+            relationships with approximately 150 people. This theory breaks down
+            into five distinct layers of social connection.
           </p>
-          
+
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              <span className="text-sm"><strong>Inner Circle (5)</strong> - Daily contact, highest emotional investment</span>
+              <span className="text-sm">
+                <strong>Inner Circle (5)</strong> - Daily contact, highest
+                emotional investment
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-              <span className="text-sm"><strong>Sympathy Group (15)</strong> - Weekly contact, close friends</span>
+              <span className="text-sm">
+                <strong>Sympathy Group (15)</strong> - Weekly contact, close
+                friends
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm"><strong>Affinity Group (50)</strong> - Monthly contact, party invitees</span>
+              <span className="text-sm">
+                <strong>Affinity Group (50)</strong> - Monthly contact, party
+                invitees
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-              <span className="text-sm"><strong>Active Network (150)</strong> - Quarterly contact, meaningful conversations</span>
+              <span className="text-sm">
+                <strong>Active Network (150)</strong> - Quarterly contact,
+                meaningful conversations
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-              <span className="text-sm"><strong>Recognition Group (500)</strong> - Yearly contact, faces and names</span>
+              <span className="text-sm">
+                <strong>Recognition Group (500)</strong> - Yearly contact, faces
+                and names
+              </span>
             </div>
           </div>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 2,
@@ -88,7 +116,7 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">App Navigation</h3>
-        
+
         <div className="grid gap-4">
           <Card>
             <CardHeader className="pb-3">
@@ -99,11 +127,12 @@ const tutorialSteps: TutorialStep[] = [
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Your starting point with an overview of Dunbar's theory and quick access to all features.
+                Your starting point with an overview of Dunbar's theory and
+                quick access to all features.
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -113,11 +142,12 @@ const tutorialSteps: TutorialStep[] = [
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Visualize your relationships in concentric circles based on Dunbar's hierarchy.
+                Visualize your relationships in concentric circles based on
+                Dunbar's hierarchy.
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -127,11 +157,12 @@ const tutorialSteps: TutorialStep[] = [
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Interactive force-directed graph showing connections between your contacts.
+                Interactive force-directed graph showing connections between
+                your contacts.
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -141,24 +172,26 @@ const tutorialSteps: TutorialStep[] = [
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Manage your relationships, import data, and track relationship health.
+                Manage your relationships, import data, and track relationship
+                health.
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 3,
     title: "Radial Visualization",
-    description: "Understanding the concentric circles view of your relationships",
+    description:
+      "Understanding the concentric circles view of your relationships",
     category: "visualization",
     icon: <Target className="w-6 h-6" />,
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Radial Diagram Features</h3>
-        
+
         <div className="bg-muted/50 rounded-lg p-6">
           <div className="text-center mb-4">
             <div className="relative w-48 h-48 mx-auto">
@@ -174,40 +207,48 @@ const tutorialSteps: TutorialStep[] = [
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
             <div>
               <h4 className="font-medium">Interactive Circles</h4>
-              <p className="text-sm text-muted-foreground">Click on any circle to focus on that relationship level</p>
+              <p className="text-sm text-muted-foreground">
+                Click on any circle to focus on that relationship level
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
             <div>
               <h4 className="font-medium">Mental Load Indicator</h4>
-              <p className="text-sm text-muted-foreground">Visual representation of cognitive effort required for each level</p>
+              <p className="text-sm text-muted-foreground">
+                Visual representation of cognitive effort required for each
+                level
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
             <div>
               <h4 className="font-medium">Contact Distribution</h4>
-              <p className="text-sm text-muted-foreground">See how your contacts are distributed across Dunbar's levels</p>
+              <p className="text-sm text-muted-foreground">
+                See how your contacts are distributed across Dunbar's levels
+              </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
           <p className="text-sm">
-            <strong>Pro Tip:</strong> Use the radial view to quickly assess if your relationship distribution aligns with Dunbar's theory.
+            <strong>Pro Tip:</strong> Use the radial view to quickly assess if
+            your relationship distribution aligns with Dunbar's theory.
           </p>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 4,
@@ -218,7 +259,7 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Network Visualization</h3>
-        
+
         <div className="bg-muted/50 rounded-lg p-6">
           <h4 className="font-semibold mb-3">Interactive Features</h4>
           <div className="grid gap-3">
@@ -228,55 +269,73 @@ const tutorialSteps: TutorialStep[] = [
               </div>
               <div>
                 <p className="font-medium">Drag & Zoom</p>
-                <p className="text-sm text-muted-foreground">Pan around and zoom in/out to explore your network</p>
+                <p className="text-sm text-muted-foreground">
+                  Pan around and zoom in/out to explore your network
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                 <Users className="w-4 h-4 text-white" />
               </div>
               <div>
                 <p className="font-medium">Node Interactions</p>
-                <p className="text-sm text-muted-foreground">Click on nodes to see relationship details</p>
+                <p className="text-sm text-muted-foreground">
+                  Click on nodes to see relationship details
+                </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                 <Target className="w-4 h-4 text-white" />
               </div>
               <div>
                 <p className="font-medium">Force Simulation</p>
-                <p className="text-sm text-muted-foreground">Nodes automatically arrange based on connection strength</p>
+                <p className="text-sm text-muted-foreground">
+                  Nodes automatically arrange based on connection strength
+                </p>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <h4 className="font-semibold">Understanding the Visualization</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-current rounded-full mt-2"></div>
-              <span><strong>Node Size:</strong> Represents the strength of your relationship</span>
+              <span>
+                <strong>Node Size:</strong> Represents the strength of your
+                relationship
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-current rounded-full mt-2"></div>
-              <span><strong>Node Color:</strong> Indicates which Dunbar level the person belongs to</span>
+              <span>
+                <strong>Node Color:</strong> Indicates which Dunbar level the
+                person belongs to
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-current rounded-full mt-2"></div>
-              <span><strong>Connections:</strong> Lines show mutual connections between people</span>
+              <span>
+                <strong>Connections:</strong> Lines show mutual connections
+                between people
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-current rounded-full mt-2"></div>
-              <span><strong>Clustering:</strong> People naturally group based on shared connections</span>
+              <span>
+                <strong>Clustering:</strong> People naturally group based on
+                shared connections
+              </span>
             </li>
           </ul>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 5,
@@ -287,7 +346,7 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Data Import Options</h3>
-        
+
         <div className="grid gap-4">
           <Card>
             <CardHeader>
@@ -297,7 +356,9 @@ const tutorialSteps: TutorialStep[] = [
                 </div>
                 Facebook Friends
               </CardTitle>
-              <CardDescription>Import your Facebook friends list</CardDescription>
+              <CardDescription>
+                Import your Facebook friends list
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -311,7 +372,7 @@ const tutorialSteps: TutorialStep[] = [
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -335,41 +396,54 @@ const tutorialSteps: TutorialStep[] = [
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-4">
-          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Privacy First</h4>
+          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+            Privacy First
+          </h4>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            All data processing happens locally in your browser. Your social media data never leaves your device.
+            All data processing happens locally in your browser. Your social
+            media data never leaves your device.
           </p>
         </div>
-        
+
         <div className="space-y-3">
           <h4 className="font-semibold">Import Process</h4>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                1
+              </div>
               <span className="text-sm">Go to Dashboard page</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                2
+              </div>
               <span className="text-sm">Click "Import Data" button</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                3
+              </div>
               <span className="text-sm">Select your data file</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">4</div>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                4
+              </div>
               <span className="text-sm">Review auto-categorization</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">5</div>
+              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                5
+              </div>
               <span className="text-sm">Start visualizing!</span>
             </div>
           </div>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 6,
@@ -380,7 +454,7 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Relationship Management</h3>
-        
+
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -390,7 +464,8 @@ const tutorialSteps: TutorialStep[] = [
             <CardContent>
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Use the relationship inventory to manually add people to your network.
+                  Use the relationship inventory to manually add people to your
+                  network.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Badge>Name</Badge>
@@ -401,15 +476,18 @@ const tutorialSteps: TutorialStep[] = [
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Auto-Categorization</CardTitle>
-              <CardDescription>Smart assignment to Dunbar levels</CardDescription>
+              <CardDescription>
+                Smart assignment to Dunbar levels
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                The app automatically suggests which Dunbar level each person belongs to based on:
+                The app automatically suggests which Dunbar level each person
+                belongs to based on:
               </p>
               <ul className="text-sm text-muted-foreground mt-2 space-y-1">
                 <li>• Contact frequency</li>
@@ -419,27 +497,31 @@ const tutorialSteps: TutorialStep[] = [
               </ul>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Relationship Health</CardTitle>
-              <CardDescription>Track relationship decay over time</CardDescription>
+              <CardDescription>
+                Track relationship decay over time
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Monitor which relationships might need attention based on time since last contact.
+                Monitor which relationships might need attention based on time
+                since last contact.
               </p>
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
           <p className="text-sm text-green-700 dark:text-green-300">
-            <strong>Tip:</strong> Regular maintenance of your relationship data helps keep visualizations accurate and meaningful.
+            <strong>Tip:</strong> Regular maintenance of your relationship data
+            helps keep visualizations accurate and meaningful.
           </p>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 7,
@@ -450,12 +532,14 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Export Options</h3>
-        
+
         <div className="grid gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Visual Exports</CardTitle>
-              <CardDescription>Save your visualizations as images</CardDescription>
+              <CardDescription>
+                Save your visualizations as images
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -467,7 +551,7 @@ const tutorialSteps: TutorialStep[] = [
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Data Exports</CardTitle>
@@ -484,30 +568,42 @@ const tutorialSteps: TutorialStep[] = [
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="space-y-3">
           <h4 className="font-semibold">How to Export</h4>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
-              <span className="text-sm">Navigate to any visualization page</span>
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                1
+              </div>
+              <span className="text-sm">
+                Navigate to any visualization page
+              </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
-              <span className="text-sm">Look for the export button (usually in the top-right)</span>
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                2
+              </div>
+              <span className="text-sm">
+                Look for the export button (usually in the top-right)
+              </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                3
+              </div>
               <span className="text-sm">Choose your preferred format</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">4</div>
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                4
+              </div>
               <span className="text-sm">Download starts automatically</span>
             </div>
           </div>
         </div>
       </div>
-    )
+    ),
   },
   {
     id: 8,
@@ -518,57 +614,68 @@ const tutorialSteps: TutorialStep[] = [
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Advanced Analysis</h3>
-        
+
         <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Digital Parallels</CardTitle>
-              <CardDescription>How Dunbar's theory applies to digital relationships</CardDescription>
+              <CardDescription>
+                How Dunbar's theory applies to digital relationships
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Explore how social media connections, email contacts, and digital interactions 
-                map to traditional relationship hierarchies.
+                Explore how social media connections, email contacts, and
+                digital interactions map to traditional relationship
+                hierarchies.
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Life Stage Analysis</CardTitle>
-              <CardDescription>How relationships change throughout life</CardDescription>
+              <CardDescription>
+                How relationships change throughout life
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Compare relationship patterns across different life stages: childhood, 
-                adolescence, young adulthood, middle age, and later life.
+                Compare relationship patterns across different life stages:
+                childhood, adolescence, young adulthood, middle age, and later
+                life.
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Level Details</CardTitle>
-              <CardDescription>Deep dive into each Dunbar level</CardDescription>
+              <CardDescription>
+                Deep dive into each Dunbar level
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Learn about the characteristics, typical contact frequencies, and 
-                cognitive load associated with each relationship level.
+                Learn about the characteristics, typical contact frequencies,
+                and cognitive load associated with each relationship level.
               </p>
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4">
-          <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">Research-Based</h4>
+          <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
+            Research-Based
+          </h4>
           <p className="text-sm text-purple-700 dark:text-purple-300">
-            All features are grounded in anthropological and psychological research about human social cognition.
+            All features are grounded in anthropological and psychological
+            research about human social cognition.
           </p>
         </div>
       </div>
-    )
-  }
+    ),
+  },
 ];
 
 const OnboardingPage = () => {
@@ -605,11 +712,16 @@ const OnboardingPage = () => {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case "getting-started": return "bg-blue-500";
-      case "visualization": return "bg-green-500";
-      case "data-management": return "bg-orange-500";
-      case "advanced": return "bg-purple-500";
-      default: return "bg-gray-500";
+      case "getting-started":
+        return "bg-blue-500";
+      case "visualization":
+        return "bg-green-500";
+      case "data-management":
+        return "bg-orange-500";
+      case "advanced":
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -650,13 +762,16 @@ const OnboardingPage = () => {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          completedSteps.includes(index)
-                            ? "bg-green-500 text-white"
-                            : currentStep === index
-                            ? "bg-primary-foreground text-primary"
-                            : getCategoryColor(step.category) + " text-white"
-                        }`}>
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            completedSteps.includes(index)
+                              ? "bg-green-500 text-white"
+                              : currentStep === index
+                                ? "bg-primary-foreground text-primary"
+                                : getCategoryColor(step.category) +
+                                  " text-white"
+                          }`}
+                        >
                           {completedSteps.includes(index) ? (
                             <CheckCircle className="w-4 h-4" />
                           ) : (
@@ -664,7 +779,9 @@ const OnboardingPage = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{step.title}</p>
+                          <p className="font-medium text-sm truncate">
+                            {step.title}
+                          </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {step.description}
                           </p>
@@ -682,11 +799,15 @@ const OnboardingPage = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryColor(currentTutorial.category)} text-white`}>
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${getCategoryColor(currentTutorial.category)} text-white`}
+                      >
                         {currentTutorial.icon}
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">{currentTutorial.title}</CardTitle>
+                        <CardTitle className="text-2xl">
+                          {currentTutorial.title}
+                        </CardTitle>
                         <CardDescription className="text-base">
                           {currentTutorial.description}
                         </CardDescription>
@@ -732,7 +853,9 @@ const OnboardingPage = () => {
                     className="flex items-center gap-2"
                   >
                     <CheckCircle className="w-4 h-4" />
-                    {completedSteps.includes(currentStep) ? "Completed" : "Mark Complete"}
+                    {completedSteps.includes(currentStep)
+                      ? "Completed"
+                      : "Mark Complete"}
                   </Button>
 
                   {currentStep === tutorialSteps.length - 1 ? (

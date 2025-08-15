@@ -571,7 +571,12 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         />
       )}
     >
-      <div className="space-y-6">
+      <div
+        data-testid="relationship-inventory"
+        className="space-y-6"
+        role="region"
+        aria-label="Relationship inventory management system"
+      >
         {/* Data Status Component */}
         <DataStatus
           onImportClick={() => setIsImporting(true)}
@@ -733,6 +738,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                       onChange={(e) => handleFileUpload(e, "facebook")}
                       className="w-full p-2 border border-gray-300 rounded-md"
                       id="facebook-upload"
+                      data-testid="file-input"
                     />
                     <label
                       htmlFor="facebook-upload"
@@ -777,6 +783,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                       onChange={(e) => handleFileUpload(e, "linkedin")}
                       className="w-full p-2 border border-gray-300 rounded-md"
                       id="linkedin-upload"
+                      data-testid="file-input"
                     />
                     <label
                       htmlFor="linkedin-upload"
@@ -885,6 +892,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                   onClick={handleExportJSON}
                   variant="outline"
                   className="w-full justify-start"
+                  data-testid="export-json"
                 >
                   <FileText className="w-4 h-4 mr-3" />
                   <div className="text-left">
@@ -899,6 +907,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                   onClick={handleExportCSV}
                   variant="outline"
                   className="w-full justify-start"
+                  data-testid="export-csv"
                 >
                   <FileText className="w-4 h-4 mr-3" />
                   <div className="text-left">

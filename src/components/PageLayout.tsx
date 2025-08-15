@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LiquidScrollIndicator } from "@/components/ui/liquid-scroll-indicator";
+import { HelpSystem, useContextualHelp } from "@/components/help-system";
 import {
   Users,
   Brain,
@@ -37,6 +38,7 @@ export default function PageLayout({
   description,
 }: PageLayoutProps) {
   const location = useLocation();
+  const contextualTopic = useContextualHelp(location.pathname);
 
   return (
     <div className="min-h-screen relative">
@@ -164,9 +166,12 @@ export default function PageLayout({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
-            {title}
-          </h2>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+              {title}
+            </h2>
+            <HelpSystem contextualTopic={contextualTopic} />
+          </div>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             {description}
           </p>

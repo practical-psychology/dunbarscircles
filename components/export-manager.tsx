@@ -43,6 +43,7 @@ export default function ExportManager({
             onClick={handleExportPNG}
             disabled={!canvasRef?.current}
             variant="outline"
+            data-testid="export-png"
           >
             Export as PNG
           </Button>
@@ -50,6 +51,7 @@ export default function ExportManager({
             onClick={handleExportSVG}
             disabled={!svgRef?.current}
             variant="outline"
+            data-testid="export-svg"
           >
             Export as SVG
           </Button>

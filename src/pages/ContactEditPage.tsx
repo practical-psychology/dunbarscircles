@@ -75,7 +75,9 @@ export default function ContactEditPage() {
     source: "manual",
   });
 
-  const [originalContact, setOriginalContact] = useState<StoredContact | null>(null);
+  const [originalContact, setOriginalContact] = useState<StoredContact | null>(
+    null,
+  );
 
   // Load existing contact data
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function ContactEditPage() {
     try {
       const result = await EnhancedContactStorage.loadContacts();
       if (result.success && result.data) {
-        const contact = result.data.find(c => c.id === contactId);
+        const contact = result.data.find((c) => c.id === contactId);
         if (contact) {
           setOriginalContact(contact);
           setFormData({
@@ -120,8 +122,11 @@ export default function ContactEditPage() {
     }
   };
 
-  const handleInputChange = (field: keyof ContactFormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: keyof ContactFormData,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
     setSuccess(null);
   };
@@ -180,19 +185,22 @@ export default function ContactEditPage() {
         // Update existing contact
         const result = await EnhancedContactStorage.loadContacts();
         const existingContacts = result.data || [];
-        const updatedContacts = existingContacts.map(c => 
-          c.id === contactData.id ? contactData : c
+        const updatedContacts = existingContacts.map((c) =>
+          c.id === contactData.id ? contactData : c,
         );
         await EnhancedContactStorage.saveContacts(updatedContacts);
       }
 
-      setSuccess(isNewContact ? "Contact created successfully!" : "Contact updated successfully!");
-      
+      setSuccess(
+        isNewContact
+          ? "Contact created successfully!"
+          : "Contact updated successfully!",
+      );
+
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
         navigate("/contacts");
       }, 1500);
-
     } catch (err) {
       console.error("Failed to save contact:", err);
       setError("Failed to save contact. Please try again.");
@@ -210,16 +218,17 @@ export default function ContactEditPage() {
     try {
       const result = await EnhancedContactStorage.loadContacts();
       const existingContacts = result.data || [];
-      const updatedContacts = existingContacts.filter(c => c.id !== originalContact.id);
+      const updatedContacts = existingContacts.filter(
+        (c) => c.id !== originalContact.id,
+      );
       await EnhancedContactStorage.saveContacts(updatedContacts);
 
       setSuccess("Contact deleted successfully!");
-      
+
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
         navigate("/contacts");
       }, 1000);
-
     } catch (err) {
       console.error("Failed to delete contact:", err);
       setError("Failed to delete contact. Please try again.");
@@ -228,7 +237,9 @@ export default function ContactEditPage() {
     }
   };
 
-  const selectedLevel = dunbarLevels.find(level => level.id === formData.levelId);
+  const selectedLevel = dunbarLevels.find(
+    (level) => level.id === formData.levelId,
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -257,7 +268,11 @@ export default function ContactEditPage() {
     return (
       <PageLayout
         title={isNewContact ? "Add New Contact" : "Edit Contact"}
-        description={isNewContact ? "Add a new contact to your network" : "Edit contact details and relationship information"}
+        description={
+          isNewContact
+            ? "Add a new contact to your network"
+            : "Edit contact details and relationship information"
+        }
       >
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3">
@@ -274,7 +289,11 @@ export default function ContactEditPage() {
   return (
     <PageLayout
       title={isNewContact ? "Add New Contact" : "Edit Contact"}
-      description={isNewContact ? "Add a new contact to your network" : "Edit contact details and relationship information"}
+      description={
+        isNewContact
+          ? "Add a new contact to your network"
+          : "Edit contact details and relationship information"
+      }
     >
       <motion.div
         variants={containerVariants}
@@ -291,7 +310,7 @@ export default function ContactEditPage() {
                 Back to Contacts
               </Button>
             </Link>
-            
+
             <div className="flex items-center gap-2">
               {!isNewContact && (
                 <AlertDialog>
@@ -305,12 +324,16 @@ export default function ContactEditPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Contact</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete "{formData.name}"? This action cannot be undone.
+                        Are you sure you want to delete "{formData.name}"? This
+                        action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
                         Delete Contact
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -357,7 +380,9 @@ export default function ContactEditPage() {
                     {isNewContact ? "New Contact" : "Edit Contact"}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300">
-                    {isNewContact ? "Add someone to your social network" : "Update contact information and relationship details"}
+                    {isNewContact
+                      ? "Add someone to your social network"
+                      : "Update contact information and relationship details"}
                   </p>
                 </div>
               </div>
@@ -366,13 +391,15 @@ export default function ContactEditPage() {
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Basic Information</h3>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       placeholder="Enter contact name"
                       disabled={saving}
                     />
@@ -384,7 +411,9 @@ export default function ContactEditPage() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       placeholder="Enter email address"
                       disabled={saving}
                     />
@@ -396,7 +425,9 @@ export default function ContactEditPage() {
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
                       placeholder="Enter phone number"
                       disabled={saving}
                     />
@@ -407,7 +438,9 @@ export default function ContactEditPage() {
                     <Input
                       id="platform"
                       value={formData.platform}
-                      onChange={(e) => handleInputChange("platform", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("platform", e.target.value)
+                      }
                       placeholder="Where you know them from"
                       disabled={saving}
                     />
@@ -416,13 +449,17 @@ export default function ContactEditPage() {
 
                 {/* Relationship Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Relationship Details</h3>
-                  
+                  <h3 className="text-lg font-semibold">
+                    Relationship Details
+                  </h3>
+
                   <div className="space-y-2">
                     <Label htmlFor="levelId">Dunbar Level *</Label>
                     <Select
                       value={formData.levelId}
-                      onValueChange={(value) => handleInputChange("levelId", value)}
+                      onValueChange={(value) =>
+                        handleInputChange("levelId", value)
+                      }
                       disabled={saving}
                     >
                       <SelectTrigger>
@@ -432,7 +469,9 @@ export default function ContactEditPage() {
                         {dunbarLevels.map((level) => (
                           <SelectItem key={level.id} value={level.id}>
                             <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 ${level.color} rounded-full`}></div>
+                              <div
+                                className={`w-3 h-3 ${level.color} rounded-full`}
+                              ></div>
                               {level.name} ({level.count})
                             </div>
                           </SelectItem>
@@ -452,19 +491,28 @@ export default function ContactEditPage() {
                       id="lastContact"
                       type="date"
                       value={formData.lastContact}
-                      onChange={(e) => handleInputChange("lastContact", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("lastContact", e.target.value)
+                      }
                       disabled={saving}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="contactFrequency">Contact Frequency (days)</Label>
+                    <Label htmlFor="contactFrequency">
+                      Contact Frequency (days)
+                    </Label>
                     <Input
                       id="contactFrequency"
                       type="number"
                       min="1"
                       value={formData.contactFrequency}
-                      onChange={(e) => handleInputChange("contactFrequency", parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "contactFrequency",
+                          parseInt(e.target.value) || 1,
+                        )
+                      }
                       disabled={saving}
                     />
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -482,7 +530,12 @@ export default function ContactEditPage() {
                         max="1"
                         step="0.1"
                         value={formData.strength}
-                        onChange={(e) => handleInputChange("strength", parseFloat(e.target.value))}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "strength",
+                            parseFloat(e.target.value),
+                          )
+                        }
                         disabled={saving}
                         className="flex-1"
                       />

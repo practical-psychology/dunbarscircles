@@ -3,30 +3,211 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageLayout from "../components/PageLayout";
 import { ContactsDashboard } from "@/components/contacts-dashboard";
+import { ContactList } from "@/components/contact-list";
+import { ContactStatsDashboard } from "@/components/contact-stats-dashboard";
+import { ContactEditModal } from "@/components/contact-edit-modal";
+import {
+  type ContactFormData,
+  type ContactUpdateData,
+  type ContactForm,
+} from "@/lib/contact-models";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
-import { 
-  Users, 
-  Plus, 
-  Upload, 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Users,
+  Plus,
+  Upload,
   Search,
   Filter,
   Download,
-  Settings
+  Settings,
+  BarChart3,
+  List,
+  Grid,
 } from "lucide-react";
 import { dunbarLevels } from "../data/dunbarLevels";
+import {
+  ContactStorageService,
+  type StoredContact,
+} from "@/lib/contact-storage-service";
+import { exportToJSON } from "@/lib/export-utils";
 
 export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [contacts, setContacts] = useState<StoredContact[]>([]);
+  const [activeTab, setActiveTab] = useState("overview");
 
+  const contactStorage = ContactStorageService.getInstance();
+
+  // Load contacts on component mount
   useEffect(() => {
-    // Simulate loading time for smooth transition
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    const loadContacts = async () => {
+      setIsLoading(true);
 
-    return () => clearTimeout(timer);
+      try {
+        const result = await contactStorage.readContacts();
+        if (result.success && result.data) {
+          setContacts(result.data);
+        } else {
+          console.error("Failed to load contacts:", result.error);
+          setContacts([]);
+        }
+      } catch (error) {
+        console.error("Failed to load contacts:", error);
+        setContacts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContacts();
   }, []);
+
+  // Contact management handlers
+  const handleContactCreate = async (data: ContactFormData) => {
+    try {
+      const newContactData: ContactForm = {
+        name: data.name,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        notes: data.notes || undefined,
+        levelId: data.levelId,
+        platform: data.platform,
+        contactFrequency: data.contactFrequency,
+        strength: data.strength,
+        tags: data.tags,
+      };
+
+      const result = await contactStorage.createContact(newContactData);
+      if (result.success && result.data) {
+        setContacts((prev) => [...prev, result.data!]);
+      } else {
+        console.error("Failed to create contact:", result.error);
+        throw new Error(result.error || "Failed to create contact");
+      }
+    } catch (error) {
+      console.error("Failed to create contact:", error);
+      throw error;
+    }
+  };
+
+  const handleContactSave = async (
+    data: ContactFormData | ContactUpdateData,
+  ) => {
+    if ("id" in data) {
+      // Update existing contact
+      return handleContactUpdate(data.id, data);
+    } else {
+      // Create new contact
+      return handleContactCreate(data);
+    }
+  };
+
+  const handleContactUpdate = async (
+    contactId: string,
+    updates: Partial<StoredContact>,
+  ) => {
+    try {
+      const result = await contactStorage.updateContact(contactId, {
+        id: contactId,
+        ...updates,
+      });
+      if (result.success && result.data) {
+        setContacts((prev) =>
+          prev.map((c) => (c.id === contactId ? result.data! : c)),
+        );
+      } else {
+        console.error("Failed to update contact:", result.error);
+        throw new Error(result.error || "Failed to update contact");
+      }
+    } catch (error) {
+      console.error("Failed to update contact:", error);
+      throw error;
+    }
+  };
+
+  const handleContactDelete = async (contactId: string) => {
+    try {
+      const result = await contactStorage.deleteContact(contactId);
+      if (result.success) {
+        setContacts((prev) => prev.filter((c) => c.id !== contactId));
+      } else {
+        console.error("Failed to delete contact:", result.error);
+      }
+    } catch (error) {
+      console.error("Failed to delete contact:", error);
+    }
+  };
+
+  const handleBulkDelete = async (contactIds: string[]) => {
+    try {
+      const results = await Promise.all(
+        contactIds.map((id) => contactStorage.deleteContact(id)),
+      );
+
+      const failedDeletes = results.filter((r) => !r.success);
+      if (failedDeletes.length > 0) {
+        console.error(`Failed to delete ${failedDeletes.length} contacts`);
+      }
+
+      // Remove successfully deleted contacts
+      const successfulDeletes = contactIds.filter(
+        (_, index) => results[index].success,
+      );
+      setContacts((prev) =>
+        prev.filter((c) => !successfulDeletes.includes(c.id)),
+      );
+    } catch (error) {
+      console.error("Failed to bulk delete contacts:", error);
+    }
+  };
+
+  const handleBulkMove = async (contactIds: string[], levelId: string) => {
+    try {
+      const results = await Promise.all(
+        contactIds.map((id) =>
+          contactStorage.updateContact(id, { id, levelId }),
+        ),
+      );
+
+      const failedUpdates = results.filter((r) => !r.success);
+      if (failedUpdates.length > 0) {
+        console.error(`Failed to move ${failedUpdates.length} contacts`);
+      }
+
+      // Update successfully moved contacts
+      setContacts((prev) =>
+        prev.map((contact) => {
+          const resultIndex = contactIds.indexOf(contact.id);
+          if (resultIndex >= 0 && results[resultIndex].success) {
+            return { ...contact, levelId };
+          }
+          return contact;
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to bulk move contacts:", error);
+    }
+  };
+
+  const handleBulkExport = (contactIds: string[]) => {
+    const selectedContacts = contacts.filter((c) => contactIds.includes(c.id));
+    const filename = `yakw_selected_contacts_${new Date().toISOString().split("T")[0]}`;
+    exportToJSON(
+      {
+        people: selectedContacts,
+        levels: dunbarLevels,
+        metadata: {
+          exportDate: new Date().toISOString(),
+          version: "1.0.0",
+          totalContacts: selectedContacts.length,
+          networkHealth: 100,
+        },
+      },
+      `${filename}.json`,
+    );
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -97,24 +278,34 @@ export default function ContactsPage() {
                     Contact Management Hub
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Import, organize, and manage your social network relationships
+                    Import, organize, and manage your social network
+                    relationships
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 <Link to="/contacts/import">
-                  <LiquidButton variant="primary" className="flex items-center gap-2">
+                  <LiquidButton
+                    variant="primary"
+                    className="flex items-center gap-2"
+                  >
                     <Upload className="w-4 h-4" />
                     Import Contacts
                   </LiquidButton>
                 </Link>
-                <Link to="/contacts/edit/new">
-                  <LiquidButton variant="secondary" className="flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    Add Contact
-                  </LiquidButton>
-                </Link>
+                <ContactEditModal
+                  onSave={handleContactSave}
+                  trigger={
+                    <LiquidButton
+                      variant="secondary"
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Contact
+                    </LiquidButton>
+                  }
+                />
               </div>
             </div>
           </LiquidCard>
@@ -181,9 +372,55 @@ export default function ContactsPage() {
           </div>
         </motion.div>
 
-        {/* Main Contacts Dashboard */}
+        {/* Main Content Tabs */}
         <motion.div variants={itemVariants}>
-          <ContactsDashboard levels={dunbarLevels} />
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="list" className="flex items-center gap-2">
+                <List className="w-4 h-4" />
+                Contact List
+              </TabsTrigger>
+              <TabsTrigger
+                value="dashboard"
+                className="flex items-center gap-2"
+              >
+                <Grid className="w-4 h-4" />
+                Dashboard
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <ContactStatsDashboard
+                contacts={contacts}
+                levels={dunbarLevels}
+              />
+            </TabsContent>
+
+            <TabsContent value="list" className="space-y-6">
+              <ContactList
+                contacts={contacts}
+                levels={dunbarLevels}
+                onContactUpdate={handleContactUpdate}
+                onContactDelete={handleContactDelete}
+                onBulkDelete={handleBulkDelete}
+                onBulkMove={handleBulkMove}
+                onBulkExport={handleBulkExport}
+                loading={isLoading}
+              />
+            </TabsContent>
+
+            <TabsContent value="dashboard" className="space-y-6">
+              <ContactsDashboard levels={dunbarLevels} />
+            </TabsContent>
+          </Tabs>
         </motion.div>
 
         {/* Navigation Help */}
@@ -194,8 +431,9 @@ export default function ContactsPage() {
                 Need Help Getting Started?
               </h3>
               <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Import your social media data to automatically categorize your relationships 
-                according to Dunbar's hierarchy, or manually add contacts to build your network.
+                Import your social media data to automatically categorize your
+                relationships according to Dunbar's hierarchy, or manually add
+                contacts to build your network.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link to="/contacts/import">

@@ -52,7 +52,13 @@ export function NetworkDiagram({
   };
 
   return (
-    <div className="relative w-full h-[600px] bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/50 dark:to-blue-900/50 rounded-2xl border border-white/20 dark:border-gray-700/20 backdrop-blur-xl overflow-hidden">
+    <div
+      data-testid="network-diagram"
+      className="relative w-full h-[600px] bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/50 dark:to-blue-900/50 rounded-2xl border border-white/20 dark:border-gray-700/20 backdrop-blur-xl overflow-hidden"
+      role="img"
+      aria-label="Interactive network diagram showing relationship levels according to Dunbar's hierarchy"
+      tabIndex={0}
+    >
       {/* Liquid background animation */}
       <div className="absolute inset-0 opacity-30">
         <motion.div
@@ -95,7 +101,20 @@ export function NetworkDiagram({
         height="100%"
         viewBox="0 0 800 600"
         className="relative z-10"
+        role="img"
+        aria-labelledby="network-diagram-title"
+        aria-describedby="network-diagram-desc"
       >
+        <title id="network-diagram-title">
+          Dunbar's Number Network Visualization
+        </title>
+        <desc id="network-diagram-desc">
+          Interactive network diagram showing {levels.length} relationship
+          levels. Click on circles to select levels and view details.
+          {selectedLevel
+            ? `Currently selected: ${levels.find((l) => l.id === selectedLevel)?.name}`
+            : "No level selected"}
+        </desc>
         {/* Liquid gradient definitions */}
         <defs>
           <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
@@ -132,12 +151,16 @@ export function NetworkDiagram({
               repeat: Infinity,
               ease: "easeInOut",
             }}
+            role="button"
+            aria-label="Center node representing you in the relationship network"
+            tabIndex={0}
           />
           <text
             x={400}
             y={305}
             textAnchor="middle"
             className="text-sm fill-white font-bold pointer-events-none"
+            aria-hidden="true"
           >
             YOU
           </text>
@@ -246,11 +269,17 @@ export function NetworkDiagram({
                 fill={`url(#gradient-${level.id})`}
                 stroke={isSelected ? "#1f2937" : "white"}
                 strokeWidth={isSelected ? 4 : 2}
-                className="cursor-pointer"
+                className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 filter="url(#liquidGlow)"
                 onMouseEnter={() => setHoveredLevel(level.id)}
                 onMouseLeave={() => setHoveredLevel(null)}
                 onClick={() => onLevelSelect(isSelected ? null : level.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onLevelSelect(isSelected ? null : level.id);
+                  }
+                }}
                 animate={{
                   r: isHovered || isSelected ? size / 2 + 5 : size / 2,
                   strokeWidth: isSelected ? 4 : isHovered ? 3 : 2,
@@ -258,6 +287,10 @@ export function NetworkDiagram({
                 transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
+                role="button"
+                aria-label={`${level.name} level with ${level.count} relationships. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
+                aria-pressed={isSelected}
+                tabIndex={0}
               />
 
               {/* Ripple effect on hover */}
@@ -281,6 +314,7 @@ export function NetworkDiagram({
                 y={pos.y - 5}
                 textAnchor="middle"
                 className="text-xs fill-white font-bold pointer-events-none drop-shadow-sm"
+                aria-hidden="true"
               >
                 {level.count.toLocaleString()}
               </text>
@@ -289,6 +323,7 @@ export function NetworkDiagram({
                 y={pos.y + 8}
                 textAnchor="middle"
                 className="text-xs fill-white font-medium pointer-events-none drop-shadow-sm"
+                aria-hidden="true"
               >
                 {level.name.split(" ")[0]}
               </text>

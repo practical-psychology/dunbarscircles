@@ -7,15 +7,18 @@ This directory contains comprehensive integration tests for the YAKW application
 ## Test Files
 
 ### `user-workflows-final.test.tsx` ✅ WORKING
+
 The main integration test suite that covers all user workflows with a simplified test component approach.
 
 **Test Coverage:**
+
 - ✅ 13 tests passing
 - ✅ All major workflows covered
 - ✅ Error handling scenarios
 - ✅ Large dataset performance testing
 
 ### Other Test Files (Reference)
+
 - `user-workflows.test.tsx` - Initial attempt with full App component (has loading screen issues)
 - `user-workflows-simple.test.tsx` - Attempt with individual page components (has mocking issues)
 - `workflow-error-handling.test.tsx` - Dedicated error handling tests
@@ -24,9 +27,11 @@ The main integration test suite that covers all user workflows with a simplified
 ## Workflows Tested
 
 ### 1. Data Import Workflow
+
 **Flow:** file upload → parsing → categorization → visualization
 
 **Tests:**
+
 - CSV file import (LinkedIn format)
 - JSON file import (Facebook format)
 - File processing and validation
@@ -35,9 +40,11 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** FR-5 (Social Media Import), FR-6 (Auto-categorization)
 
 ### 2. Relationship Management Workflow
+
 **Flow:** add → edit → categorize → export
 
 **Tests:**
+
 - Adding new relationships
 - Editing existing relationships
 - Categorizing relationships by Dunbar levels
@@ -46,9 +53,11 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** FR-4 (Relationship Inventory), FR-10 (Data Export)
 
 ### 3. Authentication Workflow
+
 **Flow:** sign-in → dashboard → data persistence → sign-out
 
 **Tests:**
+
 - User authentication with Firebase
 - Data persistence across sessions
 - Sign-in and sign-out functionality
@@ -57,9 +66,11 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** FR-11 (User Authentication)
 
 ### 4. Export Workflow
+
 **Flow:** select data → choose format → generate file → download
 
 **Tests:**
+
 - PNG export from visualizations
 - CSV export of relationship data
 - JSON export of relationship data
@@ -69,9 +80,11 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** FR-10 (Data Export)
 
 ### 5. Cross-Workflow Integration
+
 **Flow:** import → manage → visualize → export
 
 **Tests:**
+
 - Complete user journey from data import to export
 - Workflow transitions between different visualizations
 - Data consistency across workflow steps
@@ -80,7 +93,9 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** All functional requirements working together
 
 ### 6. Error Handling
+
 **Scenarios:**
+
 - Import errors (malformed files, read failures)
 - Export errors (file generation failures)
 - Canvas export failures
@@ -90,7 +105,9 @@ The main integration test suite that covers all user workflows with a simplified
 **Requirements Covered:** NFR-8 (Input Validation), NFR-5 (Browser Compatibility)
 
 ### 7. Performance Testing
+
 **Scenarios:**
+
 - Large dataset handling (100+ relationships)
 - Export performance with large datasets
 - UI responsiveness under load
@@ -101,13 +118,16 @@ The main integration test suite that covers all user workflows with a simplified
 ## Test Architecture
 
 ### Test Component Approach
+
 The tests use a simplified `TestWorkflowComponent` that provides:
+
 - All necessary UI elements for testing workflows
 - Proper test IDs for reliable element selection
 - Mock implementations of complex functionality
 - Event handlers that simulate real application behavior
 
 ### Mocking Strategy
+
 - **Canvas API**: Mocked for visualization testing
 - **Firebase**: Mocked authentication and database operations
 - **File API**: Mocked file reading and processing
@@ -115,6 +135,7 @@ The tests use a simplified `TestWorkflowComponent` that provides:
 - **Export APIs**: Mocked URL.createObjectURL and canvas.toDataURL
 
 ### Test Utilities
+
 - **Custom render function**: Provides theme and router context
 - **Test helpers**: File creation, storage setup, authentication mocking
 - **User event simulation**: Realistic user interactions
@@ -156,15 +177,15 @@ npm test -- --coverage src/test/integration/
 
 ## Requirements Coverage
 
-| Requirement | Status | Test Coverage |
-|-------------|--------|---------------|
-| FR-5 (Social Media Import) | ✅ | Data import workflow tests |
-| FR-6 (Auto-categorization) | ✅ | Import processing and categorization |
-| FR-10 (Data Export) | ✅ | Export workflow tests |
-| FR-11 (User Authentication) | ✅ | Authentication workflow tests |
-| NFR-3 (Data Processing Performance) | ✅ | Large dataset performance tests |
-| NFR-5 (Browser Compatibility) | ✅ | Error handling and fallback tests |
-| NFR-8 (Input Validation) | ✅ | Error handling and validation tests |
+| Requirement                         | Status | Test Coverage                        |
+| ----------------------------------- | ------ | ------------------------------------ |
+| FR-5 (Social Media Import)          | ✅     | Data import workflow tests           |
+| FR-6 (Auto-categorization)          | ✅     | Import processing and categorization |
+| FR-10 (Data Export)                 | ✅     | Export workflow tests                |
+| FR-11 (User Authentication)         | ✅     | Authentication workflow tests        |
+| NFR-3 (Data Processing Performance) | ✅     | Large dataset performance tests      |
+| NFR-5 (Browser Compatibility)       | ✅     | Error handling and fallback tests    |
+| NFR-8 (Input Validation)            | ✅     | Error handling and validation tests  |
 
 ## Next Steps
 

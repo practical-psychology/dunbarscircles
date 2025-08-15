@@ -126,18 +126,26 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
   const maxRadius = 280;
 
   return (
-    <div className="space-y-6">
+    <div
+      data-testid="radial-diagram"
+      className="space-y-6"
+      role="region"
+      aria-label="Radial diagram showing relationship levels with cognitive load analysis"
+    >
       {/* Mental Load Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Brain className="w-4 h-4" />
+              <Brain className="w-4 h-4" aria-hidden="true" />
               Total Cognitive Load
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div
+              className="text-2xl font-bold text-blue-600"
+              aria-label={`Total cognitive load: ${levels.reduce((sum, level) => sum + getMentalLoad(level), 0)} percent`}
+            >
               {levels.reduce((sum, level) => sum + getMentalLoad(level), 0)}%
             </div>
             <p className="text-xs text-gray-600">Mental bandwidth used</p>
@@ -147,12 +155,15 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4" aria-hidden="true" />
               Total Network Size
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div
+              className="text-2xl font-bold text-green-600"
+              aria-label={`Total network size: ${levels.reduce((sum, level) => sum + level.count, 0).toLocaleString()} potential connections`}
+            >
               {levels
                 .reduce((sum, level) => sum + level.count, 0)
                 .toLocaleString()}
@@ -164,12 +175,15 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4" />
+              <Zap className="w-4 h-4" aria-hidden="true" />
               Active Maintenance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div
+              className="text-2xl font-bold text-orange-600"
+              aria-label={`Active maintenance: ${levels.slice(0, 4).reduce((sum, level) => sum + level.count, 0)} relationships requiring effort`}
+            >
               {levels.slice(0, 4).reduce((sum, level) => sum + level.count, 0)}
             </div>
             <p className="text-xs text-gray-600">
@@ -183,7 +197,26 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
       <div className="flex gap-6">
         <div className="flex-1">
           <div className="relative w-full h-[600px] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border overflow-hidden">
-            <svg width="100%" height="100%" viewBox="0 0 800 600">
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 800 600"
+              role="img"
+              aria-labelledby="radial-diagram-title"
+              aria-describedby="radial-diagram-desc"
+            >
+              <title id="radial-diagram-title">
+                Radial Relationship Diagram
+              </title>
+              <desc id="radial-diagram-desc">
+                Interactive radial diagram showing {levels.length} relationship
+                levels as concentric circles. Each ring represents a different
+                relationship level with size proportional to the number of
+                relationships.
+                {selectedLevel
+                  ? ` Currently selected: ${levels.find((l) => l.id === selectedLevel)?.name}`
+                  : " Click on rings to view details."}
+              </desc>
               {/* Animated background rings */}
               {levels.map((level, index) => {
                 const radius = (maxRadius / levels.length) * (index + 1);
@@ -230,13 +263,24 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       fillOpacity={isHovered || isSelected ? 0.3 : 0.2}
                       stroke={safeColor}
                       strokeWidth={isSelected ? 4 : 2}
-                      className="cursor-pointer transition-all duration-300"
+                      className="cursor-pointer transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       onMouseEnter={() => setHoveredLevel(level.id)}
                       onMouseLeave={() => setHoveredLevel(null)}
                       onClick={() => {
                         setSelectedLevel(isSelected ? null : level.id);
                         setZoomedLevel(isZoomed ? null : level.id);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedLevel(isSelected ? null : level.id);
+                          setZoomedLevel(isZoomed ? null : level.id);
+                        }
+                      }}
+                      role="button"
+                      aria-label={`${level.name} ring with ${level.count} relationships. Mental load: ${getMentalLoad(level)}%. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
+                      aria-pressed={isSelected}
+                      tabIndex={0}
                     />
 
                     {/* Inner circle to create ring effect */}
@@ -257,6 +301,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       y={centerY - 10}
                       className="text-sm font-bold pointer-events-none"
                       fill={level.color.replace("bg-", "#")}
+                      aria-hidden="true"
                     >
                       {level.count.toLocaleString()}
                     </text>
@@ -265,6 +310,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       y={centerY + 5}
                       className="text-xs pointer-events-none"
                       fill={level.color.replace("bg-", "#")}
+                      aria-hidden="true"
                     >
                       {level.name.split(" ")[0]}
                     </text>
@@ -298,13 +344,17 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                 cy={centerY}
                 r="25"
                 fill="#1f2937"
-                className="cursor-pointer"
+                className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                role="button"
+                aria-label="Center node representing you in the relationship network"
+                tabIndex={0}
               />
               <text
                 x={centerX}
                 y={centerY + 5}
                 textAnchor="middle"
                 className="text-sm fill-white font-bold"
+                aria-hidden="true"
               >
                 YOU
               </text>

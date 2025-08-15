@@ -55,7 +55,7 @@ export function LevelDetails({
   ];
 
   return (
-    <div className="space-y-8">
+    <div data-testid="level-details" className="space-y-8">
       {categories.map((category) => (
         <div key={category.id}>
           <div className="mb-4">

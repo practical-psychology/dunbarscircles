@@ -39,7 +39,7 @@ interface ImportPreview {
 export default function ContactImportPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importComplete, setImportComplete] = useState(false);
@@ -58,65 +58,66 @@ export default function ContactImportPage() {
   };
 
   const parseCSVFile = (content: string): StoredContact[] => {
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length < 2) throw new Error("CSV file must have at least a header and one data row");
+    const lines = content.split("\n").filter((line) => line.trim());
+    if (lines.length < 2)
+      throw new Error("CSV file must have at least a header and one data row");
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const contacts: StoredContact[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      
+      const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
+
       if (values.length < headers.length) continue; // Skip incomplete rows
 
       const contact: StoredContact = {
         id: `import_${Date.now()}_${i}`,
-        name: '',
-        levelId: 'active-network', // Default level
+        name: "",
+        levelId: "active-network", // Default level
         lastContact: new Date(),
         contactFrequency: 90, // Default quarterly
         strength: 0.3, // Default strength for imported contacts
         decayRate: 0.1,
-        platform: 'LinkedIn',
-        source: 'linkedin',
+        platform: "LinkedIn",
+        source: "linkedin",
         importDate: new Date(),
       };
 
       // Map CSV columns to contact fields
       headers.forEach((header, index) => {
-        const value = values[index] || '';
-        
+        const value = values[index] || "";
+
         switch (header) {
-          case 'first name':
-          case 'firstname':
+          case "first name":
+          case "firstname":
             contact.name = value;
             break;
-          case 'last name':
-          case 'lastname':
+          case "last name":
+          case "lastname":
             contact.name = contact.name ? `${contact.name} ${value}` : value;
             break;
-          case 'name':
-          case 'full name':
+          case "name":
+          case "full name":
             contact.name = value;
             break;
-          case 'email':
-          case 'email address':
+          case "email":
+          case "email address":
             contact.email = value;
             break;
-          case 'phone':
-          case 'phone number':
+          case "phone":
+          case "phone number":
             contact.phone = value;
             break;
-          case 'company':
-          case 'organization':
-            contact.platform = value || 'LinkedIn';
+          case "company":
+          case "organization":
+            contact.platform = value || "LinkedIn";
             break;
-          case 'position':
-          case 'title':
-            contact.notes = value ? `Position: ${value}` : '';
+          case "position":
+          case "title":
+            contact.notes = value ? `Position: ${value}` : "";
             break;
-          case 'connected on':
-          case 'connection date':
+          case "connected on":
+          case "connection date":
             if (value) {
               const date = new Date(value);
               if (!isNaN(date.getTime())) {
@@ -146,17 +147,19 @@ export default function ContactImportPage() {
           const contact: StoredContact = {
             id: `import_${Date.now()}_${index}`,
             name: friend.name,
-            levelId: 'recognition-group', // Default level for Facebook friends
-            lastContact: friend.timestamp ? new Date(friend.timestamp * 1000) : new Date(),
+            levelId: "recognition-group", // Default level for Facebook friends
+            lastContact: friend.timestamp
+              ? new Date(friend.timestamp * 1000)
+              : new Date(),
             contactFrequency: 365, // Default yearly for Facebook friends
             strength: 0.2, // Lower strength for Facebook friends
             decayRate: 0.1,
-            platform: 'Facebook',
-            source: 'facebook',
+            platform: "Facebook",
+            source: "facebook",
             importDate: new Date(),
-            email: friend.email || '',
-            phone: friend.phone || '',
-            notes: friend.notes || '',
+            email: friend.email || "",
+            phone: friend.phone || "",
+            notes: friend.notes || "",
           };
           contacts.push(contact);
         }
@@ -169,17 +172,19 @@ export default function ContactImportPage() {
           const contact: StoredContact = {
             id: `import_${Date.now()}_${index}`,
             name: item.name,
-            levelId: item.levelId || 'active-network',
-            lastContact: item.lastContact ? new Date(item.lastContact) : new Date(),
+            levelId: item.levelId || "active-network",
+            lastContact: item.lastContact
+              ? new Date(item.lastContact)
+              : new Date(),
             contactFrequency: item.contactFrequency || 90,
             strength: item.strength || 0.3,
             decayRate: item.decayRate || 0.1,
-            platform: item.platform || 'Manual Import',
-            source: item.source || 'manual',
+            platform: item.platform || "Manual Import",
+            source: item.source || "manual",
             importDate: new Date(),
-            email: item.email || '',
-            phone: item.phone || '',
-            notes: item.notes || '',
+            email: item.email || "",
+            phone: item.phone || "",
+            notes: item.notes || "",
           };
           contacts.push(contact);
         }
@@ -202,12 +207,14 @@ export default function ContactImportPage() {
 
       let contacts: StoredContact[] = [];
 
-      if (selectedFile.name.toLowerCase().endsWith('.csv')) {
+      if (selectedFile.name.toLowerCase().endsWith(".csv")) {
         contacts = parseCSVFile(content);
-      } else if (selectedFile.name.toLowerCase().endsWith('.json')) {
+      } else if (selectedFile.name.toLowerCase().endsWith(".json")) {
         contacts = parseJSONFile(content);
       } else {
-        throw new Error("Unsupported file format. Please use CSV or JSON files.");
+        throw new Error(
+          "Unsupported file format. Please use CSV or JSON files.",
+        );
       }
 
       setImportProgress(60);
@@ -215,7 +222,9 @@ export default function ContactImportPage() {
       // Load existing contacts to check for duplicates
       const existingResult = await EnhancedContactStorage.loadContacts();
       const existingContacts = existingResult.data || [];
-      const existingNames = new Set(existingContacts.map(c => c.name.toLowerCase()));
+      const existingNames = new Set(
+        existingContacts.map((c) => c.name.toLowerCase()),
+      );
 
       setImportProgress(80);
 
@@ -223,7 +232,7 @@ export default function ContactImportPage() {
       const newContacts: StoredContact[] = [];
       const duplicates: StoredContact[] = [];
 
-      contacts.forEach(contact => {
+      contacts.forEach((contact) => {
         if (existingNames.has(contact.name.toLowerCase())) {
           duplicates.push(contact);
         } else {
@@ -245,7 +254,6 @@ export default function ContactImportPage() {
       });
 
       setImportProgress(100);
-
     } catch (err) {
       console.error("Import preview failed:", err);
       setError(err instanceof Error ? err.message : "Failed to preview import");
@@ -284,10 +292,11 @@ export default function ContactImportPage() {
       setTimeout(() => {
         navigate("/contacts");
       }, 2000);
-
     } catch (err) {
       console.error("Import execution failed:", err);
-      setError(err instanceof Error ? err.message : "Failed to import contacts");
+      setError(
+        err instanceof Error ? err.message : "Failed to import contacts",
+      );
     } finally {
       setImporting(false);
       setImportProgress(0);
@@ -351,7 +360,8 @@ export default function ContactImportPage() {
                     Import Successful!
                   </h3>
                   <p className="text-green-700 dark:text-green-300">
-                    {preview?.stats.successful} contacts have been imported. Redirecting to contacts page...
+                    {preview?.stats.successful} contacts have been imported.
+                    Redirecting to contacts page...
                   </p>
                 </div>
               </div>
@@ -421,13 +431,14 @@ export default function ContactImportPage() {
                 >
                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    {selectedFile ? selectedFile.name : "Choose a file to import"}
+                    {selectedFile
+                      ? selectedFile.name
+                      : "Choose a file to import"}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    {selectedFile 
+                    {selectedFile
                       ? `File size: ${(selectedFile.size / 1024).toFixed(1)} KB`
-                      : "Drag and drop your CSV or JSON file here, or click to browse"
-                    }
+                      : "Drag and drop your CSV or JSON file here, or click to browse"}
                   </p>
                   <Button variant="outline" disabled={importing}>
                     {selectedFile ? "Change File" : "Select File"}
@@ -539,7 +550,8 @@ export default function ContactImportPage() {
                 {preview.contacts.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-lg font-semibold">
-                      Sample Contacts ({Math.min(5, preview.contacts.length)} of {preview.contacts.length})
+                      Sample Contacts ({Math.min(5, preview.contacts.length)} of{" "}
+                      {preview.contacts.length})
                     </h3>
                     <div className="space-y-2">
                       {preview.contacts.slice(0, 5).map((contact, index) => (
@@ -559,7 +571,7 @@ export default function ContactImportPage() {
                             </div>
                           </div>
                           <Badge variant="secondary">
-                            {contact.levelId.replace('-', ' ')}
+                            {contact.levelId.replace("-", " ")}
                           </Badge>
                         </div>
                       ))}
@@ -617,7 +629,7 @@ export default function ContactImportPage() {
             <LiquidCard>
               <div className="space-y-4">
                 <h3 className="text-lg font-bold">How to Export Your Data</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">

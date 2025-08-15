@@ -17,6 +17,7 @@ import ContactImportPage from "./pages/ContactImportPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
+import { WelcomeModal } from "@/components/welcome-modal";
 import { useState, useEffect } from "react";
 
 const liquidPageVariants = {
@@ -82,6 +83,9 @@ function AppContent() {
       <div className="fixed top-4 right-4 z-50">
         <LiquidThemeToggle />
       </div>
+
+      {/* Welcome Modal for first-time users */}
+      <WelcomeModal />
 
       <AnimatePresence mode="wait">
         <motion.div

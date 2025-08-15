@@ -110,7 +110,7 @@ export function ContactManager({ levels }: ContactManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="contact-manager">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">My Social Network</h2>
@@ -122,7 +122,10 @@ export function ContactManager({ levels }: ContactManagerProps) {
 
         <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button
+              className="flex items-center gap-2"
+              data-testid="add-contact"
+            >
               <Plus className="w-4 h-4" />
               Add Contact
             </Button>

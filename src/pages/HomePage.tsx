@@ -217,7 +217,11 @@ export default function HomePage() {
               </LiquidButton>
             </Link>
             <Link to="/onboarding">
-              <LiquidButton variant="ghost" size="lg" className="flex items-center gap-2">
+              <LiquidButton
+                variant="ghost"
+                size="lg"
+                className="flex items-center gap-2"
+              >
                 <BookOpen className="w-4 h-4" />
                 Tutorial & Guide
               </LiquidButton>

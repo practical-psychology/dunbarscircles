@@ -29,7 +29,7 @@ test('renders component', () => {
 test('handles click events', async () => {
   const user = userEvent.setup()
   render(<Button onClick={mockFn}>Click me</Button>)
-  
+
   await user.click(screen.getByRole('button'))
   expect(mockFn).toHaveBeenCalled()
 })
@@ -80,70 +80,70 @@ renderWithoutRouter(<Component />)
 ## Firebase Testing
 
 ```typescript
-import { testHelpers, firebaseMocks } from '@/src/test'
+import { testHelpers, firebaseMocks } from "@/src/test";
 
 // Setup authenticated user
 testHelpers.setupFirebaseAuth({
-  uid: 'test-uid',
-  email: 'test@example.com',
-  displayName: 'Test User'
-})
+  uid: "test-uid",
+  email: "test@example.com",
+  displayName: "Test User",
+});
 
 // Test Firebase operations
-expect(firebaseMocks.signInWithPopup).toHaveBeenCalled()
+expect(firebaseMocks.signInWithPopup).toHaveBeenCalled();
 ```
 
 ## Storage Testing
 
 ```typescript
-import { testHelpers } from '@/src/test'
+import { testHelpers } from "@/src/test";
 
 // Setup localStorage with data
-testHelpers.setupThemeStorage('dark')
-testHelpers.setupContactStorage([{ id: '1', name: 'John' }])
+testHelpers.setupThemeStorage("dark");
+testHelpers.setupContactStorage([{ id: "1", name: "John" }]);
 
 // Test storage operations
-localStorage.setItem('key', 'value')
-expect(localStorage.getItem('key')).toBe('value')
+localStorage.setItem("key", "value");
+expect(localStorage.getItem("key")).toBe("value");
 ```
 
 ## Canvas Testing
 
 ```typescript
-import { testHelpers } from '@/src/test'
+import { testHelpers } from "@/src/test";
 
 // Setup canvas mock
-const context = testHelpers.setupCanvasMock()
+const context = testHelpers.setupCanvasMock();
 
 // Test canvas operations
-context.fillRect(0, 0, 100, 100)
-expect(context.fillRect).toHaveBeenCalledWith(0, 0, 100, 100)
+context.fillRect(0, 0, 100, 100);
+expect(context.fillRect).toHaveBeenCalledWith(0, 0, 100, 100);
 ```
 
 ## File Upload Testing
 
 ```typescript
-import { testHelpers, simulateFileDrop } from '@/src/test'
+import { testHelpers, simulateFileDrop } from "@/src/test";
 
 // Create mock files
-const csvFile = testHelpers.createMockLinkedInCSV()
-const jsonFile = testHelpers.createMockFacebookJSON()
+const csvFile = testHelpers.createMockLinkedInCSV();
+const jsonFile = testHelpers.createMockFacebookJSON();
 
 // Simulate file drop
-const dropZone = screen.getByTestId('drop-zone')
-simulateFileDrop(dropZone, [csvFile])
+const dropZone = screen.getByTestId("drop-zone");
+simulateFileDrop(dropZone, [csvFile]);
 ```
 
 ## Responsive Design Testing
 
 ```typescript
-import { testHelpers } from '@/src/test'
+import { testHelpers } from "@/src/test";
 
 // Mock specific breakpoint
-testHelpers.mockResponsiveBreakpoint('mobile')
+testHelpers.mockResponsiveBreakpoint("mobile");
 
 // Trigger resize event
-testHelpers.triggerResize(768, 1024)
+testHelpers.triggerResize(768, 1024);
 ```
 
 ## Common Patterns
@@ -163,7 +163,7 @@ test('component with theme', () => {
 test('navigation works', async () => {
   const user = userEvent.setup()
   renderWithRoute(<App />, '/home')
-  
+
   await user.click(screen.getByText('Dashboard'))
   expect(screen.getByText('Dashboard Page')).toBeInTheDocument()
 })
@@ -175,12 +175,12 @@ test('navigation works', async () => {
 test('file import', async () => {
   const user = userEvent.setup()
   const file = testHelpers.createMockLinkedInCSV()
-  
+
   render(<FileUpload />)
-  
+
   const input = screen.getByLabelText('Upload file')
   await user.upload(input, file)
-  
+
   expect(screen.getByText('File uploaded')).toBeInTheDocument()
 })
 ```
@@ -191,7 +191,7 @@ test('file import', async () => {
 test('network diagram renders', () => {
   const context = testHelpers.setupCanvasMock()
   render(<NetworkDiagram data={mockData} />)
-  
+
   // Verify canvas operations
   expect(context.beginPath).toHaveBeenCalled()
   expect(context.arc).toHaveBeenCalled()
@@ -204,11 +204,11 @@ test('network diagram renders', () => {
 The testing infrastructure automatically cleans up mocks between tests. For manual cleanup:
 
 ```typescript
-import { testHelpers } from '@/src/test'
+import { testHelpers } from "@/src/test";
 
 afterEach(() => {
-  testHelpers.cleanupMocks()
-})
+  testHelpers.cleanupMocks();
+});
 ```
 
 ## Best Practices

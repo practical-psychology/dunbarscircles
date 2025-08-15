@@ -31,6 +31,7 @@
     "lib",
     "hooks",
     "types",
+    "data",
     "firebase-config.ts",
     "vite.config.ts",
     "vitest.config.ts",

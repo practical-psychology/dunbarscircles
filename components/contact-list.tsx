@@ -50,8 +50,6 @@ import {
   Edit,
   Calendar,
   AlertTriangle,
-  CheckSquare,
-  Square,
   User,
   Facebook,
   Linkedin,
@@ -65,7 +63,10 @@ import { relationshipStrengthCalculator } from "@/lib/contact-models";
 interface ContactListProps {
   contacts: StoredContact[];
   levels: Level[];
-  onContactUpdate?: (contactId: string, updates: Partial<StoredContact>) => void;
+  onContactUpdate?: (
+    contactId: string,
+    updates: Partial<StoredContact>,
+  ) => void;
   onContactDelete?: (contactId: string) => void;
   onBulkDelete?: (contactIds: string[]) => void;
   onBulkMove?: (contactIds: string[], levelId: string) => void;
@@ -73,8 +74,14 @@ interface ContactListProps {
   loading?: boolean;
 }
 
-type SortField = 'name' | 'levelId' | 'platform' | 'strength' | 'lastContact' | 'createdAt';
-type SortOrder = 'asc' | 'desc';
+type SortField =
+  | "name"
+  | "levelId"
+  | "platform"
+  | "strength"
+  | "lastContact"
+  | "createdAt";
+type SortOrder = "asc" | "desc";
 
 export function ContactList({
   contacts,
@@ -86,12 +93,14 @@ export function ContactList({
   onBulkExport,
   loading = false,
 }: ContactListProps) {
-  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(
+    new Set(),
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<string | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -103,23 +112,26 @@ export function ContactList({
     // Apply search filter
     if (searchTerm) {
       const query = searchTerm.toLowerCase();
-      filtered = filtered.filter(contact =>
-        contact.name.toLowerCase().includes(query) ||
-        contact.email?.toLowerCase().includes(query) ||
-        contact.phone?.includes(query) ||
-        contact.notes?.toLowerCase().includes(query) ||
-        contact.tags?.some(tag => tag.toLowerCase().includes(query))
+      filtered = filtered.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(query) ||
+          contact.email?.toLowerCase().includes(query) ||
+          contact.phone?.includes(query) ||
+          contact.notes?.toLowerCase().includes(query) ||
+          contact.tags?.some((tag) => tag.toLowerCase().includes(query)),
       );
     }
 
     // Apply level filter
     if (levelFilter !== "all") {
-      filtered = filtered.filter(contact => contact.levelId === levelFilter);
+      filtered = filtered.filter((contact) => contact.levelId === levelFilter);
     }
 
     // Apply platform filter
     if (platformFilter !== "all") {
-      filtered = filtered.filter(contact => contact.platform === platformFilter);
+      filtered = filtered.filter(
+        (contact) => contact.platform === platformFilter,
+      );
     }
 
     // Apply sorting
@@ -127,37 +139,45 @@ export function ContactList({
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
 
-      if (sortField === 'levelId') {
+      if (sortField === "levelId") {
         // Sort by level order
-        const aLevel = levels.find(l => l.id === a.levelId);
-        const bLevel = levels.find(l => l.id === b.levelId);
+        const aLevel = levels.find((l) => l.id === a.levelId);
+        const bLevel = levels.find((l) => l.id === b.levelId);
         aValue = levels.indexOf(aLevel!);
         bValue = levels.indexOf(bLevel!);
       } else if (aValue instanceof Date) {
         aValue = aValue.getTime();
         bValue = bValue.getTime();
-      } else if (typeof aValue === 'string') {
+      } else if (typeof aValue === "string") {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
 
       const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      return sortOrder === 'desc' ? -comparison : comparison;
+      return sortOrder === "desc" ? -comparison : comparison;
     });
 
     return filtered;
-  }, [contacts, searchTerm, levelFilter, platformFilter, sortField, sortOrder, levels]);
+  }, [
+    contacts,
+    searchTerm,
+    levelFilter,
+    platformFilter,
+    sortField,
+    sortOrder,
+    levels,
+  ]);
 
   // Get unique platforms for filter
   const uniquePlatforms = useMemo(() => {
-    const platforms = new Set(contacts.map(c => c.platform));
+    const platforms = new Set(contacts.map((c) => c.platform));
     return Array.from(platforms).sort();
   }, [contacts]);
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedContacts(new Set(filteredAndSortedContacts.map(c => c.id)));
+      setSelectedContacts(new Set(filteredAndSortedContacts.map((c) => c.id)));
     } else {
       setSelectedContacts(new Set());
     }
@@ -176,10 +196,10 @@ export function ContactList({
   // Sort handlers
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder('asc');
+      setSortOrder("asc");
     }
   };
 
@@ -187,7 +207,11 @@ export function ContactList({
     if (sortField !== field) {
       return <ArrowUpDown className="w-4 h-4" />;
     }
-    return sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+    return sortOrder === "asc" ? (
+      <ArrowUp className="w-4 h-4" />
+    ) : (
+      <ArrowDown className="w-4 h-4" />
+    );
   };
 
   // Action handlers
@@ -232,9 +256,9 @@ export function ContactList({
   // Helper functions
   const getSourceIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
-      case 'facebook':
+      case "facebook":
         return <Facebook className="w-4 h-4 text-blue-600" />;
-      case 'linkedin':
+      case "linkedin":
         return <Linkedin className="w-4 h-4 text-blue-700" />;
       default:
         return <User className="w-4 h-4 text-gray-600" />;
@@ -252,15 +276,17 @@ export function ContactList({
   };
 
   const getLevelInfo = (levelId: string) => {
-    return levels.find(l => l.id === levelId);
+    return levels.find((l) => l.id === levelId);
   };
 
-  const isAllSelected = filteredAndSortedContacts.length > 0 && 
-    filteredAndSortedContacts.every(contact => selectedContacts.has(contact.id));
-  const isIndeterminate = selectedContacts.size > 0 && !isAllSelected;
+  const isAllSelected =
+    filteredAndSortedContacts.length > 0 &&
+    filteredAndSortedContacts.every((contact) =>
+      selectedContacts.has(contact.id),
+    );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="contact-list">
       {/* Search and Filters */}
       <LiquidCard>
         <div className="space-y-4">
@@ -286,7 +312,7 @@ export function ContactList({
                       Export Selected
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleBulkDelete}
                       className="text-red-600"
                     >
@@ -294,8 +320,8 @@ export function ContactList({
                       Delete Selected
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {levels.map(level => (
-                      <DropdownMenuItem 
+                    {levels.map((level) => (
+                      <DropdownMenuItem
                         key={level.id}
                         onClick={() => handleBulkMove(level.id)}
                       >
@@ -332,7 +358,7 @@ export function ContactList({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
-                  {levels.map(level => (
+                  {levels.map((level) => (
                     <SelectItem key={level.id} value={level.id}>
                       {level.name}
                     </SelectItem>
@@ -349,7 +375,7 @@ export function ContactList({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Platforms</SelectItem>
-                  {uniquePlatforms.map(platform => (
+                  {uniquePlatforms.map((platform) => (
                     <SelectItem key={platform} value={platform}>
                       {platform.charAt(0).toUpperCase() + platform.slice(1)}
                     </SelectItem>
@@ -420,50 +446,50 @@ export function ContactList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort('name')}
+                        onClick={() => handleSort("name")}
                         className="h-auto p-0 font-medium"
                       >
-                        Name {getSortIcon('name')}
+                        Name {getSortIcon("name")}
                       </Button>
                     </TableHead>
                     <TableHead>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort('levelId')}
+                        onClick={() => handleSort("levelId")}
                         className="h-auto p-0 font-medium"
                       >
-                        Level {getSortIcon('levelId')}
+                        Level {getSortIcon("levelId")}
                       </Button>
                     </TableHead>
                     <TableHead>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort('platform')}
+                        onClick={() => handleSort("platform")}
                         className="h-auto p-0 font-medium"
                       >
-                        Platform {getSortIcon('platform')}
+                        Platform {getSortIcon("platform")}
                       </Button>
                     </TableHead>
                     <TableHead>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort('strength')}
+                        onClick={() => handleSort("strength")}
                         className="h-auto p-0 font-medium"
                       >
-                        Strength {getSortIcon('strength')}
+                        Strength {getSortIcon("strength")}
                       </Button>
                     </TableHead>
                     <TableHead>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort('lastContact')}
+                        onClick={() => handleSort("lastContact")}
                         className="h-auto p-0 font-medium"
                       >
-                        Last Contact {getSortIcon('lastContact')}
+                        Last Contact {getSortIcon("lastContact")}
                       </Button>
                     </TableHead>
                     <TableHead>Health</TableHead>
@@ -485,14 +511,17 @@ export function ContactList({
                           exit={{ opacity: 0, y: -20 }}
                           transition={{ delay: index * 0.05 }}
                           className={`border-b transition-colors hover:bg-gray-50 ${
-                            isSelected ? 'bg-blue-50' : ''
+                            isSelected ? "bg-blue-50" : ""
                           }`}
                         >
                           <TableCell>
                             <Checkbox
                               checked={isSelected}
-                              onCheckedChange={(checked) => 
-                                handleSelectContact(contact.id, checked as boolean)
+                              onCheckedChange={(checked) =>
+                                handleSelectContact(
+                                  contact.id,
+                                  checked as boolean,
+                                )
                               }
                               aria-label={`Select ${contact.name}`}
                             />
@@ -501,7 +530,9 @@ export function ContactList({
                             <div className="flex items-center gap-3">
                               {getSourceIcon(contact.platform)}
                               <div>
-                                <div className="font-medium">{contact.name}</div>
+                                <div className="font-medium">
+                                  {contact.name}
+                                </div>
                                 {contact.email && (
                                   <div className="text-sm text-gray-500">
                                     {contact.email}
@@ -512,7 +543,7 @@ export function ContactList({
                           </TableCell>
                           <TableCell>
                             {level && (
-                              <Badge 
+                              <Badge
                                 variant="secondary"
                                 className={`${level.bgColor} ${level.textColor}`}
                               >
@@ -521,14 +552,18 @@ export function ContactList({
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="capitalize">{contact.platform}</span>
+                            <span className="capitalize">
+                              {contact.platform}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div className="w-16 bg-gray-200 rounded-full h-2">
                                 <div
                                   className="bg-blue-600 h-2 rounded-full"
-                                  style={{ width: `${contact.strength * 100}%` }}
+                                  style={{
+                                    width: `${contact.strength * 100}%`,
+                                  }}
                                 />
                               </div>
                               <span className="text-sm">
@@ -540,22 +575,27 @@ export function ContactList({
                             <div className="flex items-center gap-1 text-sm">
                               <Calendar className="w-3 h-3" />
                               {Math.floor(
-                                (Date.now() - contact.lastContact.getTime()) / 
-                                (1000 * 60 * 60 * 24)
-                              )}d ago
+                                (Date.now() - contact.lastContact.getTime()) /
+                                  (1000 * 60 * 60 * 24),
+                              )}
+                              d ago
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant={
-                                health.status === 'excellent' ? 'default' :
-                                health.status === 'good' ? 'secondary' :
-                                health.status === 'fair' ? 'outline' :
-                                'destructive'
+                                health.status === "excellent"
+                                  ? "default"
+                                  : health.status === "good"
+                                    ? "secondary"
+                                    : health.status === "fair"
+                                      ? "outline"
+                                      : "destructive"
                               }
                               className="flex items-center gap-1"
                             >
-                              {health.status === 'poor' || health.status === 'critical' ? (
+                              {health.status === "poor" ||
+                              health.status === "critical" ? (
                                 <AlertTriangle className="w-3 h-3" />
                               ) : null}
                               {health.score}%
@@ -574,18 +614,24 @@ export function ContactList({
                                   Edit Contact
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                {levels.map(level => (
-                                  <DropdownMenuItem 
+                                {levels.map((level) => (
+                                  <DropdownMenuItem
                                     key={level.id}
-                                    onClick={() => onContactUpdate?.(contact.id, { levelId: level.id })}
+                                    onClick={() =>
+                                      onContactUpdate?.(contact.id, {
+                                        levelId: level.id,
+                                      })
+                                    }
                                   >
                                     <Move className="w-4 h-4 mr-2" />
                                     Move to {level.name}
                                   </DropdownMenuItem>
                                 ))}
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteContact(contact.id)}
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleDeleteContact(contact.id)
+                                  }
                                   className="text-red-600"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
@@ -611,7 +657,8 @@ export function ContactList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contact</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this contact? This action cannot be undone.
+              Are you sure you want to delete this contact? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -624,13 +671,16 @@ export function ContactList({
       </AlertDialog>
 
       {/* Bulk Delete Confirmation Dialog */}
-      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+      <AlertDialog
+        open={showBulkDeleteDialog}
+        onOpenChange={setShowBulkDeleteDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Selected Contacts</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedContacts.size} selected contacts? 
-              This action cannot be undone.
+              Are you sure you want to delete {selectedContacts.size} selected
+              contacts? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

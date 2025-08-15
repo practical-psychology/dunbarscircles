@@ -78,7 +78,7 @@ export function FirebaseStatus() {
     diagnostics?.configValid && diagnostics?.connectionWorking;
 
   return (
-    <Card className="w-full max-w-2xl">
+    <Card className="w-full max-w-2xl" data-testid="firebase-status">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {isConnected ? (
