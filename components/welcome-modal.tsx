@@ -72,7 +72,7 @@ export function WelcomeModal({
 
   const steps = [
     {
-      title: "Welcome to YAKW",
+      title: "Welcome to Dunbar Circles",
       description: "Your personal relationship visualization tool",
       content: (
         <div className="space-y-6">
@@ -91,7 +91,7 @@ export function WelcomeModal({
             >
               <Users className="w-10 h-10 text-white" />
             </motion.div>
-            <h3 className="text-2xl font-bold mb-2">Welcome to YAKW</h3>
+            <h3 className="text-2xl font-bold mb-2">Welcome to Dunbar Circles</h3>
             <p className="text-muted-foreground">
               Discover and visualize your social relationships using Robin
               Dunbar's research
@@ -364,7 +364,7 @@ export function WelcomeModal({
                 {currentStepData.description}
               </DialogDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleClose}>
+            <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Close welcome modal">
               <X className="w-4 h-4" />
             </Button>
           </div>

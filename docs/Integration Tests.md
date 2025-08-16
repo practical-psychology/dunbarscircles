@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains comprehensive integration tests for the YAKW application's user workflows. The tests verify that complete user journeys work correctly from end to end, covering all major functionality areas.
+This directory contains comprehensive integration tests for the Dunbar Circles application's user workflows. The tests verify that complete user journeys work correctly from end to end, covering all major functionality areas.
 
 ## Test Files
 

@@ -328,7 +328,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   const handleShareData = async () => {
     try {
       const data = prepareExportData();
-      await shareData(data, "My YAKW Relationship Network");
+      await shareData(data, "My Dunbar Circles Relationship Network");
       setShowExportDialog(false);
     } catch (error) {
       console.error("Share failed:", error);
@@ -492,8 +492,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
               <div className="space-y-2">
                 <Label>Source</Label>
                 <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger aria-label="Filter contacts by source">
+                    <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Sources</SelectItem>
@@ -507,8 +507,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
               <div className="space-y-2">
                 <Label>Dunbar Level</Label>
                 <Select value={levelFilter} onValueChange={setLevelFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger aria-label="Filter contacts by Dunbar level">
+                    <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Levels</SelectItem>

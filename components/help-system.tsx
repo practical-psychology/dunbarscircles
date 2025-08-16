@@ -45,12 +45,12 @@ const helpTopics: HelpTopic[] = [
   {
     id: "getting-started",
     title: "Getting Started",
-    description: "Learn the basics of YAKW and Dunbar's theory",
+    description: "Learn the basics of Dunbar Circles and Dunbar's theory",
     category: "basics",
     icon: <Play className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>Welcome to YAKW! Here's how to get started:</p>
+        <p>Welcome to Dunbar Circles! Here's how to get started:</p>
         <ol className="list-decimal list-inside space-y-2 text-sm">
           <li>
             Take the interactive tutorial by clicking "Tutorial & Guide" on the
@@ -134,7 +134,7 @@ const helpTopics: HelpTopic[] = [
     icon: <Home className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>YAKW has several main pages, each with a specific purpose:</p>
+        <p>Dunbar Circles has several main pages, each with a specific purpose:</p>
         <div className="grid gap-3">
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
             <Home className="w-5 h-5 mt-0.5 text-blue-500" />
@@ -218,7 +218,7 @@ const helpTopics: HelpTopic[] = [
     icon: <Target className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>YAKW offers several ways to visualize your relationships:</p>
+        <p>Dunbar Circles offers several ways to visualize your relationships:</p>
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold mb-2">Radial Diagram</h4>
@@ -289,7 +289,7 @@ const helpTopics: HelpTopic[] = [
     icon: <MessageCircle className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>If YAKW is running slowly, try these solutions:</p>
+        <p>If Dunbar Circles is running slowly, try these solutions:</p>
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold">Browser Optimization</h4>
@@ -378,10 +378,10 @@ export function HelpSystem({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Book className="w-5 h-5" />
-            YAKW Help Center
+            Dunbar Circles Help Center
           </DialogTitle>
           <DialogDescription>
-            Find answers to common questions and learn how to use YAKW
+            Find answers to common questions and learn how to use Dunbar Circles
             effectively.
           </DialogDescription>
         </DialogHeader>

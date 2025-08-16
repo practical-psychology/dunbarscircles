@@ -1,6 +1,6 @@
 # Product Overview
 
-## YAKW - Dunbar's Number Visualization
+## Dunbar Circles - Dunbar's Number Visualization
 
 A modern React web application that visualizes Robin Dunbar's theory of social relationships, exploring the cognitive limits to stable social relationships humans can maintain.
 

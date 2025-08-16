@@ -5,7 +5,7 @@ export * from "./complete-user-journey.test";
 
 // Test suite documentation
 /**
- * Integration Tests for YAKW Application
+ * Integration Tests for Dunbar Circles Application
  *
  * This test suite covers complete user workflows and integration scenarios:
  *

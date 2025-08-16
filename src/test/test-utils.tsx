@@ -128,6 +128,7 @@ export { createCanvasContextMock } from "./canvas-mocks";
 import userEvent from "@testing-library/user-event";
 export { default as userEvent } from "@testing-library/user-event";
 export const createUser = () => userEvent.setup();
+export const user = userEvent;
 
 // Helper to wait for elements with better error messages
 export const waitForElement = async (callback: () => any, timeout = 1000) => {

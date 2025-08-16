@@ -2,7 +2,7 @@
 
 ## Task 2.2 - Complete Implementation
 
-This document summarizes the implementation of the contact storage and persistence layer for the YAKW application.
+This document summarizes the implementation of the contact storage and persistence layer for the Dunbar Circles application.
 
 ## ✅ Implemented Features
 

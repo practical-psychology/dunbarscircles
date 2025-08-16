@@ -201,7 +201,6 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
               width="100%"
               height="100%"
               viewBox="0 0 800 600"
-              role="img"
               aria-labelledby="radial-diagram-title"
               aria-describedby="radial-diagram-desc"
             >
@@ -393,6 +392,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                             <Progress
                               value={getMentalLoad(level)}
                               className="w-16 h-2"
+                              aria-label={`Mental load for ${level.name}: ${getMentalLoad(level)} percent`}
                             />
                             <span className="text-xs">
                               {getMentalLoad(level)}%
@@ -445,6 +445,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                           <Progress
                             value={getMentalLoad(level)}
                             className="flex-1"
+                            aria-label={`Cognitive load for ${level.name}: ${getMentalLoad(level)} percent of mental bandwidth`}
                           />
                           <span className="text-sm font-medium">
                             {getMentalLoad(level)}%

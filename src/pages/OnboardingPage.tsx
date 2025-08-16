@@ -42,7 +42,7 @@ interface TutorialStep {
 const tutorialSteps: TutorialStep[] = [
   {
     id: 1,
-    title: "Welcome to YAKW",
+    title: "Welcome to Dunbar Circles",
     description: "Understanding Dunbar's Number and relationship visualization",
     category: "getting-started",
     icon: <Users className="w-6 h-6" />,
@@ -52,7 +52,7 @@ const tutorialSteps: TutorialStep[] = [
           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
             <Users className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-2xl font-bold mb-2">Welcome to YAKW</h3>
+          <h3 className="text-2xl font-bold mb-2">Welcome to Dunbar Circles</h3>
           <p className="text-muted-foreground">
             Your personal relationship visualization tool
           </p>
@@ -730,7 +730,7 @@ const OnboardingPage = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Welcome to YAKW</h1>
+          <h1 className="text-4xl font-bold mb-2">Welcome to Dunbar Circles</h1>
           <p className="text-xl text-muted-foreground mb-4">
             Learn how to visualize and understand your relationships
           </p>
@@ -862,7 +862,7 @@ const OnboardingPage = () => {
                     <Button asChild className="flex items-center gap-2">
                       <Link to="/">
                         <Play className="w-4 h-4" />
-                        Start Using YAKW
+                        Start Using Dunbar Circles
                       </Link>
                     </Button>
                   ) : (

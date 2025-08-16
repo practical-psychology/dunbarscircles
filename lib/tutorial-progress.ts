@@ -22,7 +22,7 @@ const DEFAULT_TUTORIAL_STEPS: Omit<
   TutorialStep,
   "completed" | "completedAt"
 >[] = [
-  { id: "welcome", title: "Welcome to YAKW" },
+  { id: "welcome", title: "Welcome to Dunbar Circles" },
   { id: "navigation", title: "Navigation Overview" },
   { id: "radial", title: "Radial Visualization" },
   { id: "network", title: "Network Diagram" },

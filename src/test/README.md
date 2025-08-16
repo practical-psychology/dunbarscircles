@@ -1,6 +1,6 @@
 # Testing Utilities
 
-This directory contains comprehensive testing utilities and mocks for the YAKW application.
+This directory contains comprehensive testing utilities and mocks for the Dunbar Circles application.
 
 ## Overview
 

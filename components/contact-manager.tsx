@@ -160,7 +160,7 @@ export function ContactManager({ levels }: ContactManagerProps) {
                     setNewContact({ ...newContact, levelId: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Select relationship level for new contact">
                     <SelectValue placeholder="Select relationship level" />
                   </SelectTrigger>
                   <SelectContent>

@@ -353,8 +353,8 @@ export function ContactList({
             <div className="space-y-2">
               <Label>Dunbar Level</Label>
               <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger aria-label="Filter contacts by Dunbar level">
+                  <SelectValue placeholder="Select level" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
@@ -370,8 +370,8 @@ export function ContactList({
             <div className="space-y-2">
               <Label>Platform</Label>
               <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger aria-label="Filter contacts by platform">
+                  <SelectValue placeholder="Select platform" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Platforms</SelectItem>
@@ -604,7 +604,7 @@ export function ContactList({
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" aria-label="Contact actions menu">
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>

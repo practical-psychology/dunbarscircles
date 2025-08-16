@@ -55,9 +55,8 @@ export function NetworkDiagram({
     <div
       data-testid="network-diagram"
       className="relative w-full h-[600px] bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/50 dark:to-blue-900/50 rounded-2xl border border-white/20 dark:border-gray-700/20 backdrop-blur-xl overflow-hidden"
-      role="img"
+      role="region"
       aria-label="Interactive network diagram showing relationship levels according to Dunbar's hierarchy"
-      tabIndex={0}
     >
       {/* Liquid background animation */}
       <div className="absolute inset-0 opacity-30">
@@ -101,7 +100,6 @@ export function NetworkDiagram({
         height="100%"
         viewBox="0 0 800 600"
         className="relative z-10"
-        role="img"
         aria-labelledby="network-diagram-title"
         aria-describedby="network-diagram-desc"
       >
@@ -291,6 +289,7 @@ export function NetworkDiagram({
                 aria-label={`${level.name} level with ${level.count} relationships. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
                 aria-pressed={isSelected}
                 tabIndex={0}
+                data-testid={index === 0 ? "mock-node" : undefined}
               />
 
               {/* Ripple effect on hover */}

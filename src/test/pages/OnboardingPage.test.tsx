@@ -20,7 +20,7 @@ describe("OnboardingPage", () => {
     renderWithRouter(<OnboardingPage />);
 
     expect(
-      screen.getByRole("heading", { name: "Welcome to YAKW", level: 1 }),
+      screen.getByRole("heading", { name: "Welcome to Dunbar Circles", level: 1 }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -33,7 +33,7 @@ describe("OnboardingPage", () => {
     renderWithRouter(<OnboardingPage />);
 
     expect(screen.getByText("Tutorial Steps")).toBeInTheDocument();
-    expect(screen.getAllByText("Welcome to YAKW")).toHaveLength(4); // Title, sidebar, content title, and step content
+    expect(screen.getAllByText("Welcome to Dunbar Circles")).toHaveLength(4); // Title, sidebar, content title, and step content
     expect(screen.getByText("Navigation Overview")).toBeInTheDocument();
   });
 

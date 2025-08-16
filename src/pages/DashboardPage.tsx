@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ContactsDashboard } from "@/components/contacts-dashboard";
+import { ContactManager } from "@/components/contact-manager";
 import { ErrorBoundary, DataErrorFallback } from "@/components/error-boundary";
 import { DataStatus } from "@/components/data-status";
 import { useAuth } from "@/hooks/use-auth";
@@ -87,6 +88,9 @@ export default function DashboardPage() {
             className="mb-6"
           />
         )}
+
+        {/* Contact Manager */}
+        <ContactManager levels={dunbarLevels} />
 
         {/* Contacts Dashboard */}
         <ContactsDashboard levels={dunbarLevels} />

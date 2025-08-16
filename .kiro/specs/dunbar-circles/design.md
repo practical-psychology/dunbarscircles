@@ -1,4 +1,4 @@
-# Design Document - YAKW (Dunbar's Number Visualization)
+# Design Document - Dunbar Circles (Dunbar's Number Visualization)
 
 ## Project Overview
 

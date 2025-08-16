@@ -10,11 +10,13 @@ import { createCanvasContextMock } from "./canvas-mocks";
 // Helper to setup Firebase mocks with specific user state
 export const setupFirebaseAuth = (user: any = null) => {
   firebaseMocks.auth.currentUser = user;
-  firebaseMocks.onAuthStateChanged.mockImplementation((callback) => {
-    callback(user);
+  firebaseMocks.onAuthStateChanged.mockImplementation((__auth, callback, _errorCallback) => {
+    if (typeof callback === 'function') {
+      callback(user);
+    }
     return vi.fn(); // unsubscribe function
   });
-  
+
   // Also update signInWithPopup to return the user
   if (user) {
     firebaseMocks.signInWithPopup.mockResolvedValue({
@@ -106,16 +108,18 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 // Helper to create mock JSON file for Facebook import
 export const createMockFacebookJSON = () => {
   const jsonContent = JSON.stringify({
-    friends_v2: [
-      {
-        name: "John Doe",
-        timestamp: 1640995200,
-      },
-      {
-        name: "Jane Smith",
-        timestamp: 1643673600,
-      },
-    ],
+    friends: {
+      data: [
+        {
+          name: "John Doe",
+          timestamp: 1640995200,
+        },
+        {
+          name: "Jane Smith",
+          timestamp: 1643673600,
+        },
+      ],
+    },
   });
   return createMockFile(jsonContent, "friends.json", "application/json");
 };
@@ -167,28 +171,34 @@ export const triggerResize = (width: number, height: number) => {
 // Helper to mock canvas for visualization testing with proper type compatibility
 export const setupCanvasMock = () => {
   const context = createCanvasContextMock();
-  
+
   // Mock HTMLCanvasElement.prototype methods with proper typing
   HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string, contextAttributes?: any) => {
+    // contextAttributes parameter is intentionally unused in mock
+    void contextAttributes;
     if (contextType === "2d") {
       return context as CanvasRenderingContext2D;
     }
     return null;
-  });
-  
+  }) as any;
+
   HTMLCanvasElement.prototype.toDataURL = vi.fn((type?: string, quality?: any) => {
     const mimeType = type || "image/png";
+    // quality parameter is intentionally unused in mock
+    void quality;
     return `data:${mimeType};base64,mock`;
   });
-  
+
   HTMLCanvasElement.prototype.toBlob = vi.fn((callback?: BlobCallback | null, type?: string, quality?: any) => {
     const mimeType = type || "image/png";
+    // quality parameter is intentionally unused in mock
+    void quality;
     const blob = new Blob(["mock"], { type: mimeType });
     if (callback) {
       setTimeout(() => callback(blob), 0);
     }
   });
-  
+
   // Mock getBoundingClientRect for canvas positioning
   HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
     x: 0,
@@ -201,59 +211,11 @@ export const setupCanvasMock = () => {
     right: 300,
     toJSON: () => ({}),
   } as DOMRect));
-  
+
   return context;
 };
 
-// Helper to setup animation frame mocking for canvas animations
-export const setupAnimationFrameMocks = () => {
-  const originalRAF = global.requestAnimationFrame;
-  const originalCAF = global.cancelAnimationFrame;
-  
-  const rafCallbacks = new Map<number, FrameRequestCallback>();
-  let rafId = 1;
-  
-  global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-    const id = rafId++;
-    rafCallbacks.set(id, callback);
-    // Execute callback asynchronously to simulate real behavior
-    setTimeout(() => {
-      if (rafCallbacks.has(id)) {
-        try {
-          callback(performance.now());
-          rafCallbacks.delete(id);
-        } catch (error) {
-          // Handle animation cleanup errors gracefully
-          console.warn("Animation frame callback error:", error);
-        }
-      }
-    }, 16);
-    return id;
-  });
-  
-  global.cancelAnimationFrame = vi.fn((id: number) => {
-    rafCallbacks.delete(id);
-  });
-  
-  return {
-    cleanup: () => {
-      rafCallbacks.clear();
-      global.requestAnimationFrame = originalRAF;
-      global.cancelAnimationFrame = originalCAF;
-    },
-    triggerAllFrames: () => {
-      const callbacks = Array.from(rafCallbacks.values());
-      rafCallbacks.clear();
-      callbacks.forEach(callback => {
-        try {
-          callback(performance.now());
-        } catch (error) {
-          console.warn("Animation frame trigger error:", error);
-        }
-      });
-    }
-  };
-};
+// Note: setupAnimationFrameMocks is now exported from canvas-mocks.ts to avoid duplication
 
 // Helper to clean up all mocks
 export const cleanupMocks = () => {
@@ -318,7 +280,7 @@ export const testHelpers = {
   waitFor,
   triggerResize,
   setupCanvasMock,
-  setupAnimationFrameMocks,
+
   cleanupMocks,
   mockFetch,
   createMockRelationship,

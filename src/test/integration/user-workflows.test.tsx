@@ -332,8 +332,12 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
         // Trigger auth state change
         const { onAuthStateChanged } = await import("../firebase-mocks");
-        onAuthStateChanged.mockImplementation((callback: any) => {
-          callback(mockUser);
+        onAuthStateChanged.mockImplementation((auth: any, callback: any) => {
+          // auth parameter is intentionally unused in mock
+          void auth;
+          if (typeof callback === 'function') {
+            callback(mockUser);
+          }
           return vi.fn();
         });
 

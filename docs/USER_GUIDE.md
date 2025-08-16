@@ -1,4 +1,4 @@
-# YAKW User Guide
+# Dunbar Circles User Guide
 
 ## Table of Contents
 
@@ -13,9 +13,9 @@
 
 ## Getting Started
 
-### What is YAKW?
+### What is Dunbar Circles?
 
-YAKW (Yet Another Knowledge Worker) is a web application that helps you visualize and understand your social relationships using Robin Dunbar's theory of social cognition. The app provides interactive visualizations to explore how your relationships are distributed across different levels of social connection.
+Dunbar Circles (Yet Another Knowledge Worker) is a web application that helps you visualize and understand your social relationships using Robin Dunbar's theory of social cognition. The app provides interactive visualizations to explore how your relationships are distributed across different levels of social connection.
 
 ### Quick Start
 
@@ -558,7 +558,7 @@ The Levels page (`/levels`) provides detailed information about each Dunbar leve
 
 **Social Media Export Security**
 
-- Delete original export files after importing to YAKW
+- Delete original export files after importing to Dunbar Circles
 - Be cautious about where you download social media exports
 - Don't share export files with others
 - Use secure connections when downloading from social platforms
@@ -583,7 +583,7 @@ The Levels page (`/levels`) provides detailed information about each Dunbar leve
 
 #### If You Work with Confidential Relationships
 
-- Use a dedicated browser profile for YAKW
+- Use a dedicated browser profile for Dunbar Circles
 - Consider using a separate device for sensitive relationship mapping
 - Regularly clear browser data after use
 - Avoid using on shared or public computers
@@ -617,7 +617,7 @@ If you encounter bugs or have feature requests:
 
 ### Contributing
 
-YAKW is open source and welcomes contributions:
+Dunbar Circles is open source and welcomes contributions:
 
 - **Bug Reports**: Help identify and fix issues
 - **Feature Requests**: Suggest new functionality

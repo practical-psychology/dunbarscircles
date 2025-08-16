@@ -14,6 +14,7 @@ import SitemapPage from "./pages/SitemapPage";
 import ContactsPage from "./pages/ContactsPage";
 import ContactEditPage from "./pages/ContactEditPage";
 import ContactImportPage from "./pages/ContactImportPage";
+import ColorContrastTestPage from "./pages/ColorContrastTestPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
@@ -109,6 +110,7 @@ function AppContent() {
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
             <Route path="/contacts/import" element={<ContactImportPage />} />
+            <Route path="/color-contrast-test" element={<ColorContrastTestPage />} />
             <Route path="/firebase-test" element={<FirebaseTestPage />} />
             <Route path="/sitemap" element={<SitemapPage />} />
             <Route path="*" element={<NotFoundPage />} />

@@ -1,6 +1,5 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
-import React from "react";
 import { firebaseMocks } from "./firebase-mocks";
 
 // Note: axe-core configuration is handled in individual test files
@@ -40,21 +39,21 @@ import { createCanvasContextMock } from "./canvas-mocks";
 // Mock HTMLCanvasElement.getContext for Canvas API testing with proper type compatibility
 const mockCanvasContext = createCanvasContextMock();
 
-HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string, contextAttributes?: any) => {
+HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
   if (contextType === "2d") {
     return mockCanvasContext as CanvasRenderingContext2D;
   }
   return null;
-});
+}) as any;
 
 // Mock Canvas toDataURL method with proper type support
-HTMLCanvasElement.prototype.toDataURL = vi.fn((type?: string, quality?: any) => {
+HTMLCanvasElement.prototype.toDataURL = vi.fn((type?: string, _quality?: any) => {
   const mimeType = type || "image/png";
   return `data:${mimeType};base64,mock`;
 });
 
 // Mock Canvas toBlob method with proper callback handling
-HTMLCanvasElement.prototype.toBlob = vi.fn((callback?: BlobCallback | null, type?: string, quality?: any) => {
+HTMLCanvasElement.prototype.toBlob = vi.fn((callback?: BlobCallback | null, type?: string, _quality?: any) => {
   const mimeType = type || "image/png";
   const blob = new Blob(["mock"], { type: mimeType });
   if (callback) {
@@ -223,41 +222,20 @@ global.FileReader = vi.fn().mockImplementation(() => ({
   result: null,
 })) as any;
 
-// Mock requestAnimationFrame for animations with proper cleanup
-const rafCallbacks = new Map<number, FrameRequestCallback>();
-let rafId = 1;
+// Import improved animation frame mocking
+import { setupAnimationFrameMocks } from "./canvas-mocks";
 
-global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-  const id = rafId++;
-  rafCallbacks.set(id, callback);
-  // Execute callback asynchronously to simulate real behavior
-  setTimeout(() => {
-    if (rafCallbacks.has(id)) {
-      try {
-        callback(performance.now());
-        rafCallbacks.delete(id);
-      } catch (error) {
-        // Handle animation cleanup errors gracefully during tests
-        console.warn("Animation frame callback error during test:", error);
-      }
-    }
-  }, 16); // ~60fps
-  return id;
-});
+// Setup animation frame mocks globally
+const animationMocks = setupAnimationFrameMocks();
 
-global.cancelAnimationFrame = vi.fn((id: number) => {
-  rafCallbacks.delete(id);
-});
-
-// Mock performance.now for consistent timing
-global.performance = global.performance || {};
-global.performance.now = vi.fn(() => Date.now());
+// Store cleanup function for use in beforeEach
+const cleanupAnimationMocks = animationMocks.cleanup;
 
 // Reset all mocks before each test
 beforeEach(() => {
   vi.clearAllMocks();
   localStorageMock.clear();
   sessionStorageMock.clear();
-  // Clear any pending animation frames
-  rafCallbacks.clear();
+  // Clean up animation frames
+  cleanupAnimationMocks();
 });

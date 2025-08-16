@@ -56,6 +56,17 @@ export default function ExportManager({
             Export as SVG
           </Button>
         </div>
+        <div className="mt-4">
+          <Button
+            onClick={handleExportSVG}
+            disabled={!svgRef?.current}
+            variant="outline"
+            className="w-full"
+            data-testid="export-radial"
+          >
+            Export Radial Diagram
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

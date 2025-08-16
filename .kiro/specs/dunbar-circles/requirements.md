@@ -1,4 +1,4 @@
-# Requirements Document - YAKW (Dunbar's Number Visualization)
+# Requirements Document - Dunbar Circles (Dunbar's Number Visualization)
 
 ## Project Status: ✅ Core Requirements Complete
 

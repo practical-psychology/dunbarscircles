@@ -63,9 +63,14 @@ export const mockSignInWithPopup = vi.fn(() =>
 
 export const mockSignOut = vi.fn(() => Promise.resolve());
 
-export const mockOnAuthStateChanged = vi.fn((callback) => {
+export const mockOnAuthStateChanged = vi.fn((auth, callback, errorCallback) => {
+  // auth and errorCallback parameters are intentionally unused in mock
+  void auth;
+  void errorCallback;
   // Simulate no user initially
-  callback(null);
+  if (typeof callback === 'function') {
+    callback(null);
+  }
   // Return unsubscribe function
   return vi.fn();
 });

@@ -529,7 +529,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   const handleShareData = async () => {
     try {
       const data = prepareExportData();
-      await shareData(data, "My YAKW Relationship Network");
+      await shareData(data, "My Dunbar Circles Relationship Network");
       setShowExportDialog(false);
     } catch (error) {
       console.error("Share failed:", error);
@@ -607,7 +607,11 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
               <div className="text-2xl font-bold text-green-600">
                 {getRelationshipHealth().toFixed(0)}%
               </div>
-              <Progress value={getRelationshipHealth()} className="mt-2" />
+              <Progress 
+                value={getRelationshipHealth()} 
+                className="mt-2" 
+                aria-label={`Network health: ${getRelationshipHealth().toFixed(0)} percent of relationships are healthy`}
+              />
             </CardContent>
           </Card>
 
@@ -668,8 +672,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
           <div className="flex items-center gap-2">
             <Label htmlFor="filter">Filter by level:</Label>
             <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
+              <SelectTrigger className="w-48" aria-label="Filter contacts by relationship level">
+                <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
@@ -1058,6 +1062,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                     <Progress
                       value={selectedPerson.strength * 100}
                       className="flex-1"
+                      aria-label={`Relationship strength for ${selectedPerson.name}: ${(selectedPerson.strength * 100).toFixed(0)} percent`}
                     />
                     <span className="text-sm">
                       {(selectedPerson.strength * 100).toFixed(0)}%

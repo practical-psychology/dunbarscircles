@@ -1,6 +1,6 @@
 # Database Integration & Authorization
 
-This document describes the enhanced database integration with proper user authorization, error handling, and fallback mechanisms implemented for the YAKW (Dunbar's Number Visualization) application.
+This document describes the enhanced database integration with proper user authorization, error handling, and fallback mechanisms implemented for the Dunbar Circles (Dunbar's Number Visualization) application.
 
 ## Overview
 
@@ -427,7 +427,7 @@ Enable debug logging:
 
 ```typescript
 // Set in environment or localStorage
-localStorage.setItem("YAKW_DEBUG", "true");
+localStorage.setItem("Dunbar Circles_DEBUG", "true");
 ```
 
 This will provide detailed logging of:
@@ -455,4 +455,4 @@ This will provide detailed logging of:
 3. **Background Sync** - Non-blocking data synchronization
 4. **Compression** - Reduce data transfer sizes
 
-This enhanced database integration provides a robust, secure, and user-friendly foundation for the YAKW application's data management needs.
+This enhanced database integration provides a robust, secure, and user-friendly foundation for the Dunbar Circles application's data management needs.

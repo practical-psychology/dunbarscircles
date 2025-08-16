@@ -1,10 +1,7 @@
 import { vi } from "vitest";
 
 // Comprehensive Canvas 2D context mock with proper type compatibility
-export const createCanvasContextMock = (): Partial<CanvasRenderingContext2D> & {
-  _getDrawCalls: () => any;
-  _reset: () => void;
-} => {
+export const createCanvasContextMock = () => {
   const mock = {
     // Drawing rectangles
     fillRect: vi.fn(),
@@ -99,19 +96,38 @@ export const createCanvasContextMock = (): Partial<CanvasRenderingContext2D> & {
     save: vi.fn(),
     restore: vi.fn(),
 
-    // Image data
-    createImageData: vi.fn((width: number, height: number) => ({
-      data: new Uint8ClampedArray(width * height * 4),
-      width,
-      height,
-      colorSpace: "srgb" as PredefinedColorSpace,
-    } as ImageData)),
-    getImageData: vi.fn((x: number, y: number, width: number, height: number) => ({
-      data: new Uint8ClampedArray(width * height * 4),
-      width,
-      height,
-      colorSpace: "srgb" as PredefinedColorSpace,
-    } as ImageData)),
+    // Image data - support both overloads
+    createImageData: vi.fn(((widthOrImageData: number | ImageData, height?: number) => {
+      if (typeof widthOrImageData === 'number' && typeof height === 'number') {
+        return {
+          data: new Uint8ClampedArray(widthOrImageData * height * 4),
+          width: widthOrImageData,
+          height,
+          colorSpace: "srgb" as PredefinedColorSpace,
+        } as ImageData;
+      } else if (widthOrImageData && typeof widthOrImageData === 'object') {
+        // Clone existing ImageData
+        const imageData = widthOrImageData as ImageData;
+        return {
+          data: new Uint8ClampedArray(imageData.data),
+          width: imageData.width,
+          height: imageData.height,
+          colorSpace: imageData.colorSpace || "srgb" as PredefinedColorSpace,
+        } as ImageData;
+      }
+      throw new Error('Invalid arguments for createImageData');
+    }) as CanvasRenderingContext2D['createImageData']),
+    getImageData: vi.fn((x: number, y: number, width: number, height: number) => {
+      // x and y parameters are intentionally unused in mock
+      void x;
+      void y;
+      return {
+        data: new Uint8ClampedArray(width * height * 4),
+        width,
+        height,
+        colorSpace: "srgb" as PredefinedColorSpace,
+      } as ImageData;
+    }),
     putImageData: vi.fn(),
 
     // Drawing images
@@ -135,6 +151,8 @@ export const createCanvasContextMock = (): Partial<CanvasRenderingContext2D> & {
       height: 150,
       toDataURL: vi.fn(() => "data:image/png;base64,mock"),
       toBlob: vi.fn((callback?: BlobCallback | null, type?: string, quality?: any) => {
+        // quality parameter is intentionally unused in mock
+        void quality;
         const blob = new Blob(["mock"], { type: type || "image/png" });
         if (callback) {
           setTimeout(() => callback(blob), 0);
@@ -149,12 +167,15 @@ export const createCanvasContextMock = (): Partial<CanvasRenderingContext2D> & {
     // Additional Canvas API methods
     getContextAttributes: vi.fn(() => ({
       alpha: true,
-      colorSpace: "srgb",
+      colorSpace: "srgb" as PredefinedColorSpace,
       desynchronized: false,
       willReadFrequently: false,
     })),
+  };
 
-    // Helper methods for testing
+  // Helper methods for testing
+  const mockWithHelpers = {
+    ...mock,
     _getDrawCalls: () => {
       return {
         fillRect: mock.fillRect.mock.calls,
@@ -173,130 +194,193 @@ export const createCanvasContextMock = (): Partial<CanvasRenderingContext2D> & {
     _reset: () => {
       Object.values(mock).forEach((value) => {
         if (typeof value === "function" && "mockClear" in value) {
-          value.mockClear();
+          (value as any).mockClear();
         }
       });
     },
   };
 
-  return mock;
+  return mockWithHelpers as unknown as CanvasRenderingContext2D & {
+    _getDrawCalls: () => any;
+    _reset: () => void;
+  };
 };
 
 // Mock HTMLCanvasElement with proper type compatibility
 export const mockCanvas = {
-  getContext: vi.fn((contextType: string, contextAttributes?: any) => {
-    if (contextType === "2d") {
-      return createCanvasContextMock() as CanvasRenderingContext2D;
-    }
-    if (contextType === "webgl" || contextType === "webgl2") {
-      return null; // WebGL not supported in tests
-    }
-    return null;
-  }),
-  toDataURL: vi.fn((type?: string, quality?: any) => {
-    const mimeType = type || "image/png";
-    return `data:${mimeType};base64,mock`;
-  }),
-  toBlob: vi.fn((callback?: BlobCallback | null, type?: string, quality?: any) => {
-    const mimeType = type || "image/png";
-    const blob = new Blob(["mock"], { type: mimeType });
-    if (callback) {
-      setTimeout(() => callback(blob), 0);
-    }
-  }),
-  width: 300,
-  height: 150,
-  clientWidth: 300,
-  clientHeight: 150,
-  offsetWidth: 300,
-  offsetHeight: 150,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
-  getBoundingClientRect: vi.fn(() => ({
-    x: 0,
-    y: 0,
+    getContext: vi.fn((contextType: string, contextAttributes?: any) => {
+      // contextAttributes parameter is intentionally unused in mock
+      void contextAttributes;
+      if (contextType === "2d") {
+        return createCanvasContextMock() as unknown as CanvasRenderingContext2D;
+      }
+      if (contextType === "webgl" || contextType === "webgl2") {
+        return null; // WebGL not supported in tests
+      }
+      return null;
+    }),
+    toDataURL: vi.fn((type?: string, quality?: any) => {
+      const mimeType = type || "image/png";
+      // quality parameter is intentionally unused in mock
+      void quality;
+      return `data:${mimeType};base64,mock`;
+    }),
+    toBlob: vi.fn((callback?: BlobCallback | null, type?: string, quality?: any) => {
+      const mimeType = type || "image/png";
+      // quality parameter is intentionally unused in mock
+      void quality;
+      const blob = new Blob(["mock"], { type: mimeType });
+      if (callback) {
+        setTimeout(() => callback(blob), 0);
+      }
+    }),
     width: 300,
     height: 150,
-    top: 0,
-    left: 0,
-    bottom: 150,
-    right: 300,
-    toJSON: () => ({}),
-  } as DOMRect)),
+    clientWidth: 300,
+    clientHeight: 150,
+    offsetWidth: 300,
+    offsetHeight: 150,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+    getBoundingClientRect: vi.fn(() => ({
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 150,
+      top: 0,
+      left: 0,
+      bottom: 150,
+      right: 300,
+      toJSON: () => ({}),
+    } as DOMRect)),
 };
 
 // Helper function to mock canvas creation
 export const mockCreateCanvas = (width = 300, height = 150) => {
-  const canvas = {
-    ...mockCanvas,
-    width,
-    height,
-    getContext: vi.fn(() => createCanvasContextMock()),
-  };
+    const canvas = {
+      ...mockCanvas,
+      width,
+      height,
+      getContext: vi.fn(() => createCanvasContextMock()),
+    };
   return canvas;
 };
 
 // Mock for testing canvas animations with proper cleanup
 export const mockAnimationFrame = {
-  request: vi.fn((callback: FrameRequestCallback) => {
-    const id = Math.floor(Math.random() * 1000) + 1;
-    setTimeout(() => {
-      try {
-        callback(performance.now());
-      } catch (error) {
-        // Silently handle animation frame errors during cleanup
-        console.warn("Animation frame callback error:", error);
+    callbacks: new Map<number, FrameRequestCallback>(),
+    timeouts: new Map<number, NodeJS.Timeout>(),
+    nextId: 1,
+
+    request: vi.fn((callback: FrameRequestCallback) => {
+      const id = mockAnimationFrame.nextId++;
+      mockAnimationFrame.callbacks.set(id, callback);
+
+      // Execute callback asynchronously to simulate real behavior
+      const timeout = setTimeout(() => {
+        if (mockAnimationFrame.callbacks.has(id)) {
+          try {
+            callback(performance.now());
+            mockAnimationFrame.callbacks.delete(id);
+            mockAnimationFrame.timeouts.delete(id);
+          } catch (error) {
+            // Handle animation cleanup errors gracefully
+            console.warn("Animation frame callback error:", error);
+          }
+        }
+      }, 16); // ~60fps
+
+      mockAnimationFrame.timeouts.set(id, timeout);
+      return id;
+    }),
+
+    cancel: vi.fn((id: number) => {
+      mockAnimationFrame.callbacks.delete(id);
+      const timeout = mockAnimationFrame.timeouts.get(id);
+      if (timeout) {
+        clearTimeout(timeout);
+        mockAnimationFrame.timeouts.delete(id);
       }
-    }, 16); // ~60fps
-    return id;
-  }),
-  cancel: vi.fn((id: number) => {
-    // Mock cancellation - in real implementation would clear the timeout
-    return;
-  }),
+    }),
+
+    cleanup: () => {
+      // Clear all pending callbacks and timeouts
+      mockAnimationFrame.timeouts.forEach(timeout => clearTimeout(timeout));
+      mockAnimationFrame.callbacks.clear();
+      mockAnimationFrame.timeouts.clear();
+    mockAnimationFrame.nextId = 1;
+  }
 };
 
 // Enhanced animation frame setup for tests
 export const setupAnimationFrameMocks = () => {
-  global.requestAnimationFrame = mockAnimationFrame.request as any;
-  global.cancelAnimationFrame = mockAnimationFrame.cancel as any;
-  
-  // Also mock performance.now for consistent timing
-  global.performance = global.performance || {};
-  global.performance.now = vi.fn(() => Date.now());
-  
-  return {
-    cleanup: () => {
-      vi.clearAllMocks();
-    },
-    triggerFrame: (timestamp?: number) => {
-      const callbacks = mockAnimationFrame.request.mock.calls.map(call => call[0]);
-      callbacks.forEach(callback => {
-        try {
-          callback(timestamp || performance.now());
-        } catch (error) {
-          console.warn("Animation frame trigger error:", error);
+    // Store original functions for restoration
+    const originalRAF = global.requestAnimationFrame;
+    const originalCAF = global.cancelAnimationFrame;
+
+    // Reset the mock state
+    mockAnimationFrame.cleanup();
+
+    global.requestAnimationFrame = mockAnimationFrame.request as any;
+    global.cancelAnimationFrame = mockAnimationFrame.cancel as any;
+
+    // Also mock performance.now for consistent timing
+    global.performance = global.performance || {};
+    const originalPerformanceNow = global.performance.now;
+    global.performance.now = vi.fn(() => Date.now());
+
+    return {
+      cleanup: () => {
+        mockAnimationFrame.cleanup();
+        global.requestAnimationFrame = originalRAF;
+        global.cancelAnimationFrame = originalCAF;
+        if (originalPerformanceNow) {
+          global.performance.now = originalPerformanceNow;
         }
+        vi.clearAllMocks();
+      },
+      triggerAllFrames: () => {
+        const callbacks = Array.from(mockAnimationFrame.callbacks.values());
+        mockAnimationFrame.callbacks.clear();
+        mockAnimationFrame.timeouts.forEach(timeout => clearTimeout(timeout));
+        mockAnimationFrame.timeouts.clear();
+
+        callbacks.forEach(callback => {
+          try {
+            callback(performance.now());
+          } catch (error) {
+            console.warn("Animation frame trigger error:", error);
+          }
+        });
+      },
+      triggerFrame: (timestamp?: number) => {
+        const callbacks = Array.from(mockAnimationFrame.callbacks.values());
+        callbacks.forEach(callback => {
+          try {
+            callback(timestamp || performance.now());
+          } catch (error) {
+            console.warn("Animation frame trigger error:", error);
+          }
       });
     }
   };
 };
 
 // Mock for testing canvas events
-export const mockCanvasEvent = (type: string, x: number, y: number) => {
-  return new MouseEvent(type, {
-    clientX: x,
-    clientY: y,
-    bubbles: true,
+export const mockCanvasEvent = (type: string, clientX: number, clientY: number) => {
+    return new MouseEvent(type, {
+      clientX,
+      clientY,
+      bubbles: true,
     cancelable: true,
   });
 };
 
 // Helper to simulate canvas drawing operations
 export const simulateCanvasDrawing = (context: any) => {
-  context.beginPath();
-  context.arc(50, 50, 20, 0, Math.PI * 2);
+    context.beginPath();
+    context.arc(50, 50, 20, 0, Math.PI * 2);
   context.fill();
   return context._getDrawCalls();
 };

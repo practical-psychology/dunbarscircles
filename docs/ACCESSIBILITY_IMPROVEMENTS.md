@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the comprehensive accessibility improvements implemented for the YAKW (Dunbar's Number Visualization) application to meet WCAG 2.1 AA standards and enhance usability for all users.
+This document summarizes the comprehensive accessibility improvements implemented for the Dunbar Circles (Dunbar's Number Visualization) application to meet WCAG 2.1 AA standards and enhance usability for all users.
 
 ## Implemented Features
 
@@ -213,6 +213,6 @@ The accessibility improvements are compatible with:
 
 ## Conclusion
 
-The accessibility improvements significantly enhance the YAKW application's usability for users with disabilities while maintaining the existing user experience for all users. The implementation follows industry best practices and provides a solid foundation for future accessibility enhancements.
+The accessibility improvements significantly enhance the Dunbar Circles application's usability for users with disabilities while maintaining the existing user experience for all users. The implementation follows industry best practices and provides a solid foundation for future accessibility enhancements.
 
 The automated testing suite ensures that accessibility standards are maintained as the application evolves, and the comprehensive color contrast validation helps maintain visual accessibility across different themes and user preferences.
