@@ -15,129 +15,167 @@ export interface ExportData {
   };
 }
 
-// Canvas to PNG export
+// Canvas to PNG export with error handling
 export const exportCanvasToPNG = (
   canvas: HTMLCanvasElement,
   filename: string = "network-diagram.png",
 ): void => {
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+  try {
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  } catch (error) {
+    console.error("Failed to export canvas to PNG:", error);
+    throw new Error("Canvas export failed. Please try again.");
+  }
 };
 
-// SVG export utility
+// SVG export utility with error handling
 export const exportSVGToFile = (
   svgElement: SVGElement,
   filename: string = "diagram.svg",
 ): void => {
-  const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svgElement);
-  const blob = new Blob([svgString], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
+  try {
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgElement);
+    const blob = new Blob([svgString], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  link.click();
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
 
-  URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Failed to export SVG:", error);
+    throw new Error("SVG export failed. Please try again.");
+  }
 };
 
-// Convert SVG to PNG
+// Convert SVG to PNG with error handling
 export const convertSVGToPNG = (
   svgElement: SVGElement,
   filename: string = "diagram.png",
 ): void => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Canvas 2D context not available");
+    }
 
-  const svgData = new XMLSerializer().serializeToString(svgElement);
-  const img = new Image();
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const img = new Image();
 
-  img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-    exportCanvasToPNG(canvas, filename);
-  };
+    img.onload = () => {
+      try {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        exportCanvasToPNG(canvas, filename);
+      } catch (error) {
+        console.error("Failed to convert SVG to PNG:", error);
+        throw new Error("SVG to PNG conversion failed");
+      }
+    };
 
-  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(svgBlob);
-  img.src = url;
+    img.onerror = () => {
+      throw new Error("Failed to load SVG image");
+    };
+
+    const svgBlob = new Blob([svgData], {
+      type: "image/svg+xml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(svgBlob);
+    img.src = url;
+  } catch (error) {
+    console.error("SVG to PNG conversion error:", error);
+    throw error;
+  }
 };
 
-// Export relationship data as JSON
+// Export relationship data as JSON with error handling
 export const exportToJSON = (
   data: ExportData,
   filename: string = "relationships.json",
 ): void => {
-  const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+  try {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  link.click();
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
 
-  URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Failed to export JSON:", error);
+    throw new Error("JSON export failed. Please try again.");
+  }
 };
 
-// Export relationship data as CSV
+// Export relationship data as CSV with error handling
 export const exportToCSV = (
   people: Person[],
   levels: Level[],
   filename: string = "relationships.csv",
 ): void => {
-  const headers = [
-    "Name",
-    "Level",
-    "Level Name",
-    "Last Contact",
-    "Contact Frequency (days)",
-    "Relationship Strength",
-    "Decay Rate",
-    "Platform",
-    "Days Since Contact",
-    "Status",
-  ];
-
-  const rows = people.map((person) => {
-    const level = levels.find((l) => l.id === person.levelId);
-    const daysSinceContact = Math.floor(
-      (Date.now() - person.lastContact.getTime()) / (1000 * 60 * 60 * 24),
-    );
-    const isDecaying = daysSinceContact > person.contactFrequency * 1.5;
-
-    return [
-      person.name,
-      person.levelId,
-      level?.name || "Unknown",
-      person.lastContact.toISOString().split("T")[0],
-      person.contactFrequency.toString(),
-      (person.strength * 100).toFixed(1) + "%",
-      person.decayRate.toString(),
-      person.platform,
-      daysSinceContact.toString(),
-      isDecaying ? "Needs Attention" : "Healthy",
+  try {
+    const headers = [
+      "Name",
+      "Level",
+      "Level Name",
+      "Last Contact",
+      "Contact Frequency (days)",
+      "Relationship Strength",
+      "Decay Rate",
+      "Platform",
+      "Days Since Contact",
+      "Status",
     ];
-  });
 
-  const csvContent = [headers, ...rows]
-    .map((row) => row.map((field) => `"${field}"`).join(","))
-    .join("\n");
+    const rows = people.map((person) => {
+      const level = levels.find((l) => l.id === person.levelId);
+      const daysSinceContact = Math.floor(
+        (Date.now() - person.lastContact.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const isDecaying = daysSinceContact > person.contactFrequency * 1.5;
 
-  const blob = new Blob([csvContent], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
+      return [
+        person.name,
+        person.levelId,
+        level?.name || "Unknown",
+        person.lastContact.toISOString().split("T")[0],
+        person.contactFrequency.toString(),
+        (person.strength * 100).toFixed(1) + "%",
+        person.decayRate.toString(),
+        person.platform,
+        daysSinceContact.toString(),
+        isDecaying ? "Needs Attention" : "Healthy",
+      ];
+    });
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  link.click();
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
 
-  URL.revokeObjectURL(url);
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Failed to export CSV:", error);
+    throw new Error("CSV export failed. Please try again.");
+  }
 };
 
 // Generate print-friendly HTML

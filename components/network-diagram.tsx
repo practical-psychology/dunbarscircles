@@ -25,19 +25,24 @@ export function NetworkDiagram({
   onLevelSelect,
 }: NetworkDiagramProps) {
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
+  const [focusedLevel, setFocusedLevel] = useState<string | null>(null);
+
   useEffect(() => {
     // Trigger re-render when levels change
   }, [levels]);
 
   const getCircleSize = (count: number) => {
-    if (count <= 5) return 40;
-    if (count <= 15) return 60;
-    if (count <= 50) return 80;
-    if (count <= 150) return 100;
-    if (count <= 500) return 120;
-    if (count <= 1500) return 140;
-    if (count <= 5000) return 160;
-    if (count <= 15000) return 180;
+    // Ensure count is a valid number
+    const validCount = typeof count === "number" && !isNaN(count) ? count : 0;
+
+    if (validCount <= 5) return 40;
+    if (validCount <= 15) return 60;
+    if (validCount <= 50) return 80;
+    if (validCount <= 150) return 100;
+    if (validCount <= 500) return 120;
+    if (validCount <= 1500) return 140;
+    if (validCount <= 5000) return 160;
+    if (validCount <= 15000) return 180;
     return 200;
   };
 
@@ -51,11 +56,22 @@ export function NetworkDiagram({
     };
   };
 
+  const handleLevelInteraction = (levelId: string) => {
+    const isSelected = selectedLevel === levelId;
+    onLevelSelect(isSelected ? null : levelId);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent, levelId: string) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleLevelInteraction(levelId);
+    }
+  };
+
   return (
     <div
       data-testid="network-diagram"
       className="relative w-full h-[600px] bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/50 dark:to-blue-900/50 rounded-2xl border border-white/20 dark:border-gray-700/20 backdrop-blur-xl overflow-hidden"
-      role="region"
       aria-label="Interactive network diagram showing relationship levels according to Dunbar's hierarchy"
     >
       {/* Liquid background animation */}
@@ -139,7 +155,7 @@ export function NetworkDiagram({
             cy={300}
             r={25}
             fill="url(#centerGradient)"
-            className="cursor-pointer drop-shadow-lg"
+            className="cursor-pointer drop-shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             filter="url(#liquidGlow)"
             animate={{
               r: [25, 28, 25],
@@ -151,7 +167,9 @@ export function NetworkDiagram({
             }}
             role="button"
             aria-label="Center node representing you in the relationship network"
+            aria-pressed={false}
             tabIndex={0}
+            onKeyDown={(e) => handleKeyDown(e, "center")}
           />
           <text
             x={400}
@@ -208,6 +226,10 @@ export function NetworkDiagram({
           const isSelected = selectedLevel === level.id;
           const isHovered = hoveredLevel === level.id;
 
+          // Ensure size is a valid number to prevent undefined radius
+          const safeSize = typeof size === "number" && !isNaN(size) ? size : 40;
+          const radius = safeSize / 2;
+
           return (
             <motion.g
               key={level.id}
@@ -263,7 +285,7 @@ export function NetworkDiagram({
               <motion.circle
                 cx={pos.x}
                 cy={pos.y}
-                r={size / 2}
+                r={radius}
                 fill={`url(#gradient-${level.id})`}
                 stroke={isSelected ? "#1f2937" : "white"}
                 strokeWidth={isSelected ? 4 : 2}
@@ -271,16 +293,20 @@ export function NetworkDiagram({
                 filter="url(#liquidGlow)"
                 onMouseEnter={() => setHoveredLevel(level.id)}
                 onMouseLeave={() => setHoveredLevel(null)}
-                onClick={() => onLevelSelect(isSelected ? null : level.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onLevelSelect(isSelected ? null : level.id);
-                  }
-                }}
+                onFocus={() => setFocusedLevel(level.id)}
+                onBlur={() => setFocusedLevel(null)}
+                onClick={() => handleLevelInteraction(level.id)}
+                onKeyDown={(e) => handleKeyDown(e, level.id)}
                 animate={{
-                  r: isHovered || isSelected ? size / 2 + 5 : size / 2,
-                  strokeWidth: isSelected ? 4 : isHovered ? 3 : 2,
+                  r:
+                    isHovered || isSelected || focusedLevel === level.id
+                      ? radius + 5
+                      : radius,
+                  strokeWidth: isSelected
+                    ? 4
+                    : isHovered || focusedLevel === level.id
+                      ? 3
+                      : 2,
                 }}
                 transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
                 whileHover={{ scale: 1.1 }}
@@ -297,13 +323,13 @@ export function NetworkDiagram({
                 <motion.circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={size / 2}
+                  r={radius}
                   fill="none"
                   stroke={`url(#gradient-${level.id})`}
                   strokeWidth={2}
                   strokeOpacity={0.6}
-                  initial={{ r: size / 2, opacity: 0.6 }}
-                  animate={{ r: size / 2 + 20, opacity: 0 }}
+                  initial={{ r: radius, opacity: 0.6 }}
+                  animate={{ r: radius + 20, opacity: 0 }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
               )}

@@ -1,24 +1,46 @@
 import { vi } from "vitest";
 
-// Enhanced storage mock that behaves like real localStorage/sessionStorage
+// Enhanced storage mock that behaves like real localStorage/sessionStorage with error simulation
 export const createStorageMock = () => {
   let store: Record<string, string> = {};
+  let shouldThrow = false;
+  let errorMessage = "Storage error";
 
   const mock = {
-    getItem: vi.fn((key: string) => store[key] || null),
+    getItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
+      return store[key] || null;
+    }),
     setItem: vi.fn((key: string, value: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       store[key] = String(value);
     }),
     removeItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       delete store[key];
     }),
     clear: vi.fn(() => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       store = {};
     }),
     get length() {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       return Object.keys(store).length;
     },
     key: vi.fn((index: number) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       const keys = Object.keys(store);
       return keys[index] || null;
     }),
@@ -26,6 +48,14 @@ export const createStorageMock = () => {
     _getStore: () => ({ ...store }),
     _setStore: (newStore: Record<string, string>) => {
       store = { ...newStore };
+    },
+    // Error simulation methods
+    _simulateError: (message: string = "Storage error") => {
+      shouldThrow = true;
+      errorMessage = message;
+    },
+    _clearError: () => {
+      shouldThrow = false;
     },
   };
 
@@ -84,4 +114,23 @@ export const mockStorageEvent = (
     url: window.location.href,
   });
   return event;
+};
+
+// Helper to simulate localStorage being completely unavailable
+export const simulateStorageUnavailable = () => {
+  // Remove localStorage from window object
+  Object.defineProperty(window, "localStorage", {
+    value: undefined,
+    writable: true,
+  });
+};
+
+// Helper to restore localStorage mock
+export const restoreStorageMock = (
+  storageMock: ReturnType<typeof createStorageMock>,
+) => {
+  Object.defineProperty(window, "localStorage", {
+    value: storageMock,
+    writable: true,
+  });
 };

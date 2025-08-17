@@ -1,15 +1,24 @@
-
-import { ColorContrastValidator, useColorContrastValidation } from '@/components/color-contrast-validator';
-import { useTheme } from '@/components/theme-provider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import {
+  ColorContrastValidator,
+  useColorContrastValidation,
+} from "@/components/color-contrast-validator";
+import { useTheme } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 export default function ColorContrastTestPage() {
   const { theme, setTheme } = useTheme();
-  const { complianceRate, isFullyCompliant, failedCount, passedCount } = useColorContrastValidation();
+  const { complianceRate, isFullyCompliant, failedCount, passedCount } =
+    useColorContrastValidation();
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -25,35 +34,36 @@ export default function ColorContrastTestPage() {
         <CardHeader>
           <CardTitle>Theme Testing</CardTitle>
           <CardDescription>
-            Switch between themes to test color contrast in both light and dark modes
+            Switch between themes to test color contrast in both light and dark
+            modes
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Button 
-              variant={theme === 'light' ? 'default' : 'outline'}
-              onClick={() => setTheme('light')}
+            <Button
+              variant={theme === "light" ? "default" : "outline"}
+              onClick={() => setTheme("light")}
             >
               Light Theme
             </Button>
-            <Button 
-              variant={theme === 'dark' ? 'default' : 'outline'}
-              onClick={() => setTheme('dark')}
+            <Button
+              variant={theme === "dark" ? "default" : "outline"}
+              onClick={() => setTheme("dark")}
             >
               Dark Theme
             </Button>
-            <Button 
-              variant={theme === 'system' ? 'default' : 'outline'}
-              onClick={() => setTheme('system')}
+            <Button
+              variant={theme === "system" ? "default" : "outline"}
+              onClick={() => setTheme("system")}
             >
               System Theme
             </Button>
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span>WCAG AA Compliance Rate</span>
-              <Badge variant={isFullyCompliant ? 'default' : 'destructive'}>
+              <Badge variant={isFullyCompliant ? "default" : "destructive"}>
                 {Math.round(complianceRate)}%
               </Badge>
             </div>
@@ -74,7 +84,8 @@ export default function ColorContrastTestPage() {
             </span>
           ) : (
             <span className="text-destructive">
-              ⚠️ {failedCount} color combination(s) need improvement for full WCAG AA compliance.
+              ⚠️ {failedCount} color combination(s) need improvement for full
+              WCAG AA compliance.
             </span>
           )}
         </AlertDescription>
@@ -88,8 +99,12 @@ export default function ColorContrastTestPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <Button className="w-full">Primary Button</Button>
-            <Button variant="secondary" className="w-full">Secondary Button</Button>
-            <Button variant="destructive" className="w-full">Destructive Button</Button>
+            <Button variant="secondary" className="w-full">
+              Secondary Button
+            </Button>
+            <Button variant="destructive" className="w-full">
+              Destructive Button
+            </Button>
           </CardContent>
         </Card>
 
@@ -140,19 +155,26 @@ export default function ColorContrastTestPage() {
           <div>
             <h4 className="font-semibold mb-2">Improvements Made:</h4>
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Darkened muted text from 45.1% to 40% lightness for better contrast</li>
-              <li>Adjusted destructive colors for both light and dark themes</li>
+              <li>
+                Darkened muted text from 45.1% to 40% lightness for better
+                contrast
+              </li>
+              <li>
+                Adjusted destructive colors for both light and dark themes
+              </li>
               <li>Optimized chart colors for better text readability</li>
               <li>Enhanced sidebar colors for improved contrast ratios</li>
               <li>Updated liquid animation colors to maintain accessibility</li>
             </ul>
           </div>
-          
+
           <div>
             <h4 className="font-semibold mb-2">WCAG AA Requirements:</h4>
             <ul className="list-disc list-inside space-y-1 text-sm">
               <li>Normal text: minimum 4.5:1 contrast ratio</li>
-              <li>Large text (18pt+ or 14pt+ bold): minimum 3.0:1 contrast ratio</li>
+              <li>
+                Large text (18pt+ or 14pt+ bold): minimum 3.0:1 contrast ratio
+              </li>
               <li>Non-text elements: minimum 3.0:1 contrast ratio</li>
             </ul>
           </div>

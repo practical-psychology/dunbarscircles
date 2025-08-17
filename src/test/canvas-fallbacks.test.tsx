@@ -112,7 +112,7 @@ describe("Canvas Fallbacks", () => {
     // Both canvas and fallback should be present in the DOM
     expect(screen.getByTestId("test-canvas")).toBeInTheDocument();
     expect(screen.getByTestId("fallback-message")).toBeInTheDocument();
-    
+
     // The component should handle the case where getContext returns null gracefully
     const mockGetContextNull = vi.fn(() => null);
     Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {

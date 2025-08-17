@@ -47,18 +47,29 @@ const liquidPageTransition = {
 
 function AppContent() {
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Check if we're in a test environment
+  const isTestEnvironment =
+    typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+  // In test environment, skip loading screen entirely
+  const [isLoading, setIsLoading] = useState(!isTestEnvironment);
 
   useEffect(() => {
+    if (isTestEnvironment) {
+      // Skip loading in tests
+      return;
+    }
+
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isTestEnvironment]);
 
   if (isLoading) {
-    return <LiquidLoadingScreen />;
+    return <LiquidLoadingScreen skipDelay={isTestEnvironment} />;
   }
 
   return (
@@ -110,7 +121,10 @@ function AppContent() {
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
             <Route path="/contacts/import" element={<ContactImportPage />} />
-            <Route path="/color-contrast-test" element={<ColorContrastTestPage />} />
+            <Route
+              path="/color-contrast-test"
+              element={<ColorContrastTestPage />}
+            />
             <Route path="/firebase-test" element={<FirebaseTestPage />} />
             <Route path="/sitemap" element={<SitemapPage />} />
             <Route path="*" element={<NotFoundPage />} />

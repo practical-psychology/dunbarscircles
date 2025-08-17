@@ -137,16 +137,22 @@ export default function ContactImportPage() {
   };
 
   const parseJSONFile = (content: string): StoredContact[] => {
-    const data = JSON.parse(content);
+    let data;
+    try {
+      data = JSON.parse(content);
+    } catch (error) {
+      throw new Error("Invalid JSON format. Please check your file.");
+    }
+
     const contacts: StoredContact[] = [];
 
-    // Handle Facebook friends format
-    if (data.friends && Array.isArray(data.friends)) {
-      data.friends.forEach((friend: any, index: number) => {
-        if (friend.name) {
+    // Handle Facebook friends format v2 (newer format)
+    if (data.friends_v2 && Array.isArray(data.friends_v2)) {
+      data.friends_v2.forEach((friend: any, index: number) => {
+        if (friend.name && friend.name.trim()) {
           const contact: StoredContact = {
             id: `import_${Date.now()}_${index}`,
-            name: friend.name,
+            name: friend.name.trim(),
             levelId: "recognition-group", // Default level for Facebook friends
             lastContact: friend.timestamp
               ? new Date(friend.timestamp * 1000)
@@ -157,9 +163,38 @@ export default function ContactImportPage() {
             platform: "Facebook",
             source: "facebook",
             importDate: new Date(),
-            email: friend.email || "",
-            phone: friend.phone || "",
-            notes: friend.notes || "",
+            email: "",
+            phone: "",
+            notes: "",
+          };
+          contacts.push(contact);
+        }
+      });
+    }
+    // Handle Facebook friends format v1 (older format with more data)
+    else if (
+      data.friends &&
+      data.friends.data &&
+      Array.isArray(data.friends.data)
+    ) {
+      data.friends.data.forEach((friend: any, index: number) => {
+        if (friend.name && friend.name.trim()) {
+          const contact: StoredContact = {
+            id: `import_${Date.now()}_${index}`,
+            name: friend.name.trim(),
+            levelId: "recognition-group", // Default level for Facebook friends
+            lastContact: friend.timestamp
+              ? new Date(friend.timestamp * 1000)
+              : new Date(),
+            contactFrequency: 365, // Default yearly for Facebook friends
+            strength: 0.2, // Lower strength for Facebook friends
+            decayRate: 0.1,
+            platform: "Facebook",
+            source: "facebook",
+            importDate: new Date(),
+            email: friend.contact_info?.email || "",
+            phone: "",
+            notes: friend.about || "",
           };
           contacts.push(contact);
         }
@@ -189,6 +224,12 @@ export default function ContactImportPage() {
           contacts.push(contact);
         }
       });
+    }
+    // If no recognized format found, throw an error
+    else {
+      throw new Error(
+        "Unrecognized JSON format. Please ensure you're uploading a Facebook friends export file.",
+      );
     }
 
     return contacts;

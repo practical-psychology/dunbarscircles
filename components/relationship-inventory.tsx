@@ -67,8 +67,14 @@ interface FacebookFriend {
   };
 }
 
+// Support for new Facebook API v2 format
+interface FacebookFriendV2 {
+  name: string;
+  timestamp: number;
+}
+
 interface FacebookData {
-  friends: {
+  friends?: {
     data: FacebookFriend[];
     paging?: {
       cursors: {
@@ -80,6 +86,8 @@ interface FacebookData {
       total_count: number;
     };
   };
+  // New Facebook API v2 format
+  friends_v2?: FacebookFriendV2[];
   metadata?: {
     version: string;
     export_date: string;
@@ -244,7 +252,12 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         if (!level || (filterLevel !== "all" && filterLevel !== person.levelId))
           return;
 
-        const radius = 8 + person.strength * 12;
+        // Ensure strength is a valid number to prevent NaN radius
+        const safeStrength =
+          typeof person.strength === "number" && !isNaN(person.strength)
+            ? person.strength
+            : 0.5;
+        const radius = 8 + safeStrength * 12;
         const color = level.color.replace("bg-", "#");
 
         // Node circle
@@ -356,38 +369,53 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
 
     try {
       if (type === "facebook") {
-        // Handle Facebook JSON
+        // Handle Facebook JSON (both old and new formats)
         const text = await file.text();
         const facebookData: FacebookData = JSON.parse(text);
 
-        const newPeople: Person[] = facebookData.friends.data.map(
-          (friend, index) => {
-            const lastContactDate = new Date(friend.timestamp * 1000); // Convert Unix timestamp
-            const daysSinceContact =
-              (Date.now() - lastContactDate.getTime()) / (1000 * 60 * 60 * 24);
+        let friendsArray: (FacebookFriend | FacebookFriendV2)[] = [];
 
-            // Calculate relationship strength based on recency and available info
-            let strength = 0.5; // Base strength
-            if (daysSinceContact < 365) strength += 0.2; // Recent connection
-            if (friend.contact_info?.email) strength += 0.1; // Has email
-            if (friend.about) strength += 0.1; // Has description
-            if (friend.hometown) strength += 0.05; // Has location info
+        // Check for new Facebook API v2 format first
+        if (facebookData.friends_v2) {
+          friendsArray = facebookData.friends_v2;
+        } else if (facebookData.friends?.data) {
+          // Fall back to old format
+          friendsArray = facebookData.friends.data;
+        } else {
+          throw new Error(
+            "Invalid Facebook data format. Expected 'friends_v2' or 'friends.data' structure.",
+          );
+        }
 
-            const person: Person = {
-              id: `fb_${Date.now()}_${index}`,
-              name: friend.name,
-              levelId: "", // Will be set by categorization
-              lastContact: lastContactDate,
-              contactFrequency: Math.max(30, daysSinceContact), // Estimate frequency
-              strength: Math.min(strength, 1),
-              decayRate: 0.01 + daysSinceContact / 10000, // Older connections decay faster
-              platform: `Facebook${friend.contact_info?.email ? " (Email)" : ""}`,
-            };
+        const newPeople: Person[] = friendsArray.map((friend, index) => {
+          const lastContactDate = new Date(friend.timestamp * 1000); // Convert Unix timestamp
+          const daysSinceContact =
+            (Date.now() - lastContactDate.getTime()) / (1000 * 60 * 60 * 24);
 
-            person.levelId = categorizePerson(person);
-            return person;
-          },
-        );
+          // Calculate relationship strength based on recency and available info
+          let strength = 0.5; // Base strength
+          if (daysSinceContact < 365) strength += 0.2; // Recent connection
+
+          // Additional info only available in old format
+          if ("contact_info" in friend && friend.contact_info?.email)
+            strength += 0.1; // Has email
+          if ("about" in friend && friend.about) strength += 0.1; // Has description
+          if ("hometown" in friend && friend.hometown) strength += 0.05; // Has location info
+
+          const person: Person = {
+            id: `fb_${Date.now()}_${index}`,
+            name: friend.name,
+            levelId: "", // Will be set by categorization
+            lastContact: lastContactDate,
+            contactFrequency: Math.max(30, daysSinceContact), // Estimate frequency
+            strength: Math.min(strength, 1),
+            decayRate: 0.01 + daysSinceContact / 10000, // Older connections decay faster
+            platform: `Facebook${"contact_info" in friend && friend.contact_info?.email ? " (Email)" : ""}`,
+          };
+
+          person.levelId = categorizePerson(person);
+          return person;
+        });
 
         setImportedData((prev) => ({ ...prev, facebook: facebookData }));
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
@@ -607,9 +635,9 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
               <div className="text-2xl font-bold text-green-600">
                 {getRelationshipHealth().toFixed(0)}%
               </div>
-              <Progress 
-                value={getRelationshipHealth()} 
-                className="mt-2" 
+              <Progress
+                value={getRelationshipHealth()}
+                className="mt-2"
                 aria-label={`Network health: ${getRelationshipHealth().toFixed(0)} percent of relationships are healthy`}
               />
             </CardContent>
@@ -672,7 +700,10 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
           <div className="flex items-center gap-2">
             <Label htmlFor="filter">Filter by level:</Label>
             <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-48" aria-label="Filter contacts by relationship level">
+              <SelectTrigger
+                className="w-48"
+                aria-label="Filter contacts by relationship level"
+              >
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
@@ -707,8 +738,9 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
               <DialogHeader>
                 <DialogTitle>Import Social Graph Data</DialogTitle>
                 <DialogDescription>
-                  Upload your Facebook friends export (JSON) or LinkedIn
-                  connections (CSV) to automatically map your network.
+                  Upload your Facebook friends export (JSON - supports both old
+                  and new formats) or LinkedIn connections (CSV) to
+                  automatically map your network.
                 </DialogDescription>
               </DialogHeader>
 
@@ -748,15 +780,18 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                       htmlFor="facebook-upload"
                       className="text-xs text-gray-500"
                     >
-                      Expected format: Facebook JSON export with friends data
+                      Expected format: Facebook JSON export (supports
+                      friends.data or friends_v2 format)
                     </label>
 
                     {importedData.facebook && (
                       <div className="p-3 bg-blue-50 rounded-lg">
                         <p className="text-sm font-medium text-blue-700">
                           &quot;Imported{" "}
-                          {importedData.facebook.friends.data.length}&quot;{" "}
-                          Facebook friends
+                          {importedData.facebook?.friends_v2?.length ||
+                            importedData.facebook?.friends?.data?.length ||
+                            0}
+                          &quot; Facebook friends
                         </p>
                         <p className="text-xs text-blue-600">
                           Export date:{" "}

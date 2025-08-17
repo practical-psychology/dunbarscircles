@@ -44,6 +44,8 @@ export default function ExportManager({
             disabled={!canvasRef?.current}
             variant="outline"
             data-testid="export-png"
+            aria-label="Export network diagram as PNG image"
+            title="Export as PNG image file"
           >
             Export as PNG
           </Button>
@@ -52,6 +54,8 @@ export default function ExportManager({
             disabled={!svgRef?.current}
             variant="outline"
             data-testid="export-svg"
+            aria-label="Export diagram as SVG vector file"
+            title="Export as SVG vector file"
           >
             Export as SVG
           </Button>
@@ -63,6 +67,8 @@ export default function ExportManager({
             variant="outline"
             className="w-full"
             data-testid="export-radial"
+            aria-label="Export radial relationship diagram as SVG"
+            title="Export radial diagram as SVG file"
           >
             Export Radial Diagram
           </Button>

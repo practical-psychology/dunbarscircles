@@ -1,13 +1,29 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import { render, testHelpers } from "../test-utils";
 
-// Test component that simulates export functionality
+// Test component that simulates export functionality with proper error handling
 const ExportTestComponent = () => {
+  const [lastError, setLastError] = React.useState<Error | null>(null);
+  const [exportStatus, setExportStatus] = React.useState<string>("");
+
   return (
     <div data-testid="export-test-component">
       <h1>Export Workflow Test</h1>
+
+      {/* Error Display */}
+      {lastError && (
+        <div data-testid="error-display" style={{ color: "red" }}>
+          Error: {lastError.message}
+        </div>
+      )}
+
+      {/* Status Display */}
+      {exportStatus && (
+        <div data-testid="status-display">Status: {exportStatus}</div>
+      )}
 
       {/* Canvas Export Section */}
       <div data-testid="canvas-export-section">
@@ -17,15 +33,21 @@ const ExportTestComponent = () => {
           data-testid="export-canvas-png"
           onClick={() => {
             try {
-              const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+              setLastError(null);
+              setExportStatus("");
+              const canvas = document.querySelector(
+                "canvas",
+              ) as HTMLCanvasElement;
               if (canvas) {
                 const dataURL = canvas.toDataURL("image/png");
                 // Don't actually click the link in tests, just verify the process
                 console.log("Canvas exported as PNG:", dataURL);
+                setExportStatus("Canvas PNG export successful");
               }
             } catch (error) {
               console.error("Canvas export failed:", error);
-              throw error;
+              setLastError(error as Error);
+              setExportStatus("Canvas PNG export failed");
             }
           }}
         >
@@ -35,15 +57,20 @@ const ExportTestComponent = () => {
           data-testid="export-canvas-svg"
           onClick={() => {
             try {
+              setLastError(null);
+              setExportStatus("");
               // Simulate SVG export
-              const svgContent = '<svg><rect width="100" height="100" fill="red"/></svg>';
+              const svgContent =
+                '<svg><rect width="100" height="100" fill="red"/></svg>';
               const blob = new Blob([svgContent], { type: "image/svg+xml" });
               const url = URL.createObjectURL(blob);
               console.log("SVG exported:", url);
               URL.revokeObjectURL(url);
+              setExportStatus("SVG export successful");
             } catch (error) {
               console.error("SVG export failed:", error);
-              throw error;
+              setLastError(error as Error);
+              setExportStatus("SVG export failed");
             }
           }}
         >
@@ -58,15 +85,21 @@ const ExportTestComponent = () => {
           data-testid="export-data-json"
           onClick={() => {
             try {
-              const data = { contacts: [{ name: "Test", level: "inner-circle" }] };
+              setLastError(null);
+              setExportStatus("");
+              const data = {
+                contacts: [{ name: "Test", level: "inner-circle" }],
+              };
               const jsonString = JSON.stringify(data, null, 2);
               const blob = new Blob([jsonString], { type: "application/json" });
               const url = URL.createObjectURL(blob);
               console.log("JSON exported:", url);
               URL.revokeObjectURL(url);
+              setExportStatus("JSON export successful");
             } catch (error) {
               console.error("JSON export failed:", error);
-              throw error;
+              setLastError(error as Error);
+              setExportStatus("JSON export failed");
             }
           }}
         >
@@ -76,14 +109,18 @@ const ExportTestComponent = () => {
           data-testid="export-data-csv"
           onClick={() => {
             try {
+              setLastError(null);
+              setExportStatus("");
               const csvContent = "Name,Level\nTest,inner-circle\n";
               const blob = new Blob([csvContent], { type: "text/csv" });
               const url = URL.createObjectURL(blob);
               console.log("CSV exported:", url);
               URL.revokeObjectURL(url);
+              setExportStatus("CSV export successful");
             } catch (error) {
               console.error("CSV export failed:", error);
-              throw error;
+              setLastError(error as Error);
+              setExportStatus("CSV export failed");
             }
           }}
         >
@@ -98,26 +135,34 @@ const ExportTestComponent = () => {
           data-testid="export-all-formats"
           onClick={async () => {
             try {
+              setLastError(null);
+              setExportStatus("");
               // Export multiple formats
               const formats = ["png", "json", "csv"];
               for (const format of formats) {
                 if (format === "png") {
-                  const canvas = document.querySelector("canvas") as HTMLCanvasElement;
+                  const canvas = document.querySelector(
+                    "canvas",
+                  ) as HTMLCanvasElement;
                   if (canvas) {
                     canvas.toDataURL("image/png");
                   }
                 } else if (format === "json") {
                   const data = { test: "data" };
-                  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+                  const blob = new Blob([JSON.stringify(data)], {
+                    type: "application/json",
+                  });
                   URL.createObjectURL(blob);
                 } else if (format === "csv") {
                   const blob = new Blob(["test,data"], { type: "text/csv" });
                   URL.createObjectURL(blob);
                 }
               }
+              setExportStatus("Batch export successful");
             } catch (error) {
               console.error("Batch export failed:", error);
-              throw error;
+              setLastError(error as Error);
+              setExportStatus("Batch export failed");
             }
           }}
         >
@@ -143,7 +188,7 @@ describe("Export Workflow Integration Tests", () => {
     // Setup clean mocks
     testHelpers.cleanupMocks();
     testHelpers.setupCanvasMock();
-    
+
     // Mock URL methods
     global.URL.createObjectURL = vi.fn(() => "mock-blob-url");
     global.URL.revokeObjectURL = vi.fn();
@@ -166,7 +211,9 @@ describe("Export Workflow Integration Tests", () => {
       await user.click(exportButton);
 
       // Verify canvas toDataURL was called
-      expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith("image/png");
+      expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith(
+        "image/png",
+      );
     });
 
     it("should export SVG successfully", async () => {
@@ -190,14 +237,17 @@ describe("Export Workflow Integration Tests", () => {
 
       const exportButton = screen.getByTestId("export-canvas-png");
 
-      // Should handle error gracefully
-      let errorCaught = false;
-      try {
-        await user.click(exportButton);
-      } catch (error) {
-        errorCaught = true;
-        expect(error).toBeInstanceOf(Error);
-      }
+      // Click the button and wait for error handling
+      await user.click(exportButton);
+
+      // Should display error message
+      expect(screen.getByTestId("error-display")).toBeInTheDocument();
+      expect(screen.getByTestId("error-display")).toHaveTextContent(
+        "Canvas export failed",
+      );
+      expect(screen.getByTestId("status-display")).toHaveTextContent(
+        "Canvas PNG export failed",
+      );
 
       // Interface should still be functional
       expect(screen.getByTestId("export-test-component")).toBeInTheDocument();
@@ -239,14 +289,17 @@ describe("Export Workflow Integration Tests", () => {
 
       const exportButton = screen.getByTestId("export-data-json");
 
-      // Should handle error gracefully
-      let errorCaught = false;
-      try {
-        await user.click(exportButton);
-      } catch (error) {
-        errorCaught = true;
-        expect(error).toBeInstanceOf(Error);
-      }
+      // Click the button and wait for error handling
+      await user.click(exportButton);
+
+      // Should display error message
+      expect(screen.getByTestId("error-display")).toBeInTheDocument();
+      expect(screen.getByTestId("error-display")).toHaveTextContent(
+        "Blob creation failed",
+      );
+      expect(screen.getByTestId("status-display")).toHaveTextContent(
+        "JSON export failed",
+      );
 
       // Interface should still be functional
       expect(screen.getByTestId("export-test-component")).toBeInTheDocument();
@@ -277,16 +330,17 @@ describe("Export Workflow Integration Tests", () => {
 
       const exportButton = screen.getByTestId("export-all-formats");
 
-      // Should handle partial failures gracefully
-      let errorCaught = false;
-      try {
-        await user.click(exportButton);
-      } catch (error) {
-        errorCaught = true;
-      }
+      // Click the button and wait for error handling
+      await user.click(exportButton);
 
-      // Verify the error was caught
-      expect(errorCaught).toBe(true);
+      // Should display error message
+      expect(screen.getByTestId("error-display")).toBeInTheDocument();
+      expect(screen.getByTestId("error-display")).toHaveTextContent(
+        "Canvas export failed",
+      );
+      expect(screen.getByTestId("status-display")).toHaveTextContent(
+        "Batch export failed",
+      );
 
       // Interface should still be functional
       expect(screen.getByTestId("export-test-component")).toBeInTheDocument();
@@ -337,7 +391,7 @@ describe("Export Workflow Integration Tests", () => {
   describe("Export Error Recovery", () => {
     it("should recover from export failures and allow retry", async () => {
       let failCount = 0;
-      
+
       // Mock to fail first time, succeed second time
       global.URL.createObjectURL = vi.fn(() => {
         failCount++;
@@ -352,54 +406,72 @@ describe("Export Workflow Integration Tests", () => {
       const exportButton = screen.getByTestId("export-data-json");
 
       // First attempt should fail
-      let firstAttemptFailed = false;
-      try {
-        await user.click(exportButton);
-      } catch (error) {
-        firstAttemptFailed = true;
-        expect(error).toBeInstanceOf(Error);
-      }
+      await user.click(exportButton);
 
-      expect(firstAttemptFailed).toBe(true);
+      // Should display error message
+      expect(screen.getByTestId("error-display")).toBeInTheDocument();
+      expect(screen.getByTestId("error-display")).toHaveTextContent(
+        "First attempt failed",
+      );
+      expect(screen.getByTestId("status-display")).toHaveTextContent(
+        "JSON export failed",
+      );
 
       // Second attempt should succeed
-      try {
-        await user.click(exportButton);
-        expect(global.URL.createObjectURL).toHaveBeenCalledTimes(2);
-      } catch (error) {
-        // Second attempt should not fail
-        expect(error).toBeNull();
-      }
+      await user.click(exportButton);
+      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(2);
+      expect(screen.getByTestId("status-display")).toHaveTextContent(
+        "JSON export successful",
+      );
     });
 
     it("should provide meaningful error messages for different failure types", async () => {
       const errorTypes = [
-        { mock: () => { throw new Error("Network error"); }, type: "network" },
-        { mock: () => { throw new Error("Insufficient storage"); }, type: "storage" },
-        { mock: () => { throw new Error("Permission denied"); }, type: "permission" },
+        {
+          mock: () => {
+            throw new Error("Network error");
+          },
+          type: "network",
+          message: "Network error",
+        },
+        {
+          mock: () => {
+            throw new Error("Insufficient storage");
+          },
+          type: "storage",
+          message: "Insufficient storage",
+        },
+        {
+          mock: () => {
+            throw new Error("Permission denied");
+          },
+          type: "permission",
+          message: "Permission denied",
+        },
       ];
 
       for (const errorType of errorTypes) {
         // Reset the mock for each test
         global.URL.createObjectURL = vi.fn(errorType.mock);
 
-        render(<ExportTestComponent />);
+        const { unmount } = render(<ExportTestComponent />);
 
         const exportButton = screen.getByTestId("export-data-json");
 
-        let errorCaught = false;
-        let caughtError: Error | null = null;
-        try {
-          await user.click(exportButton);
-        } catch (error) {
-          errorCaught = true;
-          caughtError = error as Error;
-        }
+        // Click the button and wait for error handling
+        await user.click(exportButton);
 
-        expect(errorCaught).toBe(true);
-        expect(caughtError).toBeInstanceOf(Error);
-        
+        // Should display the specific error message
+        expect(screen.getByTestId("error-display")).toBeInTheDocument();
+        expect(screen.getByTestId("error-display")).toHaveTextContent(
+          errorType.message,
+        );
+        expect(screen.getByTestId("status-display")).toHaveTextContent(
+          "JSON export failed",
+        );
+
         // Clean up for next iteration
+        unmount();
         testHelpers.cleanupMocks();
       }
     });
@@ -429,10 +501,7 @@ describe("Export Workflow Integration Tests", () => {
       const csvButton = screen.getByTestId("export-data-csv");
 
       // Trigger concurrent exports
-      const promises = [
-        user.click(jsonButton),
-        user.click(csvButton),
-      ];
+      const promises = [user.click(jsonButton), user.click(csvButton)];
 
       await Promise.all(promises);
 

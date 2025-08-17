@@ -33,8 +33,13 @@ describe("Color Contrast Accessibility", () => {
     it("should calculate correct contrast ratios for HSL colors", () => {
       // Test known contrast ratios using HSL format
       expect(calculateContrastRatio("0 0% 0%", "0 0% 100%")).toBeCloseTo(21, 1); // Maximum contrast
-      expect(calculateContrastRatio("0 0% 100%", "0 0% 100%")).toBeCloseTo(1, 1); // No contrast
-      expect(calculateContrastRatio("0 0% 40%", "0 0% 100%")).toBeGreaterThan(4.5); // WCAG AA minimum
+      expect(calculateContrastRatio("0 0% 100%", "0 0% 100%")).toBeCloseTo(
+        1,
+        1,
+      ); // No contrast
+      expect(calculateContrastRatio("0 0% 40%", "0 0% 100%")).toBeGreaterThan(
+        4.5,
+      ); // WCAG AA minimum
     });
 
     it("should handle invalid color formats gracefully", () => {
@@ -63,10 +68,10 @@ describe("Color Contrast Accessibility", () => {
     });
 
     it("should return correct accessibility levels", () => {
-      expect(getAccessibilityLevel(21)).toBe('AAA');
-      expect(getAccessibilityLevel(7)).toBe('AAA');
-      expect(getAccessibilityLevel(4.5)).toBe('AA');
-      expect(getAccessibilityLevel(3)).toBe('FAIL');
+      expect(getAccessibilityLevel(21)).toBe("AAA");
+      expect(getAccessibilityLevel(7)).toBe("AAA");
+      expect(getAccessibilityLevel(4.5)).toBe("AA");
+      expect(getAccessibilityLevel(3)).toBe("FAIL");
     });
   });
 
@@ -79,20 +84,20 @@ describe("Color Contrast Accessibility", () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Each result should have the expected structure
-      results.forEach(result => {
-        expect(result).toHaveProperty('combination');
-        expect(result).toHaveProperty('contrastRatio');
-        expect(result).toHaveProperty('level');
-        expect(result).toHaveProperty('passes');
-        expect(typeof result.contrastRatio).toBe('number');
-        expect(['FAIL', 'AA', 'AAA']).toContain(result.level);
-        expect(typeof result.passes).toBe('boolean');
+      results.forEach((result) => {
+        expect(result).toHaveProperty("combination");
+        expect(result).toHaveProperty("contrastRatio");
+        expect(result).toHaveProperty("level");
+        expect(result).toHaveProperty("passes");
+        expect(typeof result.contrastRatio).toBe("number");
+        expect(["FAIL", "AA", "AAA"]).toContain(result.level);
+        expect(typeof result.passes).toBe("boolean");
       });
     });
 
     it("should have improved color combinations that pass WCAG AA", () => {
       const results = validateAllColorCombinations();
-      const failedResults = results.filter(r => !r.passes);
+      const failedResults = results.filter((r) => !r.passes);
 
       // With our improvements, most combinations should pass
       expect(failedResults.length).toBeLessThanOrEqual(2); // Allow for minor edge cases
@@ -111,8 +116,14 @@ describe("Color Contrast Accessibility", () => {
 
     it("should have improved destructive button contrast", () => {
       // Test improved destructive button colors
-      const lightDestructiveRatio = calculateContrastRatio("0 0% 98%", "0 84.2% 48%");
-      const darkDestructiveRatio = calculateContrastRatio("0 0% 98%", "0 62.8% 40%");
+      const lightDestructiveRatio = calculateContrastRatio(
+        "0 0% 98%",
+        "0 84.2% 48%",
+      );
+      const darkDestructiveRatio = calculateContrastRatio(
+        "0 0% 98%",
+        "0 62.8% 40%",
+      );
 
       expect(meetsWCAGAA(lightDestructiveRatio)).toBe(true);
       expect(meetsWCAGAA(darkDestructiveRatio)).toBe(true);

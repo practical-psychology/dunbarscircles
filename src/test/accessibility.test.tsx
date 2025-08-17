@@ -76,17 +76,20 @@ describe("Accessibility Tests", () => {
         </TestWrapper>,
       );
 
-      // Test keyboard navigation on interactive elements
+      // Test that the diagram container has proper accessibility attributes
       const diagram = screen.getByTestId("network-diagram");
-      expect(diagram).toHaveAttribute("tabIndex", "0");
-      expect(diagram).toHaveAttribute("role", "img");
+      // Container should NOT have role when it contains interactive elements
+      expect(diagram).not.toHaveAttribute("role");
       expect(diagram).toHaveAttribute("aria-label");
+      // Container should NOT have tabIndex to avoid nested interactive controls
+      expect(diagram).not.toHaveAttribute("tabIndex");
 
       // Test that SVG elements are properly labeled
       const svg = diagram.querySelector("svg");
-      expect(svg).toHaveAttribute("role", "img");
       expect(svg).toHaveAttribute("aria-labelledby");
       expect(svg).toHaveAttribute("aria-describedby");
+      // SVG should NOT have role="img" when it contains interactive elements
+      expect(svg).not.toHaveAttribute("role");
     });
 
     it("should have proper ARIA labels", () => {
@@ -161,7 +164,8 @@ describe("Accessibility Tests", () => {
       // Test that interactive elements are keyboard accessible
       const buttons = screen.getAllByRole("button");
       buttons.forEach((button) => {
-        expect(button).toHaveAttribute("tabIndex", "0");
+        // SVG elements use lowercase tabindex, not tabIndex
+        expect(button).toHaveAttribute("tabindex", "0");
       });
     });
 
@@ -183,12 +187,18 @@ describe("Accessibility Tests", () => {
       expect(dataElements.length).toBeGreaterThan(0);
     });
 
-    it("should provide meaningful progress indicators", () => {
+    it("should provide meaningful progress indicators", async () => {
+      const user = userEvent.setup();
+
       render(
         <TestWrapper>
           <RadialDiagram levels={mockLevels} />
         </TestWrapper>,
       );
+
+      // First select a level to make progress bars visible
+      const firstButton = screen.getAllByRole("button")[0];
+      await user.click(firstButton);
 
       // Check that progress bars have proper labels
       const progressBars = screen.getAllByRole("progressbar");

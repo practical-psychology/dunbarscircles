@@ -20,7 +20,10 @@ describe("OnboardingPage", () => {
     renderWithRouter(<OnboardingPage />);
 
     expect(
-      screen.getByRole("heading", { name: "Welcome to Dunbar Circles", level: 1 }),
+      screen.getByRole("heading", {
+        name: "Welcome to Dunbar Circles",
+        level: 1,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(

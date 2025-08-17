@@ -91,7 +91,9 @@ export function WelcomeModal({
             >
               <Users className="w-10 h-10 text-white" />
             </motion.div>
-            <h3 className="text-2xl font-bold mb-2">Welcome to Dunbar Circles</h3>
+            <h3 className="text-2xl font-bold mb-2">
+              Welcome to Dunbar Circles
+            </h3>
             <p className="text-muted-foreground">
               Discover and visualize your social relationships using Robin
               Dunbar's research
@@ -364,7 +366,13 @@ export function WelcomeModal({
                 {currentStepData.description}
               </DialogDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleClose} aria-label="Close welcome modal">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              aria-label="Close welcome modal"
+              title="Close welcome modal"
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -398,6 +406,8 @@ export function WelcomeModal({
                       ? "bg-green-500"
                       : "bg-gray-300 dark:bg-gray-600"
                 }`}
+                aria-label={`Go to step ${index + 1} of ${steps.length}`}
+                aria-current={index === currentStep ? "step" : undefined}
               />
             ))}
           </div>

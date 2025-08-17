@@ -16,6 +16,8 @@ export function LiquidThemeToggle() {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+      title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
       {/* Liquid background effect */}
       <motion.div

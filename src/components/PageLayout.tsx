@@ -22,13 +22,13 @@ interface PageLayoutProps {
 
 const navigationItems = [
   { path: "/", label: "Overview", icon: Brain },
-  { path: "/radial", label: "Radial View", icon: Eye },
+  { path: "/dashboard", label: "Dashboard", icon: Book },
+  { path: "/contacts", label: "Contacts", icon: UserCheck },
   { path: "/levels", label: "Levels", icon: Users },
   { path: "/network", label: "Network Graph", icon: Heart },
   { path: "/digital", label: "Digital", icon: Smartphone },
+  { path: "/radial", label: "Radial View", icon: Eye },
   { path: "/lifecycle", label: "Life Stages", icon: Clock },
-  { path: "/contacts", label: "Contacts", icon: UserCheck },
-  { path: "/dashboard", label: "Dashboard", icon: Book },
   { path: "/sitemap", label: "Sitemap", icon: Plane },
 ];
 

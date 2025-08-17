@@ -132,7 +132,12 @@ export default function HomePage() {
                 High emotional investment, frequent contact, and deep personal
                 connections.
               </p>
-              <LiquidButton variant="primary" size="sm" className="w-full">
+              <LiquidButton
+                variant="primary"
+                size="sm"
+                className="w-full"
+                aria-label="Explore intimate relationship levels (5-50 people)"
+              >
                 Explore Intimate Bonds
               </LiquidButton>
             </div>
@@ -160,7 +165,12 @@ export default function HomePage() {
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 Meaningful relationships with moderate maintenance requirements.
               </p>
-              <LiquidButton variant="secondary" size="sm" className="w-full">
+              <LiquidButton
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                aria-label="Discover social relationship levels (150-1,500 people)"
+              >
                 Discover Social Circles
               </LiquidButton>
             </div>
@@ -188,7 +198,12 @@ export default function HomePage() {
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 Awareness and recognition with minimal active maintenance.
               </p>
-              <LiquidButton variant="ghost" size="sm" className="w-full">
+              <LiquidButton
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                aria-label="View extended network levels (5,000-50,000 people)"
+              >
                 View Extended Network
               </LiquidButton>
             </div>
@@ -212,7 +227,11 @@ export default function HomePage() {
           </motion.h3>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/dashboard">
-              <LiquidButton variant="primary" size="lg">
+              <LiquidButton
+                variant="primary"
+                size="lg"
+                aria-label="Start exploring your social network visualization"
+              >
                 Start Visualization
               </LiquidButton>
             </Link>
@@ -221,6 +240,7 @@ export default function HomePage() {
                 variant="ghost"
                 size="lg"
                 className="flex items-center gap-2"
+                aria-label="Start interactive tutorial and user guide"
               >
                 <BookOpen className="w-4 h-4" />
                 Tutorial & Guide

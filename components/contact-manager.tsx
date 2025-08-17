@@ -298,6 +298,8 @@ export function ContactManager({ levels }: ContactManagerProps) {
                         size="sm"
                         onClick={() => removeContact(contact.id)}
                         className="text-red-600 hover:text-red-700"
+                        aria-label={`Remove ${contact.name} from contacts`}
+                        title={`Remove ${contact.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

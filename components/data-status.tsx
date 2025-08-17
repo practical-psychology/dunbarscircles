@@ -154,6 +154,7 @@ export function DataStatus({
             variant="outline"
             size="sm"
             className="mt-3"
+            aria-label="Retry checking data status"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry
@@ -175,6 +176,8 @@ export function DataStatus({
             onClick={onRefresh || checkDataStatus}
             variant="ghost"
             size="sm"
+            aria-label="Refresh data status"
+            title="Refresh data status"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -236,7 +239,12 @@ export function DataStatus({
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
           {!status.isComplete && onImportClick && (
-            <Button onClick={onImportClick} size="sm" className="flex-1">
+            <Button
+              onClick={onImportClick}
+              size="sm"
+              className="flex-1"
+              aria-label="Import relationship data from social media"
+            >
               <Upload className="w-4 h-4 mr-2" />
               Import Data
             </Button>
@@ -248,6 +256,7 @@ export function DataStatus({
               variant="outline"
               size="sm"
               className="flex-1"
+              aria-label="Sign in to access your real relationship data"
             >
               Sign In for Real Data
             </Button>

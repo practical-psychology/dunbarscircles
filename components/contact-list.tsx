@@ -302,7 +302,11 @@ export function ContactList({
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <LiquidButton variant="secondary" size="sm">
+                    <LiquidButton
+                      variant="secondary"
+                      size="sm"
+                      aria-label={`Bulk actions for ${selectedContacts.size} selected contacts`}
+                    >
                       Bulk Actions
                     </LiquidButton>
                   </DropdownMenuTrigger>
@@ -405,6 +409,7 @@ export function ContactList({
                 size="sm"
                 onClick={() => setSelectedContacts(new Set())}
                 disabled={selectedContacts.size === 0}
+                aria-label={`Clear selection of ${selectedContacts.size} contacts`}
               >
                 Clear Selection
               </Button>
@@ -448,6 +453,7 @@ export function ContactList({
                         size="sm"
                         onClick={() => handleSort("name")}
                         className="h-auto p-0 font-medium"
+                        aria-label={`Sort by name ${sortField === "name" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
                         Name {getSortIcon("name")}
                       </Button>
@@ -458,6 +464,7 @@ export function ContactList({
                         size="sm"
                         onClick={() => handleSort("levelId")}
                         className="h-auto p-0 font-medium"
+                        aria-label={`Sort by level ${sortField === "levelId" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
                         Level {getSortIcon("levelId")}
                       </Button>
@@ -468,6 +475,7 @@ export function ContactList({
                         size="sm"
                         onClick={() => handleSort("platform")}
                         className="h-auto p-0 font-medium"
+                        aria-label={`Sort by platform ${sortField === "platform" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
                         Platform {getSortIcon("platform")}
                       </Button>
@@ -478,6 +486,7 @@ export function ContactList({
                         size="sm"
                         onClick={() => handleSort("strength")}
                         className="h-auto p-0 font-medium"
+                        aria-label={`Sort by strength ${sortField === "strength" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
                         Strength {getSortIcon("strength")}
                       </Button>
@@ -488,6 +497,7 @@ export function ContactList({
                         size="sm"
                         onClick={() => handleSort("lastContact")}
                         className="h-auto p-0 font-medium"
+                        aria-label={`Sort by last contact ${sortField === "lastContact" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
                         Last Contact {getSortIcon("lastContact")}
                       </Button>
@@ -604,7 +614,11 @@ export function ContactList({
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" aria-label="Contact actions menu">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label="Contact actions menu"
+                                >
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>

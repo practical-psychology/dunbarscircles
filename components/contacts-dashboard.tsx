@@ -528,6 +528,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     variant="outline"
                     onClick={refreshContacts}
                     disabled={loading}
+                    aria-label="Refresh contacts from Firebase"
+                    title="Refresh contacts from Firebase"
                   >
                     <RefreshCw
                       className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
@@ -543,6 +545,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                         variant="outline"
                         disabled={contacts.length === 0 || loading}
                         className="text-green-600 hover:text-green-700"
+                        aria-label={`Export ${contacts.length} contacts in various formats`}
+                        title="Export contacts in various formats"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Export
@@ -644,6 +648,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     }}
                     disabled={contacts.length === 0 || loading}
                     className="text-green-600 hover:text-green-700"
+                    aria-label={`Save ${contacts.length} contacts to Firebase cloud storage`}
+                    title="Save all contacts to Firebase"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Save to Firebase
@@ -653,6 +659,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     onClick={testFirebase}
                     disabled={loading}
                     className="text-blue-600 hover:text-blue-700"
+                    aria-label="Test Firebase connection and add sample contact"
+                    title="Test Firebase connection"
                   >
                     Test Firebase
                   </Button>
@@ -661,6 +669,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     onClick={clearAllContacts}
                     className="text-red-600 hover:text-red-700"
                     disabled={contacts.length === 0 || loading}
+                    aria-label={`Clear all ${contacts.length} contacts permanently`}
+                    title="Clear all contacts (cannot be undone)"
                   >
                     Clear All
                   </Button>

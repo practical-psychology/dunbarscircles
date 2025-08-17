@@ -134,7 +134,9 @@ const helpTopics: HelpTopic[] = [
     icon: <Home className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>Dunbar Circles has several main pages, each with a specific purpose:</p>
+        <p>
+          Dunbar Circles has several main pages, each with a specific purpose:
+        </p>
         <div className="grid gap-3">
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
             <Home className="w-5 h-5 mt-0.5 text-blue-500" />
@@ -185,6 +187,8 @@ const helpTopics: HelpTopic[] = [
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">
                 Export your Facebook data and upload the friends JSON file.
+                Supports both old format (friends.data) and new format
+                (friends_v2).
               </p>
               <Badge variant="secondary">Format: JSON</Badge>
             </CardContent>
@@ -218,7 +222,9 @@ const helpTopics: HelpTopic[] = [
     icon: <Target className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>Dunbar Circles offers several ways to visualize your relationships:</p>
+        <p>
+          Dunbar Circles offers several ways to visualize your relationships:
+        </p>
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold mb-2">Radial Diagram</h4>
@@ -369,7 +375,13 @@ export function HelpSystem({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className={className}>
+        <Button
+          variant="outline"
+          size="sm"
+          className={className}
+          aria-label="Open help center and documentation"
+          title="Get help and learn how to use Dunbar Circles"
+        >
           <HelpCircle className="w-4 h-4 mr-2" />
           Help
         </Button>
@@ -400,6 +412,7 @@ export function HelpSystem({
                     key={topic.id}
                     value={topic.id}
                     className="justify-start p-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    aria-label={`Help topic: ${topic.title}`}
                   >
                     <div className="flex items-start gap-3 text-left">
                       <div className="mt-0.5">{topic.icon}</div>

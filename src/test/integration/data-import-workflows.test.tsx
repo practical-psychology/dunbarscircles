@@ -120,14 +120,14 @@ describe("Data Import Workflow Tests", () => {
       // Wait for relationship inventory to load
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
       // Verify import section is present
       expect(screen.getByTestId("import-section")).toBeInTheDocument();
       expect(screen.getByTestId("import-status")).toHaveTextContent(
-        "Ready for import"
+        "Ready for import",
       );
 
       // Test Facebook JSON file import
@@ -173,12 +173,49 @@ describe("Data Import Workflow Tests", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
       const facebookFileInput = screen.getByTestId("facebook-file-input");
       const jsonFile = new File([jsonContent], "facebook_friends.json", {
+        type: "application/json",
+      });
+
+      Object.defineProperty(facebookFileInput, "files", {
+        value: [jsonFile],
+        writable: false,
+      });
+
+      fireEvent.change(facebookFileInput);
+
+      // Verify import processing
+      await waitFor(() => {
+        expect(screen.getByTestId("import-section")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle Facebook JSON v2 format parsing correctly", async () => {
+      const jsonContent = JSON.stringify({
+        friends_v2: [
+          { name: "Martin Keshkekidis", timestamp: 1694403736 },
+          { name: "Yuri Kuznetsov", timestamp: 1672874610 },
+          { name: "Leyla Shukurova", timestamp: 1661808787 },
+        ],
+      });
+
+      testHelpers.mockFileReader(jsonContent);
+
+      render(<NetworkPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("relationship-inventory"),
+        ).toBeInTheDocument();
+      });
+
+      const facebookFileInput = screen.getByTestId("facebook-file-input");
+      const jsonFile = new File([jsonContent], "facebook_friends_v2.json", {
         type: "application/json",
       });
 
@@ -211,7 +248,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
       // Wait for relationship inventory to load
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -247,7 +284,7 @@ Bob,Wilson,bob@startup.com,StartupXYZ,Developer,2023-02-20`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -287,7 +324,7 @@ Bob,Wilson,bob@startup.com,StartupXYZ,Developer,2023-02-20`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -321,7 +358,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -360,7 +397,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -379,7 +416,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
       // Should not crash and interface should remain functional
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
     });
@@ -392,7 +429,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -411,7 +448,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
       // Should not crash and interface should remain functional
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
     });
@@ -433,7 +470,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -450,7 +487,7 @@ Test,User,test@example.com,Test Corp,Tester,01-Jan-2023`;
       // Should handle error gracefully and still show the interface
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
     });

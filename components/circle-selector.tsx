@@ -77,11 +77,20 @@ export function CircleSelector({
 
   return (
     <div className="space-y-3">
-      <Label className="text-base font-medium">
+      <Label id="circle-selector-label" className="text-base font-medium">
         Select Dunbar Circle <span className="text-red-500">*</span>
       </Label>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div
+        className="grid grid-cols-1 gap-3"
+        role="radiogroup"
+        aria-labelledby="circle-selector-label"
+        aria-required="true"
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={
+          error ? "circle-selector-error" : "circle-selector-tips"
+        }
+      >
         {dunbarLevels.map((level) => {
           const isSelected = selectedLevelId === level.id;
           const frequencyInfo = getContactFrequencyInfo(level.id);
@@ -97,6 +106,17 @@ export function CircleSelector({
                 error && !isSelected && "border-red-200",
               )}
               onClick={() => !disabled && onLevelSelect(level.id)}
+              role="radio"
+              aria-checked={isSelected}
+              aria-labelledby={`level-${level.id}-name`}
+              aria-describedby={`level-${level.id}-description`}
+              tabIndex={disabled ? -1 : 0}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !disabled) {
+                  e.preventDefault();
+                  onLevelSelect(level.id);
+                }
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
@@ -105,14 +125,22 @@ export function CircleSelector({
                       <div
                         className={cn("w-4 h-4 rounded-full", level.color)}
                       />
-                      <h4 className="font-semibold text-lg">{level.name}</h4>
+                      <h4
+                        id={`level-${level.id}-name`}
+                        className="font-semibold text-lg"
+                      >
+                        {level.name}
+                      </h4>
                       <Badge variant="secondary" className="text-sm">
                         {level.count} people
                       </Badge>
                     </div>
 
                     {showDescription && (
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p
+                        id={`level-${level.id}-description`}
+                        className="text-sm text-gray-600 mb-3"
+                      >
                         {level.description}
                       </p>
                     )}
@@ -174,9 +202,21 @@ export function CircleSelector({
         })}
       </div>
 
-      {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+      {error && (
+        <p
+          id="circle-selector-error"
+          className="text-sm text-red-500 mt-2"
+          role="alert"
+          aria-live="polite"
+        >
+          {error}
+        </p>
+      )}
 
-      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+      <div
+        id="circle-selector-tips"
+        className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg"
+      >
         <h5 className="font-medium text-sm mb-2">💡 Circle Selection Tips:</h5>
         <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
           <li>

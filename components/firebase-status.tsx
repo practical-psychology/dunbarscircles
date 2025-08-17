@@ -99,6 +99,7 @@ export function FirebaseStatus() {
             disabled={isLoading}
             variant="outline"
             size="sm"
+            aria-label="Test Firebase database connection"
           >
             {isLoading ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -113,6 +114,7 @@ export function FirebaseStatus() {
             disabled={isLoading}
             variant="secondary"
             size="sm"
+            aria-label="Reinitialize Firebase connection"
           >
             Reinitialize
           </Button>

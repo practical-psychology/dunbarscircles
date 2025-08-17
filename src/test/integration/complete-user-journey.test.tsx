@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithoutRouter, testHelpers } from "../test-utils";
+import { renderWithRouter, testHelpers } from "../test-utils";
 import App from "../../App";
 
 describe("Complete User Journey Integration Tests", () => {
@@ -21,7 +21,7 @@ describe("Complete User Journey Integration Tests", () => {
       photoURL: "https://example.com/photo.jpg",
     };
 
-    renderWithoutRouter(<App />);
+    renderWithRouter(<App />);
 
     // Step 1: User lands on homepage (onboarding)
     await waitFor(() => {
@@ -300,7 +300,7 @@ Eve,Miller,eve@example.com,Startup Inc,Founder,01-May-2023`;
   });
 
   it("should handle user journey with errors and recovery", async () => {
-    renderWithoutRouter(<App />);
+    renderWithRouter(<App />);
 
     // Start journey
     await user.click(screen.getByRole("link", { name: /dashboard/i }));
@@ -396,7 +396,7 @@ Jane,Smith,Extra`;
   });
 
   it("should handle complete workflow with authentication failures and recovery", async () => {
-    renderWithoutRouter(<App />);
+    renderWithRouter(<App />);
 
     // Attempt to sign in with failure
     const { signInWithPopup } = await import("../firebase-mocks");

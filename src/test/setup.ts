@@ -2,6 +2,9 @@ import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import { firebaseMocks } from "./firebase-mocks";
 
+// Ensure NODE_ENV is set to 'test' for loading screen detection
+process.env.NODE_ENV = "test";
+
 // Note: axe-core configuration is handled in individual test files
 
 // Mock window.matchMedia for responsive design testing
@@ -46,57 +49,106 @@ HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
   return null;
 }) as any;
 
-// Mock Canvas toDataURL method with proper type support
-HTMLCanvasElement.prototype.toDataURL = vi.fn((type?: string, _quality?: any) => {
-  const mimeType = type || "image/png";
-  return `data:${mimeType};base64,mock`;
-});
+// Mock Canvas toDataURL method with proper type support and error handling
+HTMLCanvasElement.prototype.toDataURL = vi.fn(
+  (type?: string, _quality?: any) => {
+    const mimeType = type || "image/png";
+    return `data:${mimeType};base64,mock`;
+  },
+);
 
-// Mock Canvas toBlob method with proper callback handling
-HTMLCanvasElement.prototype.toBlob = vi.fn((callback?: BlobCallback | null, type?: string, _quality?: any) => {
-  const mimeType = type || "image/png";
-  const blob = new Blob(["mock"], { type: mimeType });
-  if (callback) {
-    setTimeout(() => callback(blob), 0);
-  }
-});
+// Mock Canvas toBlob method with proper callback handling and error handling
+HTMLCanvasElement.prototype.toBlob = vi.fn(
+  (callback?: BlobCallback | null, type?: string, _quality?: any) => {
+    const mimeType = type || "image/png";
+    try {
+      const blob = new Blob(["mock"], { type: mimeType });
+      if (callback) {
+        setTimeout(() => callback(blob), 0);
+      }
+    } catch (error) {
+      if (callback) {
+        setTimeout(() => callback(null), 0);
+      }
+    }
+  },
+);
 
 // Mock Canvas getBoundingClientRect for positioning
-HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
-  x: 0,
-  y: 0,
-  width: 300,
-  height: 150,
-  top: 0,
-  left: 0,
-  bottom: 150,
-  right: 300,
-  toJSON: () => ({}),
-} as DOMRect));
+HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(
+  () =>
+    ({
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 150,
+      top: 0,
+      left: 0,
+      bottom: 150,
+      right: 300,
+      toJSON: () => ({}),
+    }) as DOMRect,
+);
 
-// Enhanced localStorage and sessionStorage mocks with realistic behavior
+// Enhanced localStorage and sessionStorage mocks with realistic behavior and error handling
 const createStorageMock = () => {
   let store: Record<string, string> = {};
+  let shouldThrow = false;
+  let errorMessage = "Storage error";
 
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
+  const mock = {
+    getItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
+      return store[key] || null;
+    }),
     setItem: vi.fn((key: string, value: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       store[key] = String(value);
     }),
     removeItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       delete store[key];
     }),
     clear: vi.fn(() => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       store = {};
     }),
     get length() {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       return Object.keys(store).length;
     },
     key: vi.fn((index: number) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       const keys = Object.keys(store);
       return keys[index] || null;
     }),
+    // Test helper methods
+    _simulateError: (message: string = "Storage error") => {
+      shouldThrow = true;
+      errorMessage = message;
+    },
+    _clearError: () => {
+      shouldThrow = false;
+    },
+    _getStore: () => ({ ...store }),
+    _setStore: (newStore: Record<string, string>) => {
+      store = { ...newStore };
+    },
   };
+
+  return mock;
 };
 
 const localStorageMock = createStorageMock();
@@ -152,7 +204,7 @@ vi.mock("@/lib/firebase-diagnostics", () => ({
   testFirebaseConnection: vi.fn(() => Promise.resolve(true)),
 }));
 
-// Mock Firebase modules
+// Mock Firebase modules with proper authentication state management
 vi.mock("firebase/app", () => ({
   initializeApp: firebaseMocks.initializeApp,
 }));
@@ -165,6 +217,23 @@ vi.mock("firebase/auth", () => ({
   GoogleAuthProvider: vi
     .fn()
     .mockImplementation(() => firebaseMocks.googleAuthProvider),
+}));
+
+// Mock auth utilities to use the improved Firebase mocks
+vi.mock("@/lib/auth-utils", () => ({
+  signInWithGoogle: vi.fn(async () => {
+    return await firebaseMocks.signInWithPopup(
+      firebaseMocks.auth,
+      firebaseMocks.googleAuthProvider,
+    );
+  }),
+  signOut: vi.fn(async () => {
+    return await firebaseMocks.signOut(firebaseMocks.auth);
+  }),
+  getUserDisplayName: vi.fn((user: any) => {
+    if (!user) return "";
+    return user.displayName || user.email?.split("@")[0] || "User";
+  }),
 }));
 
 vi.mock("firebase/firestore", () => ({
@@ -236,6 +305,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorageMock.clear();
   sessionStorageMock.clear();
+  // Clear any simulated storage errors
+  localStorageMock._clearError();
+  sessionStorageMock._clearError();
   // Clean up animation frames
   cleanupAnimationMocks();
+  // Reset Firebase authentication state
+  firebaseMocks.resetAuthState();
 });

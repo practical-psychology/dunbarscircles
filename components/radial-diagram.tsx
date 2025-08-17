@@ -32,7 +32,7 @@ interface RadialDiagramProps {
 export function RadialDiagram({ levels }: RadialDiagramProps) {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
-  const [zoomedLevel, setZoomedLevel] = useState<string | null>(null);
+  const [focusedLevel, setFocusedLevel] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState(0);
 
   // Mental load calculations
@@ -125,6 +125,18 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
   const centerY = 300;
   const maxRadius = 280;
 
+  const handleLevelInteraction = (levelId: string) => {
+    const isSelected = selectedLevel === levelId;
+    setSelectedLevel(isSelected ? null : levelId);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent, levelId: string) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleLevelInteraction(levelId);
+    }
+  };
+
   return (
     <div
       data-testid="radial-diagram"
@@ -134,6 +146,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
     >
       {/* Mental Load Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 className="sr-only">Cognitive Load Analysis</h2>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -245,7 +258,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                   index > 0 ? (maxRadius / levels.length) * index : 0;
                 const isSelected = selectedLevel === level.id;
                 const isHovered = hoveredLevel === level.id;
-                const isZoomed = zoomedLevel === level.id;
+                // const isZoomed = zoomedLevel === level.id;
 
                 // Add safety check for color
                 const levelColor = level.color || "bg-gray-500";
@@ -259,23 +272,22 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       cy={centerY}
                       r={radius}
                       fill={safeColor}
-                      fillOpacity={isHovered || isSelected ? 0.3 : 0.2}
+                      fillOpacity={
+                        isHovered || isSelected || focusedLevel === level.id
+                          ? 0.3
+                          : 0.2
+                      }
                       stroke={safeColor}
-                      strokeWidth={isSelected ? 4 : 2}
+                      strokeWidth={
+                        isSelected ? 4 : focusedLevel === level.id ? 3 : 2
+                      }
                       className="cursor-pointer transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       onMouseEnter={() => setHoveredLevel(level.id)}
                       onMouseLeave={() => setHoveredLevel(null)}
-                      onClick={() => {
-                        setSelectedLevel(isSelected ? null : level.id);
-                        setZoomedLevel(isZoomed ? null : level.id);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setSelectedLevel(isSelected ? null : level.id);
-                          setZoomedLevel(isZoomed ? null : level.id);
-                        }
-                      }}
+                      onFocus={() => setFocusedLevel(level.id)}
+                      onBlur={() => setFocusedLevel(null)}
+                      onClick={() => handleLevelInteraction(level.id)}
+                      onKeyDown={(e) => handleKeyDown(e, level.id)}
                       role="button"
                       aria-label={`${level.name} ring with ${level.count} relationships. Mental load: ${getMentalLoad(level)}%. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
                       aria-pressed={isSelected}
@@ -347,6 +359,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                 role="button"
                 aria-label="Center node representing you in the relationship network"
                 tabIndex={0}
+                onKeyDown={(e) => handleKeyDown(e, "center")}
               />
               <text
                 x={centerX}
@@ -393,6 +406,9 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                               value={getMentalLoad(level)}
                               className="w-16 h-2"
                               aria-label={`Mental load for ${level.name}: ${getMentalLoad(level)} percent`}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-valuenow={getMentalLoad(level)}
                             />
                             <span className="text-xs">
                               {getMentalLoad(level)}%
@@ -446,6 +462,9 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                             value={getMentalLoad(level)}
                             className="flex-1"
                             aria-label={`Cognitive load for ${level.name}: ${getMentalLoad(level)} percent of mental bandwidth`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={getMentalLoad(level)}
                           />
                           <span className="text-sm font-medium">
                             {getMentalLoad(level)}%
@@ -489,7 +508,6 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                         size="sm"
                         onClick={() => {
                           setSelectedLevel(null);
-                          setZoomedLevel(null);
                         }}
                         className="w-full"
                       >

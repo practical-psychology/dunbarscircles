@@ -4,8 +4,19 @@ export * from "./test-helpers";
 
 // Specific mock utilities
 export * from "./firebase-mocks";
-export * from "./storage-mocks";
 export * from "./canvas-mocks";
+
+// Storage mocks - only export the main functions to avoid conflicts
+export {
+  createStorageMock,
+  localStorageMock,
+  sessionStorageMock,
+  mockStorageWithData,
+  getStorageData,
+  clearStorageData,
+  mockStorageQuota,
+  mockStorageEvent,
+} from "./storage-mocks";
 
 // Re-export commonly used testing library functions
 export {

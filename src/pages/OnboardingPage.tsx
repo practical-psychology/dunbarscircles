@@ -364,9 +364,12 @@ const tutorialSteps: TutorialStep[] = [
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
                   Export your Facebook friends data and upload the JSON file.
+                  Supports both old and new Facebook export formats.
                 </p>
                 <div className="bg-muted/50 rounded p-3">
-                  <p className="text-xs font-mono">facebook_friends.json</p>
+                  <p className="text-xs font-mono">
+                    facebook_friends.json or friends_v2.json
+                  </p>
                 </div>
                 <Badge variant="secondary">Supported Format: JSON</Badge>
               </div>

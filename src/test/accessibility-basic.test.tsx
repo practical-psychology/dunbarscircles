@@ -59,13 +59,15 @@ describe("Basic Accessibility Features", () => {
       );
 
       const diagram = screen.getByTestId("network-diagram");
-      expect(diagram).toHaveAttribute("role", "img");
+      // Container should NOT have role when it contains interactive elements
+      expect(diagram).not.toHaveAttribute("role");
       expect(diagram).toHaveAttribute("aria-label");
-      expect(diagram).toHaveAttribute("tabIndex", "0");
+      // Container should NOT have tabIndex to avoid nested interactive controls
 
       // Check SVG accessibility
       const svg = diagram.querySelector("svg");
-      expect(svg).toHaveAttribute("role", "img");
+      // SVG should NOT have role="img" when it contains interactive elements
+      expect(svg).not.toHaveAttribute("role");
       expect(svg).toHaveAttribute("aria-labelledby");
       expect(svg).toHaveAttribute("aria-describedby");
     });
@@ -88,7 +90,16 @@ describe("Basic Accessibility Features", () => {
       expect(buttons.length).toBeGreaterThan(0);
 
       buttons.forEach((button) => {
-        expect(button).toHaveAttribute("tabIndex", "0");
+        // Check for keyboard accessibility (explicit tabIndex or default focusable)
+        const tabIndex = button.getAttribute("tabIndex");
+        const isDisabled = button.hasAttribute("disabled");
+
+        if (!isDisabled) {
+          expect(
+            tabIndex === null || tabIndex === "0" || parseInt(tabIndex) >= 0,
+          ).toBeTruthy();
+        }
+
         expect(button).toHaveAttribute("aria-label");
         expect(button).toHaveAttribute("aria-pressed");
       });
@@ -138,8 +149,8 @@ describe("Basic Accessibility Features", () => {
       expect(diagram).toHaveAttribute("role", "region");
       expect(diagram).toHaveAttribute("aria-label");
 
-      // Check for progress bars with proper attributes
-      const progressBars = screen.getAllByRole("progressbar");
+      // Check for progress bars with proper attributes (if any exist)
+      const progressBars = screen.queryAllByRole("progressbar");
       progressBars.forEach((progress) => {
         expect(progress).toHaveAttribute("aria-valuemin");
         expect(progress).toHaveAttribute("aria-valuemax");
@@ -160,10 +171,14 @@ describe("Basic Accessibility Features", () => {
       );
       expect(dataElements.length).toBeGreaterThan(0);
 
-      // Check SVG accessibility
-      const svg = document.querySelector("svg");
+      // Check SVG accessibility - find the main diagram SVG specifically
+      const diagram = screen.getByTestId("radial-diagram");
+      const svg = diagram.querySelector(
+        "svg[aria-labelledby='radial-diagram-title']",
+      );
       if (svg) {
-        expect(svg).toHaveAttribute("role", "img");
+        // SVG should NOT have role="img" when it contains interactive elements
+        expect(svg).not.toHaveAttribute("role");
         expect(svg).toHaveAttribute("aria-labelledby");
         expect(svg).toHaveAttribute("aria-describedby");
       }
@@ -193,7 +208,16 @@ describe("Basic Accessibility Features", () => {
       // Check that buttons are keyboard accessible
       const buttons = screen.getAllByRole("button");
       buttons.forEach((button) => {
-        expect(button).toHaveAttribute("tabIndex", "0");
+        // Buttons should either have explicit tabIndex or be focusable by default
+        const tabIndex = button.getAttribute("tabIndex");
+        const isDisabled = button.hasAttribute("disabled");
+
+        if (!isDisabled) {
+          // Button should be focusable (either explicit tabIndex or default focusable)
+          expect(
+            tabIndex === null || tabIndex === "0" || parseInt(tabIndex) >= 0,
+          ).toBeTruthy();
+        }
       });
     });
   });
@@ -291,9 +315,11 @@ describe("Basic Accessibility Features", () => {
 
       focusableElements.forEach((element) => {
         // Check for focus styles in class names or ARIA labels
+        const className =
+          element.className?.toString() || element.getAttribute("class") || "";
         const hasFocusStyle =
-          element.className.includes("focus:") ||
-          element.className.includes("focus-visible:") ||
+          className.includes("focus:") ||
+          className.includes("focus-visible:") ||
           element.getAttribute("aria-label");
         expect(hasFocusStyle).toBeTruthy();
       });

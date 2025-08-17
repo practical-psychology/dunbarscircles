@@ -15,26 +15,40 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
   const m = l - c / 2;
 
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
 
-  if (0 <= h && h < 1/6) {
-    r = c; g = x; b = 0;
-  } else if (1/6 <= h && h < 2/6) {
-    r = x; g = c; b = 0;
-  } else if (2/6 <= h && h < 3/6) {
-    r = 0; g = c; b = x;
-  } else if (3/6 <= h && h < 4/6) {
-    r = 0; g = x; b = c;
-  } else if (4/6 <= h && h < 5/6) {
-    r = x; g = 0; b = c;
-  } else if (5/6 <= h && h < 1) {
-    r = c; g = 0; b = x;
+  if (0 <= h && h < 1 / 6) {
+    r = c;
+    g = x;
+    b = 0;
+  } else if (1 / 6 <= h && h < 2 / 6) {
+    r = x;
+    g = c;
+    b = 0;
+  } else if (2 / 6 <= h && h < 3 / 6) {
+    r = 0;
+    g = c;
+    b = x;
+  } else if (3 / 6 <= h && h < 4 / 6) {
+    r = 0;
+    g = x;
+    b = c;
+  } else if (4 / 6 <= h && h < 5 / 6) {
+    r = x;
+    g = 0;
+    b = c;
+  } else if (5 / 6 <= h && h < 1) {
+    r = c;
+    g = 0;
+    b = x;
   }
 
   return [
     Math.round((r + m) * 255),
     Math.round((g + m) * 255),
-    Math.round((b + m) * 255)
+    Math.round((b + m) * 255),
   ];
 }
 
@@ -43,13 +57,15 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
  */
 function parseHslString(hslString: string): [number, number, number] {
   // Handle format like "220 70% 50%" or "hsl(220, 70%, 50%)"
-  const cleanString = hslString.replace(/hsl\(|\)|%/g, '').trim();
-  const parts = cleanString.split(/[\s,]+/).map(part => parseFloat(part.trim()));
-  
+  const cleanString = hslString.replace(/hsl\(|\)|%/g, "").trim();
+  const parts = cleanString
+    .split(/[\s,]+/)
+    .map((part) => parseFloat(part.trim()));
+
   if (parts.length !== 3) {
     throw new Error(`Invalid HSL format: ${hslString}`);
   }
-  
+
   return [parts[0], parts[1], parts[2]];
 }
 
@@ -58,7 +74,7 @@ function parseHslString(hslString: string): [number, number, number] {
  */
 function getRelativeLuminance(r: number, g: number, b: number): number {
   // Normalize RGB values to 0-1 range
-  const [rs, gs, bs] = [r, g, b].map(c => {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
     c = c / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   });
@@ -74,19 +90,19 @@ export function calculateContrastRatio(color1: string, color2: string): number {
   try {
     const [h1, s1, l1] = parseHslString(color1);
     const [h2, s2, l2] = parseHslString(color2);
-    
+
     const [r1, g1, b1] = hslToRgb(h1, s1, l1);
     const [r2, g2, b2] = hslToRgb(h2, s2, l2);
-    
+
     const lum1 = getRelativeLuminance(r1, g1, b1);
     const lum2 = getRelativeLuminance(r2, g2, b2);
-    
+
     const lighter = Math.max(lum1, lum2);
     const darker = Math.min(lum1, lum2);
-    
+
     return (lighter + 0.05) / (darker + 0.05);
   } catch (error) {
-    console.error('Error calculating contrast ratio:', error);
+    console.error("Error calculating contrast ratio:", error);
     return 1; // Return minimum contrast if calculation fails
   }
 }
@@ -94,7 +110,10 @@ export function calculateContrastRatio(color1: string, color2: string): number {
 /**
  * Check if contrast ratio meets WCAG AA standards
  */
-export function meetsWCAGAA(contrastRatio: number, isLargeText = false): boolean {
+export function meetsWCAGAA(
+  contrastRatio: number,
+  isLargeText = false,
+): boolean {
   const threshold = isLargeText ? 3.0 : 4.5;
   return contrastRatio >= threshold;
 }
@@ -102,7 +121,10 @@ export function meetsWCAGAA(contrastRatio: number, isLargeText = false): boolean
 /**
  * Check if contrast ratio meets WCAG AAA standards
  */
-export function meetsWCAGAAA(contrastRatio: number, isLargeText = false): boolean {
+export function meetsWCAGAAA(
+  contrastRatio: number,
+  isLargeText = false,
+): boolean {
   const threshold = isLargeText ? 4.5 : 7.0;
   return contrastRatio >= threshold;
 }
@@ -110,10 +132,13 @@ export function meetsWCAGAAA(contrastRatio: number, isLargeText = false): boolea
 /**
  * Get accessibility level for a contrast ratio
  */
-export function getAccessibilityLevel(contrastRatio: number, isLargeText = false): 'FAIL' | 'AA' | 'AAA' {
-  if (meetsWCAGAAA(contrastRatio, isLargeText)) return 'AAA';
-  if (meetsWCAGAA(contrastRatio, isLargeText)) return 'AA';
-  return 'FAIL';
+export function getAccessibilityLevel(
+  contrastRatio: number,
+  isLargeText = false,
+): "FAIL" | "AA" | "AAA" {
+  if (meetsWCAGAAA(contrastRatio, isLargeText)) return "AAA";
+  if (meetsWCAGAA(contrastRatio, isLargeText)) return "AA";
+  return "FAIL";
 }
 
 /**
@@ -134,116 +159,116 @@ export function getColorCombinationsToValidate(): ColorCombination[] {
   return [
     // Light theme combinations
     {
-      name: 'Primary Text on Background (Light)',
-      foreground: '0 0% 3.9%', // --foreground
-      background: '0 0% 100%', // --background
-      context: 'Main body text'
+      name: "Primary Text on Background (Light)",
+      foreground: "0 0% 3.9%", // --foreground
+      background: "0 0% 100%", // --background
+      context: "Main body text",
     },
     {
-      name: 'Primary Button Text (Light)',
-      foreground: '0 0% 98%', // --primary-foreground
-      background: '0 0% 9%', // --primary
-      context: 'Primary button text'
+      name: "Primary Button Text (Light)",
+      foreground: "0 0% 98%", // --primary-foreground
+      background: "0 0% 9%", // --primary
+      context: "Primary button text",
     },
     {
-      name: 'Secondary Text (Light)',
-      foreground: '0 0% 9%', // --secondary-foreground
-      background: '0 0% 96.1%', // --secondary
-      context: 'Secondary button text'
+      name: "Secondary Text (Light)",
+      foreground: "0 0% 9%", // --secondary-foreground
+      background: "0 0% 96.1%", // --secondary
+      context: "Secondary button text",
     },
     {
-      name: 'Muted Text (Light)',
-      foreground: '0 0% 40%', // --muted-foreground (improved)
-      background: '0 0% 100%', // --background
-      context: 'Muted/helper text'
+      name: "Muted Text (Light)",
+      foreground: "0 0% 40%", // --muted-foreground (improved)
+      background: "0 0% 100%", // --background
+      context: "Muted/helper text",
     },
     {
-      name: 'Card Text (Light)',
-      foreground: '0 0% 3.9%', // --card-foreground
-      background: '0 0% 100%', // --card
-      context: 'Card content text'
+      name: "Card Text (Light)",
+      foreground: "0 0% 3.9%", // --card-foreground
+      background: "0 0% 100%", // --card
+      context: "Card content text",
     },
     {
-      name: 'Destructive Button Text (Light)',
-      foreground: '0 0% 98%', // --destructive-foreground
-      background: '0 84.2% 48%', // --destructive (improved)
-      context: 'Error/destructive button text'
+      name: "Destructive Button Text (Light)",
+      foreground: "0 0% 98%", // --destructive-foreground
+      background: "0 84.2% 48%", // --destructive (improved)
+      context: "Error/destructive button text",
     },
-    
+
     // Dark theme combinations
     {
-      name: 'Primary Text on Background (Dark)',
-      foreground: '0 0% 98%', // --foreground (dark)
-      background: '0 0% 3.9%', // --background (dark)
-      context: 'Main body text (dark theme)'
+      name: "Primary Text on Background (Dark)",
+      foreground: "0 0% 98%", // --foreground (dark)
+      background: "0 0% 3.9%", // --background (dark)
+      context: "Main body text (dark theme)",
     },
     {
-      name: 'Primary Button Text (Dark)',
-      foreground: '0 0% 9%', // --primary-foreground (dark)
-      background: '0 0% 98%', // --primary (dark)
-      context: 'Primary button text (dark theme)'
+      name: "Primary Button Text (Dark)",
+      foreground: "0 0% 9%", // --primary-foreground (dark)
+      background: "0 0% 98%", // --primary (dark)
+      context: "Primary button text (dark theme)",
     },
     {
-      name: 'Secondary Text (Dark)',
-      foreground: '0 0% 98%', // --secondary-foreground (dark)
-      background: '0 0% 14.9%', // --secondary (dark)
-      context: 'Secondary button text (dark theme)'
+      name: "Secondary Text (Dark)",
+      foreground: "0 0% 98%", // --secondary-foreground (dark)
+      background: "0 0% 14.9%", // --secondary (dark)
+      context: "Secondary button text (dark theme)",
     },
     {
-      name: 'Muted Text (Dark)',
-      foreground: '0 0% 70%', // --muted-foreground (dark, improved)
-      background: '0 0% 3.9%', // --background (dark)
-      context: 'Muted/helper text (dark theme)'
+      name: "Muted Text (Dark)",
+      foreground: "0 0% 70%", // --muted-foreground (dark, improved)
+      background: "0 0% 3.9%", // --background (dark)
+      context: "Muted/helper text (dark theme)",
     },
     {
-      name: 'Card Text (Dark)',
-      foreground: '0 0% 98%', // --card-foreground (dark)
-      background: '0 0% 3.9%', // --card (dark)
-      context: 'Card content text (dark theme)'
+      name: "Card Text (Dark)",
+      foreground: "0 0% 98%", // --card-foreground (dark)
+      background: "0 0% 3.9%", // --card (dark)
+      context: "Card content text (dark theme)",
     },
     {
-      name: 'Destructive Button Text (Dark)',
-      foreground: '0 0% 98%', // --destructive-foreground (dark)
-      background: '0 62.8% 40%', // --destructive (dark, improved)
-      context: 'Error/destructive button text (dark theme)'
+      name: "Destructive Button Text (Dark)",
+      foreground: "0 0% 98%", // --destructive-foreground (dark)
+      background: "0 62.8% 40%", // --destructive (dark, improved)
+      context: "Error/destructive button text (dark theme)",
     },
-    
+
     // Chart colors (both themes use same values)
     {
-      name: 'Chart Color 1',
-      foreground: '0 0% 98%', // White text on chart
-      background: '12 76% 45%', // --chart-1 (improved)
-      context: 'Chart data labels',
-      isLargeText: true
+      name: "Chart Color 1",
+      foreground: "0 0% 98%", // White text on chart
+      background: "12 76% 45%", // --chart-1 (improved)
+      context: "Chart data labels",
+      isLargeText: true,
     },
     {
-      name: 'Chart Color 2',
-      foreground: '0 0% 98%', // White text on chart
-      background: '173 58% 30%', // --chart-2 (improved)
-      context: 'Chart data labels',
-      isLargeText: true
+      name: "Chart Color 2",
+      foreground: "0 0% 98%", // White text on chart
+      background: "173 58% 30%", // --chart-2 (improved)
+      context: "Chart data labels",
+      isLargeText: true,
     },
     {
-      name: 'Chart Color 3',
-      foreground: '0 0% 98%', // White text on chart
-      background: '197 37% 20%', // --chart-3 (improved)
-      context: 'Chart data labels',
-      isLargeText: true
+      name: "Chart Color 3",
+      foreground: "0 0% 98%", // White text on chart
+      background: "197 37% 20%", // --chart-3 (improved)
+      context: "Chart data labels",
+      isLargeText: true,
     },
     {
-      name: 'Chart Color 4',
-      foreground: '0 0% 3.9%', // Dark text on light chart
-      background: '43 74% 55%', // --chart-4 (improved)
-      context: 'Chart data labels',
-      isLargeText: true
+      name: "Chart Color 4",
+      foreground: "0 0% 3.9%", // Dark text on light chart
+      background: "43 74% 55%", // --chart-4 (improved)
+      context: "Chart data labels",
+      isLargeText: true,
     },
     {
-      name: 'Chart Color 5',
-      foreground: '0 0% 3.9%', // Dark text on light chart
-      background: '27 87% 55%', // --chart-5 (improved)
-      context: 'Chart data labels',
-      isLargeText: true
-    }
+      name: "Chart Color 5",
+      foreground: "0 0% 3.9%", // Dark text on light chart
+      background: "27 87% 55%", // --chart-5 (improved)
+      context: "Chart data labels",
+      isLargeText: true,
+    },
   ];
 }
 
@@ -253,23 +278,26 @@ export function getColorCombinationsToValidate(): ColorCombination[] {
 export interface ValidationResult {
   combination: ColorCombination;
   contrastRatio: number;
-  level: 'FAIL' | 'AA' | 'AAA';
+  level: "FAIL" | "AA" | "AAA";
   passes: boolean;
 }
 
 export function validateAllColorCombinations(): ValidationResult[] {
   const combinations = getColorCombinationsToValidate();
-  
-  return combinations.map(combination => {
-    const contrastRatio = calculateContrastRatio(combination.foreground, combination.background);
+
+  return combinations.map((combination) => {
+    const contrastRatio = calculateContrastRatio(
+      combination.foreground,
+      combination.background,
+    );
     const level = getAccessibilityLevel(contrastRatio, combination.isLargeText);
     const passes = meetsWCAGAA(contrastRatio, combination.isLargeText);
-    
+
     return {
       combination,
       contrastRatio,
       level,
-      passes
+      passes,
     };
   });
 }
@@ -306,7 +334,7 @@ export function generateAccessibleColors(): Record<string, string> {
     --chart-4: 43 74% 55%; /* Adjusted for better contrast */
     --chart-5: 27 87% 55%; /* Adjusted for better contrast */
     `,
-    
+
     // Dark theme - improved colors for better contrast
     dark: `
     --background: 0 0% 3.9%;
@@ -333,7 +361,7 @@ export function generateAccessibleColors(): Record<string, string> {
     --chart-3: 30 80% 65%; /* Lightened for better contrast on dark */
     --chart-4: 280 65% 70%; /* Lightened for better contrast on dark */
     --chart-5: 340 75% 65%; /* Lightened for better contrast on dark */
-    `
+    `,
   };
 }
 
@@ -342,31 +370,31 @@ export function generateAccessibleColors(): Record<string, string> {
  */
 export function logValidationResults(): void {
   const results = validateAllColorCombinations();
-  
-  console.group('🎨 Color Contrast Validation Results');
-  
-  const failed = results.filter(r => !r.passes);
-  const passed = results.filter(r => r.passes);
-  
+
+  console.group("🎨 Color Contrast Validation Results");
+
+  const failed = results.filter((r) => !r.passes);
+  const passed = results.filter((r) => r.passes);
+
   if (failed.length > 0) {
     console.group(`❌ Failed WCAG AA (${failed.length})`);
-    failed.forEach(result => {
+    failed.forEach((result) => {
       console.log(
-        `${result.combination.name}: ${result.contrastRatio.toFixed(2)}:1 (${result.level}) - ${result.combination.context}`
+        `${result.combination.name}: ${result.contrastRatio.toFixed(2)}:1 (${result.level}) - ${result.combination.context}`,
       );
     });
     console.groupEnd();
   }
-  
+
   if (passed.length > 0) {
     console.group(`✅ Passed WCAG AA (${passed.length})`);
-    passed.forEach(result => {
+    passed.forEach((result) => {
       console.log(
-        `${result.combination.name}: ${result.contrastRatio.toFixed(2)}:1 (${result.level}) - ${result.combination.context}`
+        `${result.combination.name}: ${result.contrastRatio.toFixed(2)}:1 (${result.level}) - ${result.combination.context}`,
       );
     });
     console.groupEnd();
   }
-  
+
   console.groupEnd();
 }

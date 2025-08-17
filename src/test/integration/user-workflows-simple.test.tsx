@@ -233,7 +233,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -365,7 +365,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -457,7 +457,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 
@@ -484,7 +484,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
       await waitFor(() => {
         expect(
-          screen.getByTestId("relationship-inventory")
+          screen.getByTestId("relationship-inventory"),
         ).toBeInTheDocument();
       });
 

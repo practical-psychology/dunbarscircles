@@ -110,6 +110,7 @@ function DefaultErrorFallback({
             <Button
               variant="outline"
               onClick={() => (window.location.href = "/")}
+              aria-label="Go to home page"
             >
               <Home className="w-4 h-4 mr-2" />
               Go Home
@@ -174,13 +175,18 @@ export function DataErrorFallback({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button onClick={retry} size="sm">
+          <Button onClick={retry} size="sm" aria-label="Retry loading data">
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry
           </Button>
 
           {showSampleData && (
-            <Button onClick={showSampleData} variant="outline" size="sm">
+            <Button
+              onClick={showSampleData}
+              variant="outline"
+              size="sm"
+              aria-label="Load sample data instead"
+            >
               Use Sample Data
             </Button>
           )}
@@ -190,6 +196,7 @@ export function DataErrorFallback({
               onClick={() => (window.location.href = "/dashboard")}
               variant="outline"
               size="sm"
+              aria-label="Go to sign in page"
             >
               Sign In
             </Button>

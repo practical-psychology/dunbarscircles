@@ -335,7 +335,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         onAuthStateChanged.mockImplementation((auth: any, callback: any) => {
           // auth parameter is intentionally unused in mock
           void auth;
-          if (typeof callback === 'function') {
+          if (typeof callback === "function") {
             callback(mockUser);
           }
           return vi.fn();

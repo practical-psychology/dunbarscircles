@@ -429,7 +429,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
     it("should handle export errors gracefully", async () => {
       // Store original function for restoration
       const originalCreateObjectURL = global.URL.createObjectURL;
-      
+
       // Mock URL.createObjectURL to fail but catch the error properly
       global.URL.createObjectURL = vi.fn(() => {
         throw new Error("Export failed");
@@ -461,7 +461,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
     it("should handle canvas export failures", async () => {
       // Store original function for restoration
       const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-      
+
       // Mock canvas toDataURL to fail
       HTMLCanvasElement.prototype.toDataURL = vi.fn(() => {
         throw new Error("Canvas export failed");
@@ -519,7 +519,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
     it("should handle export of large datasets", async () => {
       // Store original function for restoration
       const originalCreateObjectURL = global.URL.createObjectURL;
-      
+
       // Reset the mock to ensure clean state
       global.URL.createObjectURL = vi.fn(() => "mock-url");
 
@@ -535,11 +535,11 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
       render(<TestWorkflowComponent />);
 
       const csvExport = screen.getByTestId("export-csv");
-      
+
       // Wrap in try-catch to handle any potential errors
       try {
         await user.click(csvExport);
-        
+
         // Should handle large export without crashing
         await waitFor(() => {
           expect(global.URL.createObjectURL).toHaveBeenCalled();
