@@ -12,8 +12,8 @@ import {
   writeBatch,
   Timestamp,
 } from "firebase/firestore";
-import { auth, db } from "@/firebase-config";
-import type { StoredContact } from "@/lib/contact-storage";
+import { auth, db } from "../firebase-config";
+import type { StoredContact } from "./contact-storage";
 
 // Error types for proper error handling
 export class DatabaseError extends Error {
@@ -116,15 +116,24 @@ export class DatabaseService {
   }
 
   // Validate contact data
+  // For create/save operations, full objects will include all required fields.
+  // For partial updates, only validate fields that are actually provided.
   private static validateContact(contact: Partial<StoredContact>): void {
-    if (!contact.name || contact.name.trim().length === 0) {
-      throw new ValidationError("Contact name is required");
+    if ("name" in contact) {
+      const name = contact.name as string | undefined;
+      if (!name || name.trim().length === 0) {
+        throw new ValidationError("Contact name is required");
+      }
     }
-    if (!contact.levelId) {
-      throw new ValidationError("Contact level is required");
+    if ("levelId" in contact) {
+      if (!contact.levelId) {
+        throw new ValidationError("Contact level is required");
+      }
     }
-    if (!contact.platform) {
-      throw new ValidationError("Contact platform is required");
+    if ("platform" in contact) {
+      if (!contact.platform) {
+        throw new ValidationError("Contact platform is required");
+      }
     }
     if (
       contact.strength !== undefined &&

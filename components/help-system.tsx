@@ -1,14 +1,13 @@
 import { useState } from "react";
 import {
-  HelpCircle,
+  CircleHelp,
   X,
   Book,
-  Play,
-  MessageCircle,
-  ExternalLink,
+  PlayCircle,
+  MessageSquare,
   Home,
-  Target,
-  Network,
+  Crosshair,
+  Globe,
   Users,
   Upload,
   Download,
@@ -29,7 +28,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface HelpTopic {
@@ -47,7 +46,7 @@ const helpTopics: HelpTopic[] = [
     title: "Getting Started",
     description: "Learn the basics of Dunbar Circles and Dunbar's theory",
     category: "basics",
-    icon: <Play className="w-4 h-4" />,
+    icon: <PlayCircle className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
         <p>Welcome to Dunbar Circles! Here's how to get started:</p>
@@ -145,14 +144,14 @@ const helpTopics: HelpTopic[] = [
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-            <Target className="w-5 h-5 mt-0.5 text-green-500" />
+            <Crosshair className="w-5 h-5 mt-0.5 text-green-500" />
             <div>
               <strong>Radial (/radial)</strong> - Concentric circles
               visualization
             </div>
           </div>
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-            <Network className="w-5 h-5 mt-0.5 text-purple-500" />
+            <Globe className="w-5 h-5 mt-0.5 text-purple-500" />
             <div>
               <strong>Network (/network)</strong> - Interactive relationship
               graph
@@ -219,7 +218,7 @@ const helpTopics: HelpTopic[] = [
     title: "Understanding Visualizations",
     description: "How to read and interact with the diagrams",
     category: "features",
-    icon: <Target className="w-4 h-4" />,
+    icon: <Crosshair className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
         <p>
@@ -292,7 +291,7 @@ const helpTopics: HelpTopic[] = [
     title: "Performance Issues",
     description: "Troubleshoot slow loading or laggy animations",
     category: "troubleshooting",
-    icon: <MessageCircle className="w-4 h-4" />,
+    icon: <MessageSquare className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
         <p>If Dunbar Circles is running slowly, try these solutions:</p>
@@ -323,7 +322,7 @@ const helpTopics: HelpTopic[] = [
     title: "Lost Data Recovery",
     description: "What to do if your data disappears",
     category: "troubleshooting",
-    icon: <MessageCircle className="w-4 h-4" />,
+    icon: <MessageSquare className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
         <p>If your relationship data has disappeared:</p>
@@ -382,7 +381,7 @@ export function HelpSystem({
           aria-label="Open help center and documentation"
           title="Get help and learn how to use Dunbar Circles"
         >
-          <HelpCircle className="w-4 h-4 mr-2" />
+          <CircleHelp className="w-4 h-4 mr-2" />
           Help
         </Button>
       </DialogTrigger>
@@ -456,18 +455,8 @@ export function HelpSystem({
             <div className="flex gap-2">
               <Button variant="outline" size="sm" asChild>
                 <a href="/onboarding" onClick={() => setIsOpen(false)}>
-                  <Play className="w-4 h-4 mr-2" />
+                  <PlayCircle className="w-4 h-4 mr-2" />
                   Interactive Tutorial
-                </a>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a
-                  href="/docs/USER_GUIDE.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Full User Guide
                 </a>
               </Button>
             </div>

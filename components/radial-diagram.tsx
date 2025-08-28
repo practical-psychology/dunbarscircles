@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -231,7 +231,12 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
               </desc>
               {/* Animated background rings */}
               {levels.map((level, index) => {
-                const radius = (maxRadius / levels.length) * (index + 1);
+                // Ensure valid radius calculation
+                const safeLength = levels.length > 0 ? levels.length : 1;
+                const radius = Math.max(
+                  (maxRadius / safeLength) * (index + 1),
+                  10,
+                );
                 const opacity =
                   0.1 +
                   Math.sin((animationPhase + index * 40) * (Math.PI / 180)) *
@@ -241,7 +246,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                     key={`bg-${level.id}`}
                     cx={centerX}
                     cy={centerY}
-                    r={radius}
+                    r={radius || 10}
                     fill="none"
                     stroke={level.color.replace("bg-", "#")}
                     strokeWidth="1"
@@ -253,9 +258,14 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
 
               {/* Main rings */}
               {levels.map((level, index) => {
-                const radius = (maxRadius / levels.length) * (index + 1);
+                // Ensure valid radius calculation
+                const safeLength = levels.length > 0 ? levels.length : 1;
+                const radius = Math.max(
+                  (maxRadius / safeLength) * (index + 1),
+                  10,
+                );
                 const prevRadius =
-                  index > 0 ? (maxRadius / levels.length) * index : 0;
+                  index > 0 ? Math.max((maxRadius / safeLength) * index, 5) : 0;
                 const isSelected = selectedLevel === level.id;
                 const isHovered = hoveredLevel === level.id;
                 // const isZoomed = zoomedLevel === level.id;
@@ -270,7 +280,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                     <circle
                       cx={centerX}
                       cy={centerY}
-                      r={radius}
+                      r={radius || 10}
                       fill={safeColor}
                       fillOpacity={
                         isHovered || isSelected || focusedLevel === level.id
@@ -287,7 +297,9 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       onFocus={() => setFocusedLevel(level.id)}
                       onBlur={() => setFocusedLevel(null)}
                       onClick={() => handleLevelInteraction(level.id)}
-                      onKeyDown={(e) => handleKeyDown(e, level.id)}
+                      onKeyDown={(e: React.KeyboardEvent) =>
+                        handleKeyDown(e, level.id)
+                      }
                       role="button"
                       aria-label={`${level.name} ring with ${level.count} relationships. Mental load: ${getMentalLoad(level)}%. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
                       aria-pressed={isSelected}
@@ -299,7 +311,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       <circle
                         cx={centerX}
                         cy={centerY}
-                        r={prevRadius}
+                        r={prevRadius || 5}
                         fill="white"
                         fillOpacity={0.9}
                         className="pointer-events-none"
@@ -359,7 +371,9 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                 role="button"
                 aria-label="Center node representing you in the relationship network"
                 tabIndex={0}
-                onKeyDown={(e) => handleKeyDown(e, "center")}
+                onKeyDown={(e: React.KeyboardEvent) =>
+                  handleKeyDown(e, "center")
+                }
               />
               <text
                 x={centerX}
@@ -492,13 +506,11 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                         </h4>
                         <div className="flex flex-wrap gap-1">
                           {examples.slice(0, 5).map((example, index) => (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {example}
-                            </Badge>
+                            <div key={index}>
+                              <Badge variant="outline" className="text-xs">
+                                {example}
+                              </Badge>
+                            </div>
                           ))}
                         </div>
                       </div>

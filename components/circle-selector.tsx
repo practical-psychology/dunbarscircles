@@ -1,9 +1,9 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { dunbarLevels } from "@/data/dunbarLevels";
+import { Card, CardContent } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Label } from "./ui/label";
+import { dunbarLevels } from "../data/dunbarLevels";
 import { Users, Clock, Brain } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 interface CircleSelectorProps {
   selectedLevelId: string;

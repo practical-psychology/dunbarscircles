@@ -1,19 +1,19 @@
 import {
   ColorContrastValidator,
   useColorContrastValidation,
-} from "@/components/color-contrast-validator";
-import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
+} from "../../components/color-contrast-validator";
+import { useTheme } from "../../components/theme-provider";
+import { Button } from "../../components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
+} from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Progress } from "../../components/ui/progress";
 
 export default function ColorContrastTestPage() {
   const { theme, setTheme } = useTheme();

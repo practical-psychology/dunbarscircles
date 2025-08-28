@@ -1,16 +1,43 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  beforeAll,
+  afterEach,
+} from "vitest";
+import { screen, waitFor, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithoutRouter, testHelpers } from "../test-utils";
+import { renderWithRouter } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 import App from "../../App";
 
+// Mock the components that cause side effects
+vi.mock("../../components/analytics", () => ({
+  trackEvent: vi.fn(),
+  trackError: vi.fn(),
+}));
+
 describe("Workflow Error Handling Integration Tests", () => {
-  const user = userEvent.setup();
+  let user: ReturnType<typeof userEvent.setup>;
+
+  beforeAll(() => {
+    // Initialize user event with proper timing
+    user = userEvent.setup({ delay: null });
+  });
 
   beforeEach(() => {
     testHelpers.cleanupMocks();
     testHelpers.setupCanvasMock();
     testHelpers.setupFirebaseAuth(null);
+
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe("Data Import Error Handling", () => {
@@ -22,7 +49,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
 
       testHelpers.mockFileReader(malformedCSV);
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -73,7 +104,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
 
       testHelpers.mockFileReader(invalidJSON);
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -117,7 +152,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
     it("should handle empty files", async () => {
       testHelpers.mockFileReader("");
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -164,7 +203,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
       const { signInWithPopup } = await import("../firebase-mocks");
       signInWithPopup.mockRejectedValue(new Error("Authentication failed"));
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       const signInButton = screen.queryByText(/sign in/i);
       if (signInButton) {
@@ -186,7 +229,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
       const { signInWithPopup } = await import("../firebase-mocks");
       signInWithPopup.mockRejectedValue(new Error("Network error"));
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       const signInButton = screen.queryByText(/sign in/i);
       if (signInButton) {
@@ -211,7 +258,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         throw new Error("Export failed");
       });
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /network/i }));
 
@@ -245,7 +296,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         throw new Error("Canvas export failed");
       });
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /network/i }));
 
@@ -293,7 +348,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         value: mockLocalStorage,
       });
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -340,7 +399,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
 
       testHelpers.setupContactStorage(largeDataset);
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       // Navigate to visualization with large dataset
       await user.click(screen.getByRole("link", { name: /network/i }));
@@ -375,7 +438,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
 
       testHelpers.setupContactStorage(largeDataset);
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -404,7 +471,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
       // Mock missing Canvas support
       HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as any;
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /network/i }));
 
@@ -422,7 +493,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
       delete (global as any).File;
       delete (global as any).FileReader;
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       await user.click(screen.getByRole("link", { name: /dashboard/i }));
 
@@ -446,7 +521,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         value: undefined,
       });
 
-      renderWithoutRouter(<App />);
+      await act(async () => {
+        renderWithRouter(<App />, {
+          initialEntries: ["/dashboard"],
+        });
+      });
 
       // Should still function without localStorage
       await waitFor(() => {

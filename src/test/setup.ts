@@ -1,6 +1,162 @@
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
+import { vi, beforeAll, afterEach, afterAll, beforeEach } from "vitest";
 import { firebaseMocks } from "./firebase-mocks";
+import React from "react";
+
+interface LocalStorageMock extends Storage {
+  _clearError?: () => void;
+}
+
+// Mock react-router-dom to prevent router nesting issues
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({
+      pathname: "/",
+      search: "",
+      hash: "",
+      state: null,
+      key: "test",
+    }),
+  };
+});
+
+// Mock window.matchMedia
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Storage mock implementation
+const createStorageMock = (): LocalStorageMock => {
+  const store: Record<string, string> = {};
+
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      Object.keys(store).forEach((key) => delete store[key]);
+    }),
+    key: vi.fn((index: number) => {
+      const keys = Object.keys(store);
+      return index >= keys.length ? null : keys[index];
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+    _clearError: vi.fn(),
+    _getStore: () => ({ ...store }),
+    _setStore: (newStore: Record<string, string>) => {
+      Object.keys(store).forEach((key) => delete store[key]);
+      Object.assign(store, newStore);
+    },
+  };
+};
+
+// Initialize storage mocks
+const localStorageMock = createStorageMock();
+const sessionStorageMock = createStorageMock();
+
+Object.defineProperty(window, "localStorage", {
+  value: localStorageMock,
+  configurable: true,
+});
+
+Object.defineProperty(window, "sessionStorage", {
+  value: sessionStorageMock,
+  configurable: true,
+});
+
+// Suppress React 18 act() warnings globally
+const originalError = console.error;
+const originalWarn = console.warn;
+const originalConsole = { ...console };
+
+beforeAll(() => {
+  // Mock console methods
+  global.console = {
+    ...originalConsole,
+    error: (...args) => {
+      // Skip specific error messages
+      if (
+        /Warning: An update to .* inside a test was not wrapped in act/.test(
+          args[0],
+        ) ||
+        /React Router Future Flag Warning/.test(args[0]) ||
+        /React does not recognize the `%s` prop on a DOM element/.test(args[0])
+      ) {
+        return;
+      }
+      originalError(...args);
+    },
+    warn: (...args) => {
+      // Skip specific warning messages
+      if (
+        args[0] &&
+        (/React Router Future Flag Warning/.test(args[0]) ||
+          /componentWillMount has been renamed/.test(args[0]) ||
+          /componentWillReceiveProps has been renamed/.test(args[0]))
+      ) {
+        return;
+      }
+      originalWarn(...args);
+    },
+  };
+
+  // Set up any other global test configurations
+  vi.mock("next/head", () => ({
+    __esModule: true,
+    default: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, null, children);
+    },
+  }));
+
+  // Mock next/link
+  vi.mock("next/link", () => {
+    return ({
+      children,
+      href,
+      ...props
+    }: {
+      children: React.ReactNode;
+      href: string;
+      [key: string]: any;
+    }) => {
+      return React.createElement("a", { href, ...props }, children);
+    };
+  });
+});
+
+afterEach(() => {
+  // Clean up after each test
+  vi.clearAllMocks();
+  localStorage.clear();
+});
+
+afterAll(() => {
+  // Restore original console methods
+  console.error = originalError;
+  console.warn = originalWarn;
+
+  // Clean up any other resources
+  vi.restoreAllMocks();
+});
 
 // Ensure NODE_ENV is set to 'test' for loading screen detection
 process.env.NODE_ENV = "test";
@@ -90,79 +246,9 @@ HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(
     }) as DOMRect,
 );
 
-// Enhanced localStorage and sessionStorage mocks with realistic behavior and error handling
-const createStorageMock = () => {
-  let store: Record<string, string> = {};
-  let shouldThrow = false;
-  let errorMessage = "Storage error";
+// Clean up duplicate storage mock implementation
 
-  const mock = {
-    getItem: vi.fn((key: string) => {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      return store[key] || null;
-    }),
-    setItem: vi.fn((key: string, value: string) => {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      store[key] = String(value);
-    }),
-    removeItem: vi.fn((key: string) => {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      store = {};
-    }),
-    get length() {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      return Object.keys(store).length;
-    },
-    key: vi.fn((index: number) => {
-      if (shouldThrow) {
-        throw new Error(errorMessage);
-      }
-      const keys = Object.keys(store);
-      return keys[index] || null;
-    }),
-    // Test helper methods
-    _simulateError: (message: string = "Storage error") => {
-      shouldThrow = true;
-      errorMessage = message;
-    },
-    _clearError: () => {
-      shouldThrow = false;
-    },
-    _getStore: () => ({ ...store }),
-    _setStore: (newStore: Record<string, string>) => {
-      store = { ...newStore };
-    },
-  };
-
-  return mock;
-};
-
-const localStorageMock = createStorageMock();
-const sessionStorageMock = createStorageMock();
-
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-});
-
-Object.defineProperty(window, "sessionStorage", {
-  value: sessionStorageMock,
-});
-
-// Firebase components are mocked in individual test files as needed
+// Storage mocks are already defined above
 
 // Mock Firebase configuration and diagnostics
 vi.mock("@/firebase-config", () => ({
@@ -294,22 +380,35 @@ global.FileReader = vi.fn().mockImplementation(() => ({
 // Import improved animation frame mocking
 import { setupAnimationFrameMocks } from "./canvas-mocks";
 
-// Setup animation frame mocks globally
-const animationMocks = setupAnimationFrameMocks();
+// Setup animation frame mocks globally if available
+let cleanupAnimationMocks: (() => void) | undefined;
+try {
+  const animationMocks = setupAnimationFrameMocks();
+  cleanupAnimationMocks = animationMocks.cleanup;
+} catch (error) {
+  console.warn("Could not set up animation frame mocks:", error);
+}
 
-// Store cleanup function for use in beforeEach
-const cleanupAnimationMocks = animationMocks.cleanup;
+// Safe call helper removed as it's not being used
 
 // Reset all mocks before each test
 beforeEach(() => {
   vi.clearAllMocks();
-  localStorageMock.clear();
-  sessionStorageMock.clear();
-  // Clear any simulated storage errors
-  localStorageMock._clearError();
-  sessionStorageMock._clearError();
-  // Clean up animation frames
-  cleanupAnimationMocks();
+
+  // Reset localStorage and sessionStorage mocks
+  if (localStorageMock) {
+    localStorageMock.clear();
+    localStorageMock._clearError?.();
+  }
+
+  if (sessionStorageMock) {
+    sessionStorageMock.clear();
+  }
+  sessionStorageMock._clearError?.();
+  // Clean up animation frames if cleanup function exists
+  if (typeof cleanupAnimationMocks === "function") {
+    cleanupAnimationMocks();
+  }
   // Reset Firebase authentication state
   firebaseMocks.resetAuthState();
 });

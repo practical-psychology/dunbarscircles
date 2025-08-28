@@ -3,7 +3,7 @@
  * This shows how to use the contact validation and utilities with the existing Person type
  */
 
-import type { Person, Level } from "@/types/relationships";
+import type { Person, Level } from "../src/types/relationships";
 import {
   contactUtils,
   type ContactFormData,

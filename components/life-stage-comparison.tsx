@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -20,7 +20,7 @@ import {
   Baby,
   Home,
   Sunset,
-  Play,
+  PlayCircle,
   ArrowRight,
   TrendingUp,
   TrendingDown,
@@ -93,7 +93,7 @@ const lifeStages: LifeStage[] = [
     id: "adolescence",
     name: "Adolescence",
     ageRange: [13, 18],
-    icon: <Play className="w-5 h-5" />,
+    icon: <PlayCircle className="w-5 h-5" />,
     color: "#4ECDC4",
     description:
       "Peer relationships become central, family relationships shift",
@@ -489,9 +489,9 @@ export function LifeStageComparison({ levels }: LifeStageComparisonProps) {
             <h4 className="font-medium mb-2">Key Life Transitions</h4>
             <div className="flex flex-wrap gap-2">
               {currentStage.keyTransitions.map((transition, index) => (
-                <Badge key={index} variant="outline">
-                  {transition}
-                </Badge>
+                <div key={index}>
+                  <Badge variant="outline">{transition}</Badge>
+                </div>
               ))}
             </div>
           </div>
@@ -543,13 +543,11 @@ export function LifeStageComparison({ levels }: LifeStageComparisonProps) {
 
                     <div className="flex flex-wrap gap-1">
                       {characteristic.examples.map((example, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {example}
-                        </Badge>
+                        <div key={index}>
+                          <Badge variant="secondary" className="text-xs">
+                            {example}
+                          </Badge>
+                        </div>
                       ))}
                     </div>
                   </div>

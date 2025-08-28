@@ -1,6 +1,6 @@
 // Main testing utilities
 export * from "./test-utils";
-export * from "./test-helpers";
+export { testHelpers } from "./test-helpers";
 
 // Specific mock utilities
 export * from "./firebase-mocks";

@@ -1,7 +1,7 @@
 // Simplified contact storage using basic Firestore operations
 // Avoids real-time listeners that cause 400 errors
 
-import type { Person } from "@/types/relationships";
+import type { Person } from "../src/types/relationships";
 import {
   collection,
   getDocs,

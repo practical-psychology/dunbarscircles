@@ -1,167 +1,275 @@
-import React, { ReactElement } from "react";
-import { render, RenderOptions } from "@testing-library/react";
-import { BrowserRouter, MemoryRouter } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
-import { testHelpers } from "./test-helpers";
+import { ReactElement, ReactNode, useEffect, useMemo } from "react";
+import { render, type RenderOptions } from "@testing-library/react";
+import { MemoryRouter, useLocation } from "react-router-dom";
+import { createMemoryHistory, type History } from "history";
+import { vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 
-// Interface for custom render options
+// Local TestStoredContact interface for testing
+type TestStoredContact = {
+  id: string;
+  name: string;
+  levelId: string;
+  lastContact: Date;
+  contactFrequency: number;
+  strength: number;
+  decayRate: number;
+  platform: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  importDate: Date;
+  source: "facebook" | "linkedin" | "manual";
+  firestoreId?: string;
+  syncStatus?: "synced" | "pending" | "error";
+  lastSyncAt?: Date;
+  tags?: string[];
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+};
+
+// Mock theme provider for testing
+const ThemeProvider = ({
+  children,
+  defaultTheme = "light",
+  storageKey = "test-theme",
+}: {
+  children: ReactNode;
+  defaultTheme?: "light" | "dark" | "system";
+  storageKey?: string;
+}) => {
+  return (
+    <div
+      data-testid="theme-provider"
+      data-theme={defaultTheme}
+      data-storage-key={storageKey}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Mock StoredContact interface for testing
+export interface StoredContact {
+  id: string;
+  name: string;
+  levelId: string;
+  lastContact: Date;
+  contactFrequency: number;
+  strength: number;
+  decayRate: number;
+  platform: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  importDate: Date;
+  source: "facebook" | "linkedin" | "manual";
+  firestoreId?: string;
+  syncStatus?: "synced" | "pending" | "error";
+  lastSyncAt?: Date;
+  tags?: string[];
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+}
+
+type RouterType = "memory" | "history";
+
+interface TestProviderProps {
+  children: ReactNode;
+  routerType?: RouterType;
+  initialEntries?: string[];
+  theme?: "light" | "dark" | "system";
+}
+
+const HistoryRouter = ({
+  children,
+  history,
+}: {
+  children: ReactNode;
+  history: History;
+}) => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (pathname !== history.location.pathname) {
+      history.push(pathname);
+    }
+  }, [history, pathname]);
+
+  return <>{children}</>;
+};
+
+export const TestProviders = ({
+  children,
+  routerType = "memory",
+  initialEntries = ["/"],
+  theme = "light",
+}: TestProviderProps) => {
+  const history = useMemo(
+    () => createMemoryHistory({ initialEntries }),
+    [initialEntries],
+  );
+
+  return routerType === "memory" ? (
+    <MemoryRouter initialEntries={initialEntries}>
+      <ThemeProvider defaultTheme={theme} storageKey="test-theme">
+        {children}
+      </ThemeProvider>
+    </MemoryRouter>
+  ) : (
+    <HistoryRouter history={history}>
+      <ThemeProvider defaultTheme={theme} storageKey="test-theme">
+        {children}
+      </ThemeProvider>
+    </HistoryRouter>
+  );
+};
+
 interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
   initialEntries?: string[];
   theme?: "light" | "dark" | "system";
   withRouter?: boolean;
+  routerType?: RouterType;
 }
 
-// Custom render function that includes all necessary providers
-const AllTheProviders = ({
-  children,
-  theme = "light",
-  initialEntries = ["/"],
-  withRouter = true,
-}: {
-  children: React.ReactNode;
-  theme?: "light" | "dark" | "system";
-  initialEntries?: string[];
-  withRouter?: boolean;
-}) => {
-  const RouterComponent = withRouter
-    ? initialEntries.length > 1
-      ? MemoryRouter
-      : BrowserRouter
-    : React.Fragment;
-
-  const routerProps =
-    withRouter && initialEntries.length > 1 ? { initialEntries } : {};
-
-  return (
-    <RouterComponent {...routerProps}>
-      <ThemeProvider defaultTheme={theme} storageKey="test-theme">
-        {children}
-      </ThemeProvider>
-    </RouterComponent>
-  );
-};
-
-// Main custom render function
 const customRender = (ui: ReactElement, options: CustomRenderOptions = {}) => {
-  const {
-    initialEntries = ["/"],
-    theme = "light",
-    withRouter = true,
-    ...renderOptions
-  } = options;
+  const Wrapper = options.withRouter
+    ? ({ children }: { children: ReactNode }) => (
+        <TestProviders
+          initialEntries={options.initialEntries}
+          theme={options.theme}
+          routerType={options.routerType}
+        >
+          {children}
+        </TestProviders>
+      )
+    : ({ children }: { children: ReactNode }) => (
+        <ThemeProvider defaultTheme={options.theme} storageKey="test-theme">
+          {children}
+        </ThemeProvider>
+      );
 
-  // Setup theme storage if needed
-  if (theme !== "light") {
-    testHelpers.setupThemeStorage(theme);
-  }
-
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <AllTheProviders
-      theme={theme}
-      initialEntries={initialEntries}
-      withRouter={withRouter}
-    >
-      {children}
-    </AllTheProviders>
-  );
-
-  return render(ui, { wrapper: Wrapper, ...renderOptions });
+  return render(ui, { wrapper: Wrapper, ...options });
 };
 
-// Re-export everything from testing library
-export * from "@testing-library/react";
-
-// Override render method
 export { customRender as render };
 
-// Specialized render functions for different scenarios
 export const renderWithRouter = (
   ui: ReactElement,
-  options: {
-    initialEntries?: string[];
-    theme?: "light" | "dark" | "system";
-  } = {},
-) => {
-  return customRender(ui, { ...options, withRouter: true });
-};
+  options: Omit<CustomRenderOptions, "withRouter"> = {},
+) => customRender(ui, { ...options, withRouter: true });
 
-export const renderWithoutRouter = (
+export const renderWithHistory = (
   ui: ReactElement,
-  options: { theme?: "light" | "dark" | "system" } = {},
-) => {
-  return customRender(ui, { ...options, withRouter: false });
-};
+  options: Omit<CustomRenderOptions, "withRouter" | "routerType"> = {},
+) => customRender(ui, { ...options, withRouter: true, routerType: "history" });
 
 export const renderWithTheme = (
   ui: ReactElement,
   theme: "light" | "dark" | "system",
-  options: CustomRenderOptions = {},
-) => {
-  return customRender(ui, { ...options, theme });
-};
+  options: Omit<CustomRenderOptions, "theme"> = {},
+) => customRender(ui, { ...options, theme });
 
-// Render with specific route for testing navigation
-export const renderWithRoute = (
-  ui: ReactElement,
-  route: string,
-  options: CustomRenderOptions = {},
-) => {
-  return customRender(ui, { ...options, initialEntries: [route] });
-};
-
-// Render with multiple routes for testing navigation between pages
-export const renderWithRoutes = (
-  ui: ReactElement,
-  routes: string[],
-  options: CustomRenderOptions = {},
-) => {
-  return customRender(ui, { ...options, initialEntries: routes });
-};
-
-// Export test helpers for convenience
-export { testHelpers } from "./test-helpers";
-export { firebaseMocks } from "./firebase-mocks";
-export { localStorageMock, sessionStorageMock } from "./storage-mocks";
-export { createCanvasContextMock } from "./canvas-mocks";
-
-// Common test utilities
-import userEvent from "@testing-library/user-event";
-export { default as userEvent } from "@testing-library/user-event";
-export const createUser = () => userEvent.setup();
-export const user = userEvent;
-
-// Helper to wait for elements with better error messages
-export const waitForElement = async (callback: () => any, timeout = 1000) => {
-  const start = Date.now();
-  while (Date.now() - start < timeout) {
-    try {
-      const result = callback();
-      if (result) return result;
-    } catch (error) {
-      // Continue waiting
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-  throw new Error(`Element not found within ${timeout}ms`);
-};
-
-// Helper to simulate file drop events
-export const simulateFileDrop = (element: Element, files: File[]) => {
-  const dataTransfer = {
-    files,
-    items: files.map((file) => ({
-      kind: "file",
-      type: file.type,
-      getAsFile: () => file,
-    })),
-    types: ["Files"],
+// Helper to mock next/router
+export const mockNextRouter = (overrides = {}) => {
+  const mockRouter = {
+    route: "/",
+    pathname: "/",
+    query: {},
+    asPath: "/",
+    push: vi.fn(),
+    replace: vi.fn(),
+    reload: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn().mockResolvedValue(undefined),
+    beforePopState: vi.fn(),
+    events: {
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+    },
+    isFallback: false,
+    ...overrides,
   };
 
-  const dropEvent = new DragEvent("drop", {
-    bubbles: true,
-    cancelable: true,
-    dataTransfer: dataTransfer as any,
-  });
+  vi.mock("next/router", () => ({
+    useRouter: () => mockRouter,
+  }));
 
-  element.dispatchEvent(dropEvent);
+  return mockRouter;
 };
+
+export const waitForAsync = (ms = 0) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+type MockApiResponse<T> = {
+  status: number;
+  ok: boolean;
+  json: () => Promise<T>;
+};
+
+type TestHelpers = {
+  createMockContact: (
+    overrides?: Partial<TestStoredContact>,
+  ) => TestStoredContact;
+  expectContactToMatch: (
+    contact: TestStoredContact,
+    expected: Partial<TestStoredContact>,
+  ) => void;
+  navigateTo: (path: string) => void;
+  mockApiResponse: <T>(data: T, status?: number) => MockApiResponse<T>;
+  waitForCondition: (
+    condition: () => boolean,
+    timeout?: number,
+  ) => Promise<void>;
+};
+
+export const testHelpers: TestHelpers = {
+  createMockContact: (overrides = {}) => ({
+    id: overrides.id || `contact-${Math.random().toString(36).substr(2, 9)}`,
+    name: overrides.name || "Test Contact",
+    levelId: overrides.levelId || "level-1",
+    lastContact: overrides.lastContact || new Date(),
+    contactFrequency: overrides.contactFrequency || 30,
+    strength: overrides.strength ?? 0.8,
+    decayRate: overrides.decayRate ?? 0.1,
+    platform: overrides.platform || "test",
+    importDate: overrides.importDate || new Date(),
+    source: overrides.source || "manual",
+    ...overrides,
+  }),
+
+  expectContactToMatch: (contact, expected) => {
+    Object.entries(expected).forEach(([key, value]) => {
+      expect(contact[key as keyof TestStoredContact]).toEqual(value);
+    });
+  },
+
+  navigateTo: (path) => {
+    window.history.pushState({}, "Test page", path);
+  },
+
+  mockApiResponse: (data, status = 200) => ({
+    status,
+    ok: status >= 200 && status < 300,
+    json: async () => data,
+  }),
+
+  waitForCondition: async (condition, timeout = 1000) => {
+    const start = Date.now();
+    while (!condition() && Date.now() - start < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    if (!condition()) {
+      throw new Error("Condition not met within timeout");
+    }
+  },
+};
+
+// Export userEvent for testing interactions
+export { userEvent };

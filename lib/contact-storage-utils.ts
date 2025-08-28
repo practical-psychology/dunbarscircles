@@ -12,7 +12,7 @@ import type {
   StoredContact,
   ContactOperationResult,
 } from "./contact-storage-service";
-import type { Person } from "@/types/relationships";
+import type { Person } from "../src/types/relationships";
 
 // Re-export types for convenience
 export type {

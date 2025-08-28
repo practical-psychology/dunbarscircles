@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Level } from "@/types/relationships";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Move, Edit as EditIcon, Trash2 } from "lucide-react";
+import { ContactEditModal } from "./contact-edit-modal";
+import { ContactDeleteConfirmation } from "./contact-delete-confirmation";
+import type { ContactFormData, ContactUpdateData } from "@/lib/contact-models";
 
 interface ContactsDashboardProps {
   levels: Level[];
@@ -76,6 +87,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     byLevel: {} as Record<string, number>,
   });
   const [, setDataSource] = useState<string>("loading");
+  const [editingContact, setEditingContact] = useState<StoredContact | null>(
+    null,
+  );
 
   // Load contacts and stats
   useEffect(() => {
@@ -120,7 +134,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
             const bySource = { facebook: 0, linkedin: 0, manual: 0 };
             const byLevel: Record<string, number> = {};
 
-            contacts.forEach((contact) => {
+            contacts.forEach((contact: StoredContact) => {
               if (contact.source === "facebook") bySource.facebook++;
               else if (contact.source === "linkedin") bySource.linkedin++;
               else if (contact.source === "manual") bySource.manual++;
@@ -206,6 +220,83 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
     const isDecaying = daysSinceContact > contact.contactFrequency * 1.5;
     return { daysSinceContact: Math.floor(daysSinceContact), isDecaying };
+  };
+
+  const recalcStats = (list: StoredContact[]) => {
+    const total = list.length;
+    const bySource = { facebook: 0, linkedin: 0, manual: 0 } as Record<
+      string,
+      number
+    > & { facebook: number; linkedin: number; manual: number };
+    const byLevel: Record<string, number> = {};
+    list.forEach((c) => {
+      bySource[c.source] = (bySource[c.source] || 0) + 1;
+      byLevel[c.levelId] = (byLevel[c.levelId] || 0) + 1;
+    });
+    setStats({
+      total,
+      bySource: {
+        facebook: bySource.facebook || 0,
+        linkedin: bySource.linkedin || 0,
+        manual: bySource.manual || 0,
+      },
+      byLevel,
+    });
+  };
+
+  const handleContactUpdate = async (
+    contact: StoredContact,
+    updates: Partial<StoredContact>,
+  ) => {
+    const targetId = contact.firestoreId || contact.id;
+    try {
+      const result = await EnhancedContactStorage.updateContact(
+        targetId,
+        updates,
+      );
+      if (result.success && result.data) {
+        setContacts((prev) => {
+          const next = prev.map((c) =>
+            (c.firestoreId && c.firestoreId === targetId) || c.id === targetId
+              ? { ...c, ...result.data }
+              : c,
+          );
+          recalcStats(next);
+          return next;
+        });
+      } else {
+        throw new Error(result.error || "Failed to update contact");
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert(
+        `Failed to update contact: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    }
+  };
+
+  const handleContactDelete = async (contact: StoredContact) => {
+    const targetId = contact.firestoreId || contact.id;
+    try {
+      const result = await EnhancedContactStorage.deleteContact(targetId);
+      if (result.success) {
+        setContacts((prev) => {
+          const next = prev.filter((c) => {
+            const cId = c.firestoreId || c.id;
+            return cId !== targetId;
+          });
+          recalcStats(next);
+          return next;
+        });
+      } else {
+        throw new Error(result.error || "Failed to delete contact");
+      }
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert(
+        `Failed to delete contact: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    }
   };
 
   const clearAllContacts = async () => {
@@ -314,8 +405,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   };
 
   const handleExportCSV = () => {
-    const filename = generateFilename("yakw_contacts", "csv");
-    exportToCSV(contacts, levels, filename);
+    const data = prepareExportData();
+    exportToCSV(data.people, data.levels);
     setShowExportDialog(false);
   };
 
@@ -737,8 +828,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
+                      <div className="flex items-center gap-2">
+                        <div className="text-right pr-2">
                           <div className="text-sm font-medium">
                             {Math.round(contact.strength * 100)}%
                           </div>
@@ -758,6 +849,74 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                         <Badge variant="secondary" className="capitalize">
                           {contact.source}
                         </Badge>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label="Contact actions menu"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setEditingContact(contact)}
+                              data-testid="edit-contact"
+                            >
+                              <EditIcon className="w-4 h-4 mr-2" />
+                              Edit Contact
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {levels.map((lvl) => (
+                              <DropdownMenuItem
+                                key={lvl.id}
+                                onClick={() =>
+                                  handleContactUpdate(contact, {
+                                    levelId: lvl.id,
+                                  })
+                                }
+                              >
+                                <Move className="w-4 h-4 mr-2" />
+                                Move to {lvl.name}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <ContactDeleteConfirmation
+                          contact={{
+                            id: contact.firestoreId || contact.id,
+                            name: contact.name,
+                            levelId: contact.levelId,
+                            platform: contact.platform,
+                            lastContact: contact.lastContact,
+                            strength: contact.strength,
+                          }}
+                          onDelete={async (contactId) => {
+                            // Map back to the full contact by id
+                            const full = contacts.find(
+                              (c) =>
+                                c.firestoreId === contactId ||
+                                c.id === contactId,
+                            );
+                            if (full) {
+                              await handleContactDelete(full);
+                            }
+                          }}
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={`Delete ${contact.name}`}
+                              className="text-red-600 hover:text-red-700"
+                              title={`Delete ${contact.name}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          }
+                        />
                       </div>
                     </div>
                   );
@@ -766,6 +925,53 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {editingContact && (
+        <ContactEditModal
+          contact={{
+            id: editingContact.firestoreId || editingContact.id,
+            name: editingContact.name,
+            email: editingContact.email,
+            phone: editingContact.phone,
+            notes: editingContact.notes,
+            levelId: editingContact.levelId,
+            platform: editingContact.platform,
+            contactFrequency: editingContact.contactFrequency,
+            strength: editingContact.strength,
+            lastContact: editingContact.lastContact,
+          }}
+          isOpen={!!editingContact}
+          onOpenChange={(open) => {
+            if (!open) setEditingContact(null);
+          }}
+          onSave={async (data: ContactFormData | ContactUpdateData) => {
+            const contactId =
+              "id" in data
+                ? data.id
+                : editingContact.firestoreId || editingContact.id;
+            const { id, ...updates } = data as any;
+            const result = await EnhancedContactStorage.updateContact(
+              contactId,
+              updates,
+            );
+            if (result.success && result.data) {
+              setContacts((prev) => {
+                const next = prev.map((c) =>
+                  (c.firestoreId && c.firestoreId === contactId) ||
+                  c.id === contactId
+                    ? { ...c, ...result.data }
+                    : c,
+                );
+                recalcStats(next);
+                return next;
+              });
+              setEditingContact(null);
+            } else {
+              throw new Error(result.error || "Failed to save contact");
+            }
+          }}
+        />
       )}
     </div>
   );

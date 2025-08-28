@@ -2,12 +2,17 @@ import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageLayout from "../components/PageLayout";
-import { LiquidCard } from "@/components/ui/liquid-card";
-import { LiquidButton } from "@/components/ui/liquid-button";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+// UI Components
+import { LiquidCard } from "../../components/ui/liquid-card";
+import { LiquidButton } from "../../components/ui/liquid-button";
+import { Button } from "../../components/ui/button";
+import { Progress } from "../../components/ui/progress";
+import { Badge } from "../../components/ui/badge";
+
+// Icons
 import {
+  Users,
+  RefreshCw,
   Upload,
   FileText,
   Facebook,
@@ -17,11 +22,10 @@ import {
   AlertTriangle,
   Download,
   Eye,
-  Users,
-  RefreshCw,
 } from "lucide-react";
-import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+
 import type { StoredContact } from "@/lib/contact-storage";
+import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
 
 interface ImportStats {
   total: number;
@@ -64,23 +68,39 @@ export default function ContactImportPage() {
 
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const contacts: StoredContact[] = [];
+    const now = new Date();
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
 
       if (values.length < headers.length) continue; // Skip incomplete rows
 
+      // Create a new contact with all required fields and defaults
       const contact: StoredContact = {
         id: `import_${Date.now()}_${i}`,
         name: "",
         levelId: "active-network", // Default level
-        lastContact: new Date(),
+        lastContact: now,
         contactFrequency: 90, // Default quarterly
         strength: 0.3, // Default strength for imported contacts
         decayRate: 0.1,
         platform: "LinkedIn",
         source: "linkedin",
-        importDate: new Date(),
+        importDate: now,
+        // Optional fields with defaults
+        email: "",
+        phone: "",
+        notes: "",
+        // Optional fields from Person interface
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        // Optional fields from StoredContact
+        firestoreId: undefined,
+        syncStatus: undefined,
+        lastSyncAt: undefined,
+        tags: [],
       };
 
       // Map CSV columns to contact fields
@@ -145,57 +165,72 @@ export default function ContactImportPage() {
     }
 
     const contacts: StoredContact[] = [];
+    const now = new Date();
+
+    // Create a base contact with all required fields and defaults
+    const createBaseContact = (): StoredContact => ({
+      id: `import_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      name: "",
+      levelId: "active-network",
+      lastContact: now,
+      contactFrequency: 90,
+      strength: 0.3,
+      decayRate: 0.1,
+      platform: "",
+      source: "manual",
+      importDate: now,
+      // Optional fields with defaults
+      email: "",
+      phone: "",
+      notes: "",
+      // Optional fields from Person interface
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      // Optional fields from StoredContact
+      firestoreId: undefined,
+      syncStatus: undefined,
+      lastSyncAt: undefined,
+      tags: [],
+    });
 
     // Handle Facebook friends format v2 (newer format)
     if (data.friends_v2 && Array.isArray(data.friends_v2)) {
       data.friends_v2.forEach((friend: any, index: number) => {
         if (friend.name && friend.name.trim()) {
-          const contact: StoredContact = {
-            id: `import_${Date.now()}_${index}`,
-            name: friend.name.trim(),
-            levelId: "recognition-group", // Default level for Facebook friends
-            lastContact: friend.timestamp
-              ? new Date(friend.timestamp * 1000)
-              : new Date(),
-            contactFrequency: 365, // Default yearly for Facebook friends
-            strength: 0.2, // Lower strength for Facebook friends
-            decayRate: 0.1,
-            platform: "Facebook",
-            source: "facebook",
-            importDate: new Date(),
-            email: "",
-            phone: "",
-            notes: "",
-          };
+          const contact = createBaseContact();
+          contact.id = `import_${Date.now()}_${index}`;
+          contact.name = friend.name.trim();
+          contact.levelId = "recognition-group";
+          contact.lastContact = friend.timestamp
+            ? new Date(friend.timestamp * 1000)
+            : now;
+          contact.contactFrequency = 365;
+          contact.strength = 0.2;
+          contact.platform = "Facebook";
+          contact.source = "facebook";
           contacts.push(contact);
         }
       });
     }
     // Handle Facebook friends format v1 (older format with more data)
-    else if (
-      data.friends &&
-      data.friends.data &&
-      Array.isArray(data.friends.data)
-    ) {
+    else if (data.friends?.data && Array.isArray(data.friends.data)) {
       data.friends.data.forEach((friend: any, index: number) => {
         if (friend.name && friend.name.trim()) {
-          const contact: StoredContact = {
-            id: `import_${Date.now()}_${index}`,
-            name: friend.name.trim(),
-            levelId: "recognition-group", // Default level for Facebook friends
-            lastContact: friend.timestamp
-              ? new Date(friend.timestamp * 1000)
-              : new Date(),
-            contactFrequency: 365, // Default yearly for Facebook friends
-            strength: 0.2, // Lower strength for Facebook friends
-            decayRate: 0.1,
-            platform: "Facebook",
-            source: "facebook",
-            importDate: new Date(),
-            email: friend.contact_info?.email || "",
-            phone: "",
-            notes: friend.about || "",
-          };
+          const contact = createBaseContact();
+          contact.id = `import_${Date.now()}_${index}`;
+          contact.name = friend.name.trim();
+          contact.levelId = "recognition-group";
+          contact.lastContact = friend.timestamp
+            ? new Date(friend.timestamp * 1000)
+            : now;
+          contact.contactFrequency = 365;
+          contact.strength = 0.2;
+          contact.platform = "Facebook";
+          contact.source = "facebook";
+          contact.email = friend.contact_info?.email || "";
+          contact.notes = friend.about || "";
           contacts.push(contact);
         }
       });
@@ -204,23 +239,21 @@ export default function ContactImportPage() {
     else if (Array.isArray(data)) {
       data.forEach((item: any, index: number) => {
         if (item.name) {
-          const contact: StoredContact = {
-            id: `import_${Date.now()}_${index}`,
-            name: item.name,
-            levelId: item.levelId || "active-network",
-            lastContact: item.lastContact
-              ? new Date(item.lastContact)
-              : new Date(),
-            contactFrequency: item.contactFrequency || 90,
-            strength: item.strength || 0.3,
-            decayRate: item.decayRate || 0.1,
-            platform: item.platform || "Manual Import",
-            source: item.source || "manual",
-            importDate: new Date(),
-            email: item.email || "",
-            phone: item.phone || "",
-            notes: item.notes || "",
-          };
+          const contact = createBaseContact();
+          contact.id = `import_${Date.now()}_${index}`;
+          contact.name = item.name;
+          contact.levelId = item.levelId || "active-network";
+          contact.lastContact = item.lastContact
+            ? new Date(item.lastContact)
+            : now;
+          contact.contactFrequency = item.contactFrequency || 90;
+          contact.strength = item.strength || 0.3;
+          contact.decayRate = item.decayRate || 0.1;
+          contact.platform = item.platform || "Manual Import";
+          contact.source = item.source || "manual";
+          contact.email = item.email || "";
+          contact.phone = item.phone || "";
+          contact.notes = item.notes || "";
           contacts.push(contact);
         }
       });
@@ -264,7 +297,7 @@ export default function ContactImportPage() {
       const existingResult = await EnhancedContactStorage.loadContacts();
       const existingContacts = existingResult.data || [];
       const existingNames = new Set(
-        existingContacts.map((c) => c.name.toLowerCase()),
+        existingContacts.map((c: StoredContact) => c.name.toLowerCase()),
       );
 
       setImportProgress(80);

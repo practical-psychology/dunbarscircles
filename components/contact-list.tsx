@@ -7,26 +7,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "./ui/table";
+import { Checkbox } from "./ui/checkbox";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "./ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "./ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +36,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "./ui/alert-dialog";
 import {
   Search,
   Filter,
@@ -54,10 +54,10 @@ import {
   Facebook,
   Linkedin,
 } from "lucide-react";
-import { LiquidCard } from "@/components/ui/liquid-card";
-import { LiquidButton } from "@/components/ui/liquid-button";
-import type { StoredContact } from "@/lib/contact-storage-service";
-import type { Level } from "@/types/relationships";
+import { LiquidCard } from "./ui/liquid-card";
+import { LiquidButton } from "./ui/liquid-button";
+import type { StoredContact } from "@/lib/contact-storage";
+import type { Level } from "@/types";
 import { relationshipStrengthCalculator } from "@/lib/contact-models";
 
 interface ContactListProps {
@@ -118,7 +118,9 @@ export function ContactList({
           contact.email?.toLowerCase().includes(query) ||
           contact.phone?.includes(query) ||
           contact.notes?.toLowerCase().includes(query) ||
-          contact.tags?.some((tag) => tag.toLowerCase().includes(query)),
+          contact.tags?.some((tag: string) =>
+            tag.toLowerCase().includes(query),
+          ),
       );
     }
 

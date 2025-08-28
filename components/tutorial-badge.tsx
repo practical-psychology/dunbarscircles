@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useTutorialProgress } from "@/lib/tutorial-progress";
 

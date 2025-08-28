@@ -294,6 +294,8 @@ describe("ContactStorageService", () => {
           strength: 0.8,
           decayRate: 0.1,
           platform: "work",
+          importDate: new Date(),
+          source: "manual" as const,
         },
         {
           id: "person2",
@@ -304,6 +306,8 @@ describe("ContactStorageService", () => {
           strength: 0.6,
           decayRate: 0.15,
           platform: "facebook",
+          importDate: new Date(),
+          source: "facebook" as const,
         },
       ];
 
@@ -339,6 +343,8 @@ describe("ContactStorageService", () => {
           strength: 0.8,
           decayRate: 0.1,
           platform: "work",
+          importDate: new Date(),
+          source: "manual" as const,
         },
       ];
 
@@ -639,6 +645,8 @@ describe("ContactStorageUtils", () => {
       strength: 0.8,
       decayRate: 0.1,
       platform: "work",
+      importDate: new Date(),
+      source: "manual" as const,
     };
 
     const contactForm = ContactStorageUtils.personToContactForm(person);

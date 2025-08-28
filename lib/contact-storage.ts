@@ -1,4 +1,4 @@
-import type { Person } from "@/types/relationships";
+import type { Person } from "../src/types/relationships";
 import {
   collection,
   getDocs,
@@ -8,15 +8,33 @@ import {
   writeBatch,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/firebase-config";
+import { db } from "../firebase-config";
 
 const CONTACTS_STORAGE_KEY = "yakw_imported_contacts";
 const CONTACTS_COLLECTION = "contacts";
 
 export interface StoredContact extends Person {
+  id: string;
+  name: string;
+  levelId: string;
+  lastContact: Date;
+  contactFrequency: number;
+  strength: number;
+  decayRate: number;
+  platform: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
   importDate: Date;
   source: "facebook" | "linkedin" | "manual";
   firestoreId?: string;
+  syncStatus?: "synced" | "pending" | "error";
+  lastSyncAt?: Date;
+  tags?: string[];
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
 }
 
 export class ContactStorage {

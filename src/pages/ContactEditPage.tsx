@@ -2,20 +2,21 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageLayout from "../components/PageLayout";
-import { LiquidCard } from "@/components/ui/liquid-card";
-import { LiquidButton } from "@/components/ui/liquid-button";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+// UI Components - Update paths as needed
+import { LiquidCard } from "../../components/ui/liquid-card";
+import { LiquidButton } from "../../components/ui/liquid-button";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from "../../components/ui/select";
+import { Badge } from "../../components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,7 +27,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "../../components/ui/alert-dialog";
+
+// Icons
 import {
   User,
   Save,
@@ -35,9 +38,11 @@ import {
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";
-import { dunbarLevels } from "../data/dunbarLevels";
-import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
-import type { StoredContact } from "@/lib/contact-storage";
+
+// Data and Types
+import { dunbarLevels } from "../../data/dunbarLevels";
+import { EnhancedContactStorage } from "../../lib/contact-storage-enhanced";
+import type { StoredContact } from "../../lib/contact-storage";
 
 interface ContactFormData {
   name: string;

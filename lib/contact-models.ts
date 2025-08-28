@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Person, Level } from "@/types/relationships";
+import type { Person, Level } from "../src/types/relationships";
 
 // Core contact interfaces extending the existing Person type
 export interface Contact extends Person {

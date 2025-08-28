@@ -16,16 +16,16 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import {
   Users,
-  Play,
-  BookOpen,
-  Shield,
-  Zap,
+  PlayCircle,
+  Book,
+  ShieldCheck,
+  Sparkles as Zap,
   ChevronRight,
   X,
-  Sparkles,
+  Star,
 } from "lucide-react";
 
 interface WelcomeModalProps {
@@ -140,7 +140,7 @@ export function WelcomeModal({
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-white" />
+                    <ShieldCheck className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <h4 className="font-semibold">Privacy First</h4>
@@ -260,7 +260,7 @@ export function WelcomeModal({
                 ease: "easeInOut",
               }}
             >
-              <Sparkles className="w-8 h-8 text-white" />
+              <Star className="w-8 h-8 text-white" />
             </motion.div>
             <h3 className="text-xl font-bold mb-2">You're all set!</h3>
             <p className="text-muted-foreground">
@@ -272,7 +272,7 @@ export function WelcomeModal({
             <Card className="border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Play className="w-4 h-4 text-blue-500" />
+                  <PlayCircle className="w-4 h-4 text-blue-500" />
                   Interactive Tutorial
                   <Badge variant="secondary">Recommended</Badge>
                 </CardTitle>
@@ -293,7 +293,7 @@ export function WelcomeModal({
             <Card className="border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-green-500" />
+                  <Book className="w-4 h-4 text-green-500" />
                   Quick Start Guide
                 </CardTitle>
                 <CardDescription>

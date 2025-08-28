@@ -1,6 +1,6 @@
 import { ContactStorage } from "./contact-storage";
 import { testFirebaseConnection as runDiagnostics } from "./firebase-diagnostics";
-import type { Person } from "@/types/relationships";
+import type { Person } from "../types/relationships";
 
 export async function testFirebaseConnection(): Promise<boolean> {
   // Run comprehensive diagnostics
@@ -30,6 +30,8 @@ export async function addTestContact(): Promise<void> {
     strength: 0.9,
     decayRate: 0.001,
     platform: "Test Platform",
+    importDate: new Date(),
+    source: "test",
   };
 
   await ContactStorage.addAllContacts([testContact], "manual");

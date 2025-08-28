@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Smartphone, DollarSign } from "lucide-react";
 

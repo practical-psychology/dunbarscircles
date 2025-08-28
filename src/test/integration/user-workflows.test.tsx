@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, testHelpers } from "../test-utils";
+import { render } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 import App from "../../App";
 
 // Mock the components that require Canvas API

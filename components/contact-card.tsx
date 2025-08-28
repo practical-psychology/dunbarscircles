@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CardContent, CardHeader } from "@/components/ui/card";
+import {
+  User as UserIcon,
+  Facebook as FacebookIcon,
+  Linkedin as LinkedinIcon,
+  Mail as MailIcon,
+  Phone as PhoneIcon,
+  Calendar as CalendarIcon,
+  AlertTriangle as AlertTriangleIcon,
+  MessageSquare,
+  Edit,
+} from "lucide-react";
+
+// Import components
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,87 +27,175 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  User,
-  Facebook,
-  Linkedin,
-  Mail,
-  Phone,
-  Calendar,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Move,
-  AlertTriangle,
-  Clock,
-  Heart,
-  MessageCircle,
-  Tag,
-} from "lucide-react";
-import { LiquidCard } from "@/components/ui/liquid-card";
-import type { StoredContact } from "@/lib/contact-storage-service";
-import type { Level } from "@/types/relationships";
-import { relationshipStrengthCalculator } from "@/lib/contact-models";
-import { formatDistanceToNow } from "date-fns";
+// Removed unused imports
+
+// Types
+export type HealthStatus = "critical" | "poor" | "fair" | "good" | "excellent";
+
+export interface HealthInfo {
+  score: number;
+  status: HealthStatus;
+  recommendations: string[];
+}
+
+export interface StoredContact {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  platform: string;
+  lastContact: Date;
+  contactFrequency: number;
+  strength: number;
+  notes?: string;
+  tags?: string[];
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+}
+
+export interface Level {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  bgColor?: string;
+  textColor?: string;
+  maxContacts?: number;
+}
 
 interface ContactCardProps {
   contact: StoredContact;
-  level?: Level;
+  level: Level;
   onEdit?: (contact: StoredContact) => void;
   onDelete?: (contactId: string) => void;
   onMove?: (contactId: string, levelId: string) => void;
   onUpdateLastContact?: (contactId: string) => void;
-  levels?: Level[];
   compact?: boolean;
+  className?: string;
 }
 
-export function ContactCard({
+// Types are exported above where they are defined
+
+// Card component
+export function LiquidCard({
+  children,
+  className = "",
+  hover = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  hover?: boolean;
+}) {
+  return (
+    <Card
+      className={`relative overflow-hidden ${hover ? "hover:shadow-lg transition-shadow" : ""} ${className}`}
+    >
+      {children}
+    </Card>
+  );
+}
+
+// Relationship strength calculator with health score
+const relationshipStrengthCalculator = {
+  calculateHealthScore: ({
+    strength,
+    lastContact,
+    contactFrequency,
+    decayRate = 0.1,
+    currentStrength = 0.5,
+  }: {
+    strength: number;
+    lastContact: Date;
+    contactFrequency: number;
+    decayRate?: number;
+    currentStrength?: number;
+  }): HealthInfo => {
+    const lastContactDate =
+      lastContact instanceof Date ? lastContact : new Date(lastContact);
+
+    const daysSinceLastContact = Math.floor(
+      (Date.now() - lastContactDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    const decayFactor = Math.max(
+      0,
+      1 - (daysSinceLastContact * decayRate) / 100,
+    );
+    const baseScore = (strength * 0.7 + contactFrequency * 0.3) * 100;
+    const healthScore = Math.min(
+      100,
+      Math.max(0, Math.round(baseScore * decayFactor)),
+    );
+
+    const status: HealthStatus =
+      healthScore < 30
+        ? "critical"
+        : healthScore < 60
+          ? "poor"
+          : healthScore < 80
+            ? "fair"
+            : "good";
+
+    const recommendations: string[] = [];
+    if (daysSinceLastContact > 30) {
+      recommendations.push("Reach out soon to maintain connection");
+    }
+    if (contactFrequency < 0.5) {
+      recommendations.push("Consider increasing contact frequency");
+    }
+    if (currentStrength < 0.5) {
+      recommendations.push("Work on strengthening this relationship");
+    }
+
+    return {
+      score: healthScore,
+      status,
+      recommendations,
+    };
+  },
+};
+
+// Main ContactCard Component
+export default function ContactCard({
   contact,
   level,
   onEdit,
   onDelete,
-  onMove,
   onUpdateLastContact,
-  levels = [],
   compact = false,
+  className = "",
 }: ContactCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-  // Calculate relationship health
-  const health = relationshipStrengthCalculator.calculateHealthScore({
-    strength: contact.strength,
-    lastContact: contact.lastContact,
-    contactFrequency: contact.contactFrequency,
-    decayRate: contact.decayRate || 0.1,
-  });
 
   // Get platform icon
   const getSourceIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
       case "facebook":
-        return <Facebook className="w-4 h-4 text-blue-600" />;
+        return <FacebookIcon className="w-4 h-4 text-blue-600" />;
       case "linkedin":
-        return <Linkedin className="w-4 h-4 text-blue-700" />;
+        return <LinkedinIcon className="w-4 h-4 text-blue-700" />;
       default:
-        return <User className="w-4 h-4 text-gray-600" />;
+        return <UserIcon className="w-4 h-4 text-gray-600" />;
     }
   };
 
   // Get health status color
-  const getHealthColor = (status: string) => {
+  const getHealthColor = (status: HealthStatus) => {
     switch (status) {
-      case "excellent":
-        return "text-green-600 bg-green-50 border-green-200";
-      case "good":
-        return "text-blue-600 bg-blue-50 border-blue-200";
-      case "fair":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200";
-      case "poor":
-        return "text-orange-600 bg-orange-50 border-orange-200";
       case "critical":
         return "text-red-600 bg-red-50 border-red-200";
+      case "poor":
+        return "text-amber-600 bg-amber-50 border-amber-200";
+      case "fair":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      case "good":
+        return "text-green-600 bg-green-50 border-green-200";
+      case "excellent":
+        return "text-emerald-600 bg-emerald-50 border-emerald-200";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
+        return "text-green-600 bg-green-50 border-green-200";
     }
   };
 
@@ -112,21 +207,11 @@ export function ContactCard({
   // Check if contact is overdue
   const isOverdue = daysSinceContact > contact.contactFrequency * 1.5;
 
-  const handleDelete = () => {
-    setShowDeleteDialog(true);
-  };
-
   const confirmDelete = () => {
     if (onDelete) {
       onDelete(contact.id);
     }
     setShowDeleteDialog(false);
-  };
-
-  const handleMove = (levelId: string) => {
-    if (onMove) {
-      onMove(contact.id, levelId);
-    }
   };
 
   const handleUpdateLastContact = () => {
@@ -140,13 +225,19 @@ export function ContactCard({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-        data-testid="contact-card"
+        className={`bg-white rounded-lg border p-3 hover:shadow-md transition-shadow ${className}`}
+        data-testid="contact-card-compact"
       >
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            {getSourceIcon(contact.platform)}
-            {level && <div className={`w-3 h-3 ${level.color} rounded-full`} />}
+          <div className="relative">
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+              {getSourceIcon(contact.platform)}
+            </div>
+            {level && (
+              <div
+                className={`absolute -bottom-1 -right-1 w-3 h-3 ${level.color} rounded-full border border-white`}
+              />
+            )}
           </div>
           <div>
             <h4 className="font-medium">{contact.name}</h4>
@@ -160,62 +251,6 @@ export function ContactCard({
               )}
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-sm font-medium">
-              {Math.round(contact.strength * 100)}%
-            </div>
-            <div className="text-xs text-gray-500">strength</div>
-          </div>
-
-          {isOverdue && (
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Overdue
-            </Badge>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Contact actions menu"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onEdit?.(contact)}
-                data-testid="edit-contact"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Contact
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleUpdateLastContact}>
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Mark as Contacted
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {levels.map((level) => (
-                <DropdownMenuItem
-                  key={level.id}
-                  onClick={() => handleMove(level.id)}
-                >
-                  <Move className="w-4 h-4 mr-2" />
-                  Move to {level.name}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDelete} className="text-red-600">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Contact
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </motion.div>
     );
@@ -244,60 +279,12 @@ export function ContactCard({
                   {level && (
                     <>
                       <span>•</span>
-                      <Badge
-                        variant="secondary"
-                        className={`${level.bgColor} ${level.textColor}`}
-                      >
-                        {level.name}
-                      </Badge>
+                      <span>{level.name}</span>
                     </>
                   )}
                 </div>
               </div>
             </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Contact actions menu"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => onEdit?.(contact)}
-                  data-testid="edit-contact"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Contact
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleUpdateLastContact}>
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Mark as Contacted
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {levels.map((level) => (
-                  <DropdownMenuItem
-                    key={level.id}
-                    onClick={() => handleMove(level.id)}
-                  >
-                    <Move className="w-4 h-4 mr-2" />
-                    Move to {level.name}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Contact
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </CardHeader>
 
@@ -306,13 +293,13 @@ export function ContactCard({
           <div className="space-y-2">
             {contact.email && (
               <div className="flex items-center gap-2 text-sm">
-                <Mail className="w-4 h-4 text-gray-400" />
+                <MailIcon className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">{contact.email}</span>
               </div>
             )}
             {contact.phone && (
               <div className="flex items-center gap-2 text-sm">
-                <Phone className="w-4 h-4 text-gray-400" />
+                <PhoneIcon className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">{contact.phone}</span>
               </div>
             )}
@@ -320,7 +307,7 @@ export function ContactCard({
 
           {/* Notes */}
           {contact.notes && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="text-sm font-medium text-gray-700">Notes</div>
               <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
                 {contact.notes}
@@ -328,93 +315,81 @@ export function ContactCard({
             </div>
           )}
 
-          {/* Tags */}
-          {contact.tags && contact.tags.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                <Tag className="w-3 h-3" />
-                Tags
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {contact.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Relationship Metrics */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                <Heart className="w-3 h-3" />
-                Strength
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
-                    style={{ width: `${contact.strength * 100}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium">
-                  {Math.round(contact.strength * 100)}%
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Health
-              </div>
-              <Badge className={`${getHealthColor(health.status)} border`}>
-                {health.status === "poor" || health.status === "critical" ? (
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                ) : null}
-                {health.score}%
-              </Badge>
-            </div>
-          </div>
-
           {/* Last Contact */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="w-4 h-4" />
-              <span>
-                Last contact:{" "}
-                {formatDistanceToNow(contact.lastContact, { addSuffix: true })}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 text-sm">
+            <CalendarIcon className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-600">
+              Last contact: {contact.lastContact.toLocaleDateString()}
+            </span>
             {isOverdue && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
+              <Badge variant="destructive" className="ml-2">
+                <AlertTriangleIcon className="w-3 h-3 mr-1" />
                 Overdue
               </Badge>
             )}
           </div>
 
-          {/* Health Recommendations */}
-          {health.recommendations.length > 0 && (
-            <div className="space-y-2 pt-2 border-t">
-              <div className="text-sm font-medium text-gray-700">
-                Recommendations
-              </div>
-              <ul className="space-y-1">
-                {health.recommendations.slice(0, 2).map((rec, index) => (
-                  <li
-                    key={index}
-                    className="text-xs text-gray-600 flex items-start gap-1"
-                  >
-                    <span className="text-blue-500 mt-0.5">•</span>
-                    {rec}
-                  </li>
-                ))}
-              </ul>
+          {/* Relationship Strength */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-700 font-medium">
+                Relationship Strength
+              </span>
+              <span className="text-gray-600">
+                {Math.round(contact.strength * 100)}%
+              </span>
             </div>
-          )}
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
+                style={{ width: `${contact.strength * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Health Score */}
+          {(() => {
+            const healthInfo =
+              relationshipStrengthCalculator.calculateHealthScore({
+                strength: contact.strength,
+                lastContact: contact.lastContact,
+                contactFrequency: contact.contactFrequency,
+              });
+
+            return (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 font-medium">
+                    Relationship Health
+                  </span>
+                  <Badge className={getHealthColor(healthInfo.status)}>
+                    {healthInfo.status.charAt(0).toUpperCase() +
+                      healthInfo.status.slice(1)}{" "}
+                    ({healthInfo.score}%)
+                  </Badge>
+                </div>
+
+                {healthInfo.recommendations.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="text-sm font-medium text-blue-800 mb-2">
+                      Recommendations
+                    </div>
+                    <ul className="space-y-1">
+                      {healthInfo.recommendations.map((rec, index) => (
+                        <li
+                          key={index}
+                          className="text-xs text-gray-600 flex items-start gap-1"
+                        >
+                          <span className="text-blue-500 mt-0.5">•</span>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-2">
@@ -424,7 +399,7 @@ export function ContactCard({
               onClick={handleUpdateLastContact}
               className="flex-1"
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
+              <MessageSquare className="w-4 h-4 mr-2" />
               Mark Contacted
             </Button>
             <Button

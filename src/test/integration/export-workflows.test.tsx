@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { render, testHelpers } from "../test-utils";
+import { render } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 
 // Test component that simulates export functionality with proper error handling
 const ExportTestComponent = () => {

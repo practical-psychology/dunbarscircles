@@ -1,4 +1,4 @@
-import { Person, Level } from "@/types/relationships";
+import { Person, Level } from "../types/relationships";
 
 // Export formats
 export type ExportFormat = "json" | "csv" | "png" | "svg";

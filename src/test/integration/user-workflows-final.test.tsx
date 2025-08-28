@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, testHelpers } from "../test-utils";
+import { render } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 
 // Create a simple test component that demonstrates the workflows
 const TestWorkflowComponent = () => {
@@ -15,7 +16,7 @@ const TestWorkflowComponent = () => {
         <input
           data-testid="file-input"
           type="file"
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file) {
               console.log("File imported:", file.name);

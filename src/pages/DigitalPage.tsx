@@ -1,6 +1,6 @@
-import { DigitalParallelsExplorer } from "@/components/digital-parallels-explorer";
-import PageLayout from "../components/PageLayout";
-import { dunbarLevels } from "../data/dunbarLevels";
+import { DigitalParallelsExplorer } from "../../components/digital-parallels-explorer";
+import PageLayout from "../../src/components/PageLayout";
+import { dunbarLevels } from "../../data/dunbarLevels";
 
 export default function DigitalPage() {
   return (

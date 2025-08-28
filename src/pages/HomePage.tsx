@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
 import { NetworkDiagram } from "@/components/network-diagram";
-import { Eye, Users, Heart, Globe, BookOpen } from "lucide-react";
+import { Eye, Users, Heart, Book, Share2 } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import { dunbarLevels } from "../data/dunbarLevels";
 
@@ -184,7 +184,7 @@ export default function HomePage() {
                   whileHover={{ scale: 1.1, rotate: -5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
-                  <Globe className="w-5 h-5" />
+                  <Share2 className="w-5 h-5" />
                 </motion.div>
                 <div>
                   <h3 className="text-xl font-bold text-purple-600 dark:text-purple-400">
@@ -242,7 +242,7 @@ export default function HomePage() {
                 className="flex items-center gap-2"
                 aria-label="Start interactive tutorial and user guide"
               >
-                <BookOpen className="w-4 h-4" />
+                <Book className="w-4 h-4" />
                 Tutorial & Guide
               </LiquidButton>
             </Link>

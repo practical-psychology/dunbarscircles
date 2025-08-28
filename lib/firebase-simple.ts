@@ -6,7 +6,7 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
 
 // Import config from main file
-import { firebaseConfig } from "@/firebase-config";
+import { firebaseConfig } from "../firebase-config";
 
 // Simple Firebase services
 let simpleApp: FirebaseApp | null = null;

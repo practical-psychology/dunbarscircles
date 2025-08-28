@@ -1,20 +1,324 @@
-import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import React, {
+  useState,
+  ReactNode,
+  forwardRef,
+  createContext,
+  useContext,
+  useMemo,
+} from "react";
 import { toast } from "sonner";
 import { dunbarLevels } from "@/data/dunbarLevels";
+
+// Alert Dialog Components
+interface AlertDialogProps {
+  children: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+interface AlertDialogContextType {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const AlertDialogContext = createContext<AlertDialogContextType | null>(null);
+
+const AlertDialog: React.FC<AlertDialogProps> = ({
+  children,
+  open: controlledOpen,
+  onOpenChange,
+}) => {
+  const [isOpen, setIsOpen] = React.useState(controlledOpen || false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : isOpen;
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isControlled) {
+      setIsOpen(newOpen);
+    }
+    onOpenChange?.(newOpen);
+  };
+
+  const contextValue = useMemo(
+    () => ({
+      open: open ?? false,
+      onOpenChange: handleOpenChange,
+    }),
+    [open, handleOpenChange],
+  );
+
+  return (
+    <AlertDialogContext.Provider value={contextValue}>
+      <div className={`fixed inset-0 z-50 ${open ? "block" : "hidden"}`}>
+        {children}
+      </div>
+    </AlertDialogContext.Provider>
+  );
+};
+
+interface AlertDialogTriggerProps
+  extends Omit<React.ComponentPropsWithoutRef<"button">, "ref"> {
+  children: ReactNode;
+  asChild?: boolean;
+}
+
+const AlertDialogTrigger = forwardRef<
+  HTMLButtonElement,
+  AlertDialogTriggerProps
+>(({ children, asChild = false, ...props }, ref) => {
+  const context = useContext(AlertDialogContext);
+
+  if (!context) {
+    throw new Error("AlertDialogTrigger must be used within an AlertDialog");
+  }
+
+  const { onOpenChange } = context;
+
+  if (asChild && React.isValidElement(children)) {
+    const childProps: React.HTMLAttributes<HTMLElement> & {
+      ref?: React.Ref<HTMLElement>;
+    } = {
+      "aria-haspopup": "dialog",
+      "aria-expanded": "false",
+      "aria-controls": "alert-dialog",
+    };
+
+    // Only add ref if it's a function ref
+    if (ref) {
+      childProps.ref = ref as React.Ref<HTMLElement>;
+    }
+
+    const originalOnClick = (children as React.ReactElement<any>).props.onClick;
+    if (originalOnClick) {
+      childProps.onClick = (e: React.MouseEvent) => {
+        onOpenChange?.(true);
+        originalOnClick(e);
+      };
+    } else {
+      childProps.onClick = () => onOpenChange?.(true);
+    }
+
+    return React.cloneElement(children, childProps);
+  } else {
+    return (
+      <button
+        type="button"
+        onClick={() => onOpenChange?.(true)}
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="alert-dialog"
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+});
+
+const AlertDialogTriggerWithRef = forwardRef(AlertDialogTrigger);
+AlertDialogTriggerWithRef.displayName = "AlertDialogTrigger";
+
+interface AlertDialogDescriptionProps {
+  children: ReactNode;
+  className?: string;
+  asChild?: boolean;
+}
+
+interface AlertDialogContentProps {
+  children: ReactNode;
+  className?: string;
+}
+
+interface AlertDialogFooterProps {
+  children: ReactNode;
+  className?: string;
+}
+
+const AlertDialogContent = ({
+  children,
+  className = "",
+  ...props
+}: AlertDialogContentProps) => (
+  <div
+    className={`bg-white rounded-lg p-6 max-w-md mx-auto mt-20 shadow-xl ${className}`}
+    {...props}
+  >
+    <div className={`mb-4`}>{children}</div>
+  </div>
+);
+
+interface AlertDialogHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const AlertDialogHeader = ({ children }: AlertDialogHeaderProps) => (
+  <div className="mb-4">{children}</div>
+);
+
+interface AlertDialogTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const AlertDialogTitle = ({
+  children,
+  className = "",
+  ...props
+}: AlertDialogTitleProps) => (
+  <h3 className={`text-lg font-medium ${className}`} {...props}>
+    {children}
+  </h3>
+);
+
+interface AlertDialogDescriptionProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  className?: string;
+  asChild?: boolean;
+}
+
+const AlertDialogDescription = forwardRef<
+  HTMLDivElement,
+  AlertDialogDescriptionProps
+>(({ children, className = "", asChild = false, ...props }, ref) => {
+  const content = (
+    <div
+      className={`text-sm text-gray-500 dark:text-gray-400 ${className}`}
+      ref={ref}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+
+  if (asChild && React.isValidElement(children)) {
+    const childProps: React.HTMLAttributes<HTMLElement> & {
+      ref?: React.Ref<HTMLElement>;
+    } = {
+      className: `text-sm text-gray-500 dark:text-gray-400 ${className}`,
+      ...props,
+    };
+
+    // Only add ref if it's a function ref
+    if (ref) {
+      childProps.ref = ref as React.Ref<HTMLElement>;
+    }
+
+    return React.cloneElement(children, childProps);
+  }
+
+  return content;
+});
+
+const AlertDialogDescriptionWithRef = forwardRef(AlertDialogDescription);
+AlertDialogDescriptionWithRef.displayName = "AlertDialogDescription";
+
+const AlertDialogFooter = ({
+  children,
+  className = "",
+  ...props
+}: AlertDialogFooterProps) => (
+  <div className={`flex justify-end gap-2 ${className}`} {...props}>
+    {children}
+  </div>
+);
+
+interface AlertDialogActionProps {
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}
+
+const AlertDialogAction = ({
+  children,
+  className = "",
+  ...props
+}: AlertDialogActionProps) => (
+  <button
+    className={`px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+interface AlertDialogCancelProps {
+  children: ReactNode;
+  className?: string;
+  [key: string]: any;
+}
+
+const AlertDialogCancel = ({
+  children,
+  className = "",
+  ...props
+}: AlertDialogCancelProps) => (
+  <button
+    className={`px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+// Button Component
+import { Button } from "@/components/ui/button";
+
+// Badge Component
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?:
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "ghost"
+    | "link";
+  asChild?: boolean;
+}
+
+const Badge = ({
+  children,
+  variant = "default",
+  className = "",
+  asChild = false,
+  ...props
+}: BadgeProps) => {
+  const variantStyles = {
+    default: "bg-primary text-primary-foreground hover:bg-primary/80",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    destructive:
+      "bg-destructive text-destructive-foreground hover:bg-destructive/80",
+    outline: "text-foreground border border-input",
+  };
+
+  if (asChild) {
+    return React.Children.only(children);
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variantStyles[variant as keyof typeof variantStyles]} ${className}`}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};
+
+// Icons
+const Trash2 = ({ className = "" }: { className?: string }) => (
+  <span className={className}>🗑️</span>
+);
+
+const AlertTriangle = ({ className = "" }: { className?: string }) => (
+  <span className={className}>⚠️</span>
+);
+
+const Loader2 = ({ className = "" }: { className?: string }) => (
+  <span className={`animate-spin ${className}`}>⏳</span>
+);
 
 interface ContactDeleteConfirmationProps {
   contact: {

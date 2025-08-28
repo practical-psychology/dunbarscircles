@@ -6,6 +6,7 @@ import {
   mockStorageWithData,
 } from "./storage-mocks";
 import { createCanvasContextMock } from "./canvas-mocks";
+import type { TestHelpers } from "./test-helpers.types";
 
 // Helper to setup Firebase mocks with specific user state
 export const setupFirebaseAuth = (user: any = null) => {
@@ -186,7 +187,7 @@ export const mockFileReader = (result: string) => {
 };
 
 // Helper to wait for async operations in tests
-export const waitFor = (ms: number = 0) => {
+export const waitFor = (ms: number = 0): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
@@ -375,7 +376,7 @@ export const createMockLevel = (overrides: any = {}) => {
 };
 
 // Export all helpers for easy importing
-export const testHelpers = {
+export const testHelpers: TestHelpers = {
   setupFirebaseAuth,
   setupThemeStorage,
   setupContactStorage,
@@ -406,3 +407,13 @@ export const testHelpers = {
   mockSignOutError: firebaseMocks.mockSignOutError,
   mockAuthStateError: firebaseMocks.mockAuthStateError,
 };
+
+// For Node.js environment
+if (typeof global !== "undefined") {
+  (global as any).testHelpers = testHelpers;
+}
+
+// For browser environment
+if (typeof window !== "undefined") {
+  (window as any).testHelpers = testHelpers;
+}

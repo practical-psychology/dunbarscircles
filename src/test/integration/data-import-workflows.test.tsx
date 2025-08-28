@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, testHelpers } from "../test-utils";
+import { render } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 
 // Import individual page components to test workflows directly
 import NetworkPage from "../../pages/NetworkPage";
@@ -30,7 +31,7 @@ vi.mock("@/components/relationship-inventory", () => ({
           data-testid="facebook-file-input"
           type="file"
           accept=".json"
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file && file.name.includes("facebook")) {
               console.log("Facebook file imported:", file.name);
@@ -48,7 +49,7 @@ vi.mock("@/components/relationship-inventory", () => ({
           data-testid="linkedin-file-input"
           type="file"
           accept=".csv"
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (file && file.name.includes("linkedin")) {
               console.log("LinkedIn file imported:", file.name);

@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
 import { LiquidInput } from "@/components/ui/liquid-input";
-import { Droplets, Waves, Zap } from "lucide-react";
+import { Droplet, Waves, Zap } from "lucide-react";
 
 export function LiquidShowcase() {
   return (
@@ -59,7 +59,7 @@ export function LiquidShowcase() {
               className="p-2 bg-gradient-to-br from-cyan-500 to-green-600 rounded-xl text-white"
               whileHover={{ scale: 1.1, rotate: -5 }}
             >
-              <Droplets className="w-5 h-5" />
+              <Droplet className="w-5 h-5" />
             </motion.div>
             <h3 className="text-xl font-bold">Liquid Inputs</h3>
           </div>

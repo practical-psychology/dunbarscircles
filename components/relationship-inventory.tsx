@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "./ui/card";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
 import { ErrorBoundary, DataErrorFallback } from "@/components/error-boundary";
 import { DataStatus } from "@/components/data-status";
@@ -411,6 +411,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             strength: Math.min(strength, 1),
             decayRate: 0.01 + daysSinceContact / 10000, // Older connections decay faster
             platform: `Facebook${"contact_info" in friend && friend.contact_info?.email ? " (Email)" : ""}`,
+            importDate: new Date(),
+            source: "facebook",
           };
 
           person.levelId = categorizePerson(person);
@@ -478,6 +480,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             strength: Math.min(strength, 1),
             decayRate: 0.005 + daysSinceConnection / 20000, // Professional connections decay slower
             platform: `LinkedIn - ${connection.Company} (${connection.Position})`,
+            importDate: new Date(),
+            source: "linkedin",
           };
 
           person.levelId = categorizePerson(person);
@@ -543,8 +547,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   };
 
   const handleExportCSV = () => {
-    const filename = generateFilename("yakw_relationships", "csv");
-    exportToCSV(people, levels, filename);
+    const data = prepareExportData();
+    exportToCSV(data.people, data.levels);
     setShowExportDialog(false);
   };
 
@@ -583,6 +587,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                 strength: 0.95,
                 decayRate: 0.001,
                 platform: "Real Life",
+                importDate: new Date(),
+                source: "manual",
               },
               {
                 id: "sample_2",
@@ -593,6 +599,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                 strength: 0.8,
                 decayRate: 0.005,
                 platform: "Work",
+                importDate: new Date(),
+                source: "manual",
               },
             ]);
           }}
@@ -771,7 +779,9 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                     <input
                       type="file"
                       accept=".json"
-                      onChange={(e) => handleFileUpload(e, "facebook")}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleFileUpload(e, "facebook")
+                      }
                       className="w-full p-2 border border-gray-300 rounded-md"
                       id="facebook-upload"
                       data-testid="file-input"
@@ -819,7 +829,9 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                     <input
                       type="file"
                       accept=".csv"
-                      onChange={(e) => handleFileUpload(e, "linkedin")}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleFileUpload(e, "linkedin")
+                      }
                       className="w-full p-2 border border-gray-300 rounded-md"
                       id="linkedin-upload"
                       data-testid="file-input"

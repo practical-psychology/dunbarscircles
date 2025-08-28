@@ -3,7 +3,7 @@ import {
   validateAllColorCombinations,
   ValidationResult,
   logValidationResults,
-} from "@/lib/color-contrast-utils";
+} from "../lib/color-contrast-utils";
 import { useTheme } from "./theme-provider";
 
 interface ColorContrastValidatorProps {

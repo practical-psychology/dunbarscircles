@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
-import { Home, Map } from "lucide-react";
+import { Home, Menu } from "lucide-react";
 
 export default function NotFoundPage() {
   return (
@@ -122,7 +122,7 @@ export default function NotFoundPage() {
                     variant="ghost"
                     className="flex items-center gap-2"
                   >
-                    <Map className="w-4 h-4" />
+                    <Menu className="w-4 h-4" />
                     View Sitemap
                   </LiquidButton>
                 </Link>

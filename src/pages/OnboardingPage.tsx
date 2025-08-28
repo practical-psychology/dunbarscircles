@@ -5,13 +5,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
-  Network,
-  Target,
+  Share2, // Alternative for Network
+  Target as TargetIcon,
   Upload,
   Download,
   Eye,
   Settings,
-  Play,
+  Play as PlayIcon,
   CheckCircle,
   Home,
 } from "lucide-react";
@@ -112,7 +112,7 @@ const tutorialSteps: TutorialStep[] = [
     title: "Navigation Overview",
     description: "Learn how to navigate through different views and features",
     category: "getting-started",
-    icon: <Target className="w-6 h-6" />,
+    icon: <TargetIcon className="w-6 h-6" />,
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">App Navigation</h3>
@@ -136,7 +136,7 @@ const tutorialSteps: TutorialStep[] = [
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Target className="w-4 h-4" />
+                <TargetIcon className="w-4 h-4" />
                 Radial View
               </CardTitle>
             </CardHeader>
@@ -151,7 +151,7 @@ const tutorialSteps: TutorialStep[] = [
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Network className="w-4 h-4" />
+                <Share2 className="w-4 h-4" />
                 Network Diagram
               </CardTitle>
             </CardHeader>
@@ -187,7 +187,7 @@ const tutorialSteps: TutorialStep[] = [
     description:
       "Understanding the concentric circles view of your relationships",
     category: "visualization",
-    icon: <Target className="w-6 h-6" />,
+    icon: <TargetIcon className="w-6 h-6" />,
     content: (
       <div className="space-y-6">
         <h3 className="text-xl font-semibold">Radial Diagram Features</h3>
@@ -252,13 +252,13 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     id: 4,
-    title: "Network Diagram",
+    title: "Share2 Diagram",
     description: "Exploring connections and relationship patterns",
     category: "visualization",
-    icon: <Network className="w-6 h-6" />,
+    icon: <Share2 className="w-6 h-6" />,
     content: (
       <div className="space-y-6">
-        <h3 className="text-xl font-semibold">Network Visualization</h3>
+        <h3 className="text-xl font-semibold">Share2 Visualization</h3>
 
         <div className="bg-muted/50 rounded-lg p-6">
           <h4 className="font-semibold mb-3">Interactive Features</h4>
@@ -289,7 +289,7 @@ const tutorialSteps: TutorialStep[] = [
 
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                <Target className="w-4 h-4 text-white" />
+                <TargetIcon className="w-4 h-4 text-white" />
               </div>
               <div>
                 <p className="font-medium">Force Simulation</p>
@@ -864,7 +864,7 @@ const OnboardingPage = () => {
                   {currentStep === tutorialSteps.length - 1 ? (
                     <Button asChild className="flex items-center gap-2">
                       <Link to="/">
-                        <Play className="w-4 h-4" />
+                        <PlayIcon className="h-4 w-4" />
                         Start Using Dunbar Circles
                       </Link>
                     </Button>
@@ -898,14 +898,14 @@ const OnboardingPage = () => {
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/radial" className="flex items-center gap-2">
-                        <Target className="w-4 h-4" />
+                        <TargetIcon className="w-4 h-4" />
                         Radial View
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to="/network" className="flex items-center gap-2">
-                        <Network className="w-4 h-4" />
-                        Network
+                      <Link to="/share2" className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        Share2
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>

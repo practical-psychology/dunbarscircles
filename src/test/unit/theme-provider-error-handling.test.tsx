@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ThemeProvider, useTheme } from "@/components/theme-provider";
-import {
+import { testHelpers } from "../test-helpers";
+
+const {
   simulateStorageError,
   clearStorageError,
   simulateStorageUnavailable,
   restoreStorageMock,
-} from "@/src/test/test-helpers";
+} = testHelpers;
 
 // Test component that uses the theme
 function TestComponent() {

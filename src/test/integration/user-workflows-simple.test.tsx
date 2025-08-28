@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, testHelpers } from "../test-utils";
+import { render } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 
 // Import individual page components to test workflows directly
 import DashboardPage from "../../pages/DashboardPage";
@@ -70,7 +71,7 @@ vi.mock("@/components/relationship-inventory", () => ({
       <input
         data-testid="ri-file-input"
         type="file"
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (file) {
             console.log("File imported:", file.name);
@@ -142,7 +143,7 @@ vi.mock("@/components/contact-manager", () => ({
       <input
         data-testid="file-input"
         type="file"
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (file) {
             onImport?.({ fileName: file.name, data: "mock-data" });

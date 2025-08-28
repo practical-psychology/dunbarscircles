@@ -256,58 +256,60 @@ export function ContactManager({ levels }: ContactManagerProps) {
           if (levelContacts.length === 0) return null;
 
           return (
-            <Card key={level.id}>
-              <CardHeader className={level.bgColor}>
-                <div className="flex items-center justify-between">
-                  <CardTitle className={level.textColor}>
-                    {level.name}
-                  </CardTitle>
-                  <Badge variant="secondary">
-                    {levelContacts.length} contacts
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {levelContacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className="p-4 flex items-center justify-between hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{contact.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {contact.notes}
-                          </p>
-                          {contact.lastContact && (
-                            <p className="text-xs text-gray-500">
-                              Last contact:{" "}
-                              {new Date(
-                                contact.lastContact,
-                              ).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeContact(contact.id)}
-                        className="text-red-600 hover:text-red-700"
-                        aria-label={`Remove ${contact.name} from contacts`}
-                        title={`Remove ${contact.name}`}
+            <div key={level.id}>
+              <Card>
+                <CardHeader className={level.bgColor}>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className={level.textColor}>
+                      {level.name}
+                    </CardTitle>
+                    <Badge variant="secondary">
+                      {levelContacts.length} contacts
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {levelContacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="p-4 flex items-center justify-between hover:bg-gray-50"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                            <User className="w-5 h-5 text-gray-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{contact.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              {contact.notes}
+                            </p>
+                            {contact.lastContact && (
+                              <p className="text-xs text-gray-500">
+                                Last contact:{" "}
+                                {new Date(
+                                  contact.lastContact,
+                                ).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeContact(contact.id)}
+                          className="text-red-600 hover:text-red-700"
+                          aria-label={`Remove ${contact.name} from contacts`}
+                          title={`Remove ${contact.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           );
         })}
       </div>

@@ -27,28 +27,65 @@ export function NetworkDiagram({
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
   const [focusedLevel, setFocusedLevel] = useState<string | null>(null);
 
+  // Ensure levels is a valid array with valid data
+  const safeLevels = Array.isArray(levels)
+    ? levels.filter(
+        (level) =>
+          level &&
+          typeof level.id === "string" &&
+          typeof level.name === "string" &&
+          typeof level.count === "number" &&
+          !isNaN(level.count),
+      )
+    : [];
+
+  // Early return if no valid levels to prevent rendering errors
+  if (safeLevels.length === 0) {
+    console.warn("NetworkDiagram: No valid levels provided", {
+      levels,
+      safeLevels,
+    });
+    return (
+      <div className="flex items-center justify-center h-[600px] bg-gray-50 dark:bg-gray-900 rounded-2xl">
+        <p className="text-gray-500 dark:text-gray-400">
+          No valid relationship data to display
+        </p>
+      </div>
+    );
+  }
+
   useEffect(() => {
     // Trigger re-render when levels change
   }, [levels]);
 
   const getCircleSize = (count: number) => {
-    // Ensure count is a valid number
-    const validCount = typeof count === "number" && !isNaN(count) ? count : 0;
+    // Ensure count is a valid number with fallback
+    const validCount =
+      typeof count === "number" && !isNaN(count) && count >= 0 ? count : 0;
 
-    if (validCount <= 5) return 40;
-    if (validCount <= 15) return 60;
-    if (validCount <= 50) return 80;
-    if (validCount <= 150) return 100;
-    if (validCount <= 500) return 120;
-    if (validCount <= 1500) return 140;
-    if (validCount <= 5000) return 160;
-    if (validCount <= 15000) return 180;
-    return 200;
+    let size = 40; // Default minimum size
+    if (validCount <= 5) size = 40;
+    else if (validCount <= 15) size = 60;
+    else if (validCount <= 50) size = 80;
+    else if (validCount <= 150) size = 100;
+    else if (validCount <= 500) size = 120;
+    else if (validCount <= 1500) size = 140;
+    else if (validCount <= 5000) size = 160;
+    else if (validCount <= 15000) size = 180;
+    else size = 200;
+
+    // Additional safety check to ensure size is always a valid number
+    return typeof size === "number" && !isNaN(size) && size > 0 ? size : 40;
   };
 
   const getPosition = (index: number, total: number) => {
-    const angle = (index * 2 * Math.PI) / total;
-    const radius = 200 + index * 20;
+    // Ensure valid inputs to prevent NaN
+    const safeIndex = typeof index === "number" && !isNaN(index) ? index : 0;
+    const safeTotal =
+      typeof total === "number" && !isNaN(total) && total > 0 ? total : 1;
+
+    const angle = (safeIndex * 2 * Math.PI) / safeTotal;
+    const radius = 200 + safeIndex * 20;
     const toFixed = (n: number) => Number(n.toFixed(3));
     return {
       x: toFixed(300 + radius * Math.cos(angle)),
@@ -123,10 +160,10 @@ export function NetworkDiagram({
           Dunbar's Number Network Visualization
         </title>
         <desc id="network-diagram-desc">
-          Interactive network diagram showing {levels.length} relationship
+          Interactive network diagram showing {safeLevels.length} relationship
           levels. Click on circles to select levels and view details.
           {selectedLevel
-            ? `Currently selected: ${levels.find((l) => l.id === selectedLevel)?.name}`
+            ? `Currently selected: ${safeLevels.find((l) => l.id === selectedLevel)?.name}`
             : "No level selected"}
         </desc>
         {/* Liquid gradient definitions */}
@@ -183,7 +220,7 @@ export function NetworkDiagram({
         </motion.g>
 
         {/* Connection lines with liquid flow */}
-        {levels.map((level, index) => {
+        {safeLevels.map((level, index) => {
           const pos = getPosition(index, levels.length);
           return (
             <motion.g key={`line-${level.id}`}>
@@ -220,15 +257,22 @@ export function NetworkDiagram({
         })}
 
         {/* Level circles with liquid morphing */}
-        {levels.map((level, index) => {
-          const pos = getPosition(index, levels.length);
-          const size = getCircleSize(level.count);
+        {safeLevels.map((level, index) => {
+          const pos = getPosition(index, safeLevels.length);
+          const size = getCircleSize(level.count || 0);
           const isSelected = selectedLevel === level.id;
           const isHovered = hoveredLevel === level.id;
 
           // Ensure size is a valid number to prevent undefined radius
-          const safeSize = typeof size === "number" && !isNaN(size) ? size : 40;
-          const radius = safeSize / 2;
+          const safeSize =
+            typeof size === "number" && !isNaN(size) && size > 0 ? size : 40;
+          const radius = Math.max(safeSize / 2, 20); // Minimum radius of 20
+
+          // Additional safety check to ensure radius is always a valid number
+          const safeRadius =
+            typeof radius === "number" && !isNaN(radius) && radius > 0
+              ? radius
+              : 20;
 
           return (
             <motion.g
@@ -285,7 +329,7 @@ export function NetworkDiagram({
               <motion.circle
                 cx={pos.x}
                 cy={pos.y}
-                r={radius}
+                r={safeRadius || 20}
                 fill={`url(#gradient-${level.id})`}
                 stroke={isSelected ? "#1f2937" : "white"}
                 strokeWidth={isSelected ? 4 : 2}
@@ -298,10 +342,12 @@ export function NetworkDiagram({
                 onClick={() => handleLevelInteraction(level.id)}
                 onKeyDown={(e) => handleKeyDown(e, level.id)}
                 animate={{
-                  r:
-                    isHovered || isSelected || focusedLevel === level.id
-                      ? radius + 5
-                      : radius,
+                  r: Math.max(
+                    (isHovered || isSelected || focusedLevel === level.id
+                      ? safeRadius + 5
+                      : safeRadius) || 20,
+                    20,
+                  ),
                   strokeWidth: isSelected
                     ? 4
                     : isHovered || focusedLevel === level.id
@@ -312,7 +358,7 @@ export function NetworkDiagram({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 role="button"
-                aria-label={`${level.name} level with ${level.count} relationships. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
+                aria-label={`${level.name} level with ${level.count || 0} relationships. ${level.description}. ${isSelected ? "Currently selected" : "Click to select"}`}
                 aria-pressed={isSelected}
                 tabIndex={0}
                 data-testid={index === 0 ? "mock-node" : undefined}
@@ -323,13 +369,16 @@ export function NetworkDiagram({
                 <motion.circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={radius}
+                  r={safeRadius || 20}
                   fill="none"
                   stroke={`url(#gradient-${level.id})`}
                   strokeWidth={2}
                   strokeOpacity={0.6}
-                  initial={{ r: radius, opacity: 0.6 }}
-                  animate={{ r: radius + 20, opacity: 0 }}
+                  initial={{ r: safeRadius || 20, opacity: 0.6 }}
+                  animate={{
+                    r: Math.max((safeRadius || 20) + 20, 40),
+                    opacity: 0,
+                  }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
               )}
@@ -423,7 +472,7 @@ export function NetworkDiagram({
           transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
         >
           {(() => {
-            const level = levels.find((l) => l.id === selectedLevel);
+            const level = safeLevels.find((l) => l.id === selectedLevel);
             if (!level) return null;
             return (
               <div>

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithRouter, testHelpers } from "../test-utils";
+import { renderWithRouter } from "../test-utils";
+import { testHelpers } from "../test-helpers";
 import App from "../../App";
 
 describe("Complete User Journey Integration Tests", () => {

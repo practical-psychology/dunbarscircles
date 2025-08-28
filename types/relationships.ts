@@ -24,6 +24,9 @@ export interface Person {
   email?: string; // optional email address
   phone?: string; // optional phone number
   notes?: string; // optional notes about the relationship
+  tags?: string[]; // optional tags for categorization
+  importDate: Date; // when the contact was imported/added
+  source: string; // source of the contact (manual, facebook, linkedin, etc.)
   x?: number;
   y?: number;
   vx?: number;

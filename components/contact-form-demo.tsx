@@ -7,7 +7,7 @@ import {
   type ContactUpdateData,
 } from "@/lib/contact-models";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { toast } from "sonner";
 
 // Demo component to showcase the contact form components

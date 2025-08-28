@@ -1,4 +1,4 @@
-import { db, firebaseConfig, getFirebaseStatus } from "@/firebase-config";
+import { db, firebaseConfig, getFirebaseStatus } from "../firebase-config";
 import {
   collection,
   getDocs,

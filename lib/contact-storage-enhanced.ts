@@ -1,5 +1,5 @@
 // Enhanced contact storage with database integration, authorization, and fallback
-import type { Person } from "@/types/relationships";
+import type { Person } from "../src/types/relationships";
 import { DatabaseService } from "./database-service";
 import type { StoredContact } from "./contact-storage";
 
@@ -372,6 +372,50 @@ export class EnhancedContactStorage {
         };
       }
 
+      // If update failed (e.g., when working with sample/local contacts or offline), try updating localStorage directly
+      try {
+        const localContacts = this.loadFromLocalStorage();
+        const existsLocally = localContacts.some(
+          (c) => c.id === contactId || c.firestoreId === contactId,
+        );
+        if (existsLocally) {
+          const updatedContacts = localContacts.map((contact) =>
+            contact.id === contactId || contact.firestoreId === contactId
+              ? { ...contact, ...updates }
+              : contact,
+          );
+          this.saveToLocalStorage(updatedContacts);
+          const updated = updatedContacts.find(
+            (c) => c.id === contactId || c.firestoreId === contactId,
+          )!;
+          return {
+            success: true,
+            data: updated,
+            fallbackUsed: true,
+            source: "localStorage",
+          };
+        }
+
+        // If not in local storage, see if this is one of our sample contacts and persist it locally with the updates applied
+        const sample = SAMPLE_CONTACTS.find((c) => c.id === contactId);
+        if (sample) {
+          const updatedSample: StoredContact = {
+            ...sample,
+            ...updates,
+          } as StoredContact;
+          const next = [...localContacts, updatedSample];
+          this.saveToLocalStorage(next);
+          return {
+            success: true,
+            data: updatedSample,
+            fallbackUsed: true,
+            source: "localStorage",
+          };
+        }
+      } catch (localError) {
+        console.warn("Local fallback update failed:", localError);
+      }
+
       return {
         success: false,
         error: dbResponse.error?.message || "Failed to update contact",
@@ -411,6 +455,39 @@ export class EnhancedContactStorage {
           data: { deleted: true },
           source: "database",
         };
+      }
+
+      // If delete failed (e.g., sample or local-only contact), try deleting from localStorage
+      try {
+        const localContacts = this.loadFromLocalStorage();
+        const existsLocally = localContacts.some(
+          (c) => c.id === contactId || c.firestoreId === contactId,
+        );
+        if (existsLocally) {
+          const filteredContacts = localContacts.filter(
+            (contact) =>
+              contact.id !== contactId && contact.firestoreId !== contactId,
+          );
+          this.saveToLocalStorage(filteredContacts);
+          return {
+            success: true,
+            data: { deleted: true },
+            fallbackUsed: true,
+            source: "localStorage",
+          };
+        }
+
+        // If this is one of our sample contacts, treat as deleted to avoid blocking the UI
+        if (SAMPLE_CONTACTS.find((c) => c.id === contactId)) {
+          return {
+            success: true,
+            data: { deleted: true },
+            fallbackUsed: true,
+            source: "sample",
+          };
+        }
+      } catch (localError) {
+        console.warn("Local fallback delete failed:", localError);
       }
 
       return {
@@ -581,11 +658,23 @@ export class EnhancedContactStorage {
 
   private static saveToLocalStorage(contacts: StoredContact[]): void {
     try {
-      const serializedContacts = contacts.map((contact) => ({
-        ...contact,
-        lastContact: contact.lastContact.toISOString(),
-        importDate: contact.importDate.toISOString(),
-      }));
+      const serializedContacts = contacts.map((contact) => {
+        const last =
+          contact.lastContact instanceof Date
+            ? contact.lastContact
+            : new Date(contact.lastContact as any);
+        const imp =
+          contact.importDate instanceof Date
+            ? contact.importDate
+            : new Date(contact.importDate as any);
+        const safeLast = isNaN(last.getTime()) ? new Date() : last;
+        const safeImp = isNaN(imp.getTime()) ? new Date() : imp;
+        return {
+          ...contact,
+          lastContact: safeLast.toISOString(),
+          importDate: safeImp.toISOString(),
+        };
+      });
       localStorage.setItem(
         CONTACTS_STORAGE_KEY,
         JSON.stringify(serializedContacts),

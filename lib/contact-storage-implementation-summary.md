@@ -133,7 +133,7 @@ This document summarizes the implementation of the contact storage and persisten
 
 ## 📁 File Structure
 
-```
+```plaintext
 lib/
 ├── contact-storage-service.ts      # Main service implementation
 ├── contact-storage-utils.ts        # Simplified utility interface

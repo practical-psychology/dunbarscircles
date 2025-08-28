@@ -1,6 +1,6 @@
-import { RelationshipInventory } from "@/components/relationship-inventory";
+import { RelationshipInventory } from "../../components/relationship-inventory";
 import PageLayout from "../components/PageLayout";
-import { dunbarLevels } from "../data/dunbarLevels";
+import { dunbarLevels } from "../../data/dunbarLevels";
 
 export default function NetworkPage() {
   return (

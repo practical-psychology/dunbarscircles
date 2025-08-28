@@ -11,10 +11,10 @@
  * Requirements: FR-11 (User Authentication), NFR-7 (Data Privacy), DR-1 (Relationship Data Model)
  */
 
-import type { Person } from "@/types/relationships";
+import type { Person } from "../src/types/relationships";
 import type { Contact, ContactForm, ContactUpdate } from "./contact-models";
 import { sanitizeContactData, validateContactData } from "./contact-models";
-import { auth, db } from "@/firebase-config";
+import { auth, db } from "../firebase-config";
 import {
   collection,
   doc,

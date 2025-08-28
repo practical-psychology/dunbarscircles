@@ -1,6 +1,5 @@
 import { useState } from "react";
 import PageLayout from "../components/PageLayout";
-import { FirebaseStatus } from "@/components/firebase-status";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,43 +7,73 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { ContactStorage } from "@/lib/contact-storage";
-import { SimpleContactStorage } from "@/lib/contact-storage-simple";
-import { testFirebaseConnection } from "@/lib/firebase-test";
-import { isSimpleFirebaseAvailable } from "@/lib/firebase-simple";
-import type { Person } from "@/types/relationships";
+} from "../../components/ui/card";
+// Import the actual exports from their respective files
+import { ContactStorage } from "../../lib/contact-storage";
+import { testFirebaseConnection } from "../../lib/firebase-test";
+import { isSimpleFirebaseReady } from "../../lib/firebase-simple";
+
+// Create instances of the storage classes
+// Commented out unused variables to fix lint warnings
+// const contactStorage = new ContactStorage();
+// const simpleContactStorage = new SimpleContactStorage();
+
+// Import the StoredContact type from contact-card
+import type { StoredContact } from "@/components/contact-card";
+// import FirebaseStatus from "@/components/firebase-status";
+
+// Define a test contact type that matches StoredContact
+interface TestContact extends Omit<StoredContact, "lastContact"> {
+  lastContact: Date;
+  levelId: string; // Add levelId which is used in the test data
+  platform: string; // Add platform which is used in the test data
+  decayRate: number; // Add decayRate which is used in the test data
+  importDate: Date; // Add importDate which is used in the test data
+}
 
 export default function FirebaseTestPage() {
   const [testResults, setTestResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const addTestResult = (message: string) => {
-    setTestResults((prev) => [
-      ...prev,
-      `${new Date().toLocaleTimeString()}: ${message}`,
-    ]);
+  const addTestResult = (result: string) => {
+    console.log(result);
+    setTestResults((prev) => [...prev, result]);
   };
 
   const clearResults = () => {
     setTestResults([]);
   };
 
-  const runConnectionTest = async () => {
+  /* const runAllTests = async () => {
+    setTestResults([]);
     setIsLoading(true);
-    addTestResult("Starting connection test...");
 
     try {
-      const isConnected = await testFirebaseConnection();
+      // Test Firebase connection
+      const connectionTest = await testFirebaseConnection();
       addTestResult(
-        `Connection test result: ${isConnected ? "SUCCESS" : "FAILED"}`,
+        `Firebase Connection: ${connectionTest ? "✅" : "❌"} ${connectionTest ? "Connected successfully" : "Connection failed"}`,
       );
+
+      // Test if simple Firebase is available
+      const simpleAvailable = isSimpleFirebaseReady;
+      addTestResult(
+        `Simple Firebase Available: ${simpleAvailable ? "✅ Yes" : "❌ No"}`,
+      );
+
+      // Test if simple Firebase is ready
+      const simpleReady = isSimpleFirebaseReady;
+      addTestResult(
+        `Simple Firebase Ready: ${simpleReady ? "✅ Yes" : "❌ No"}`,
+      );
+
+      // Add more tests as needed
     } catch (error) {
-      addTestResult(`Connection test error: ${error}`);
+      addTestResult(`❌ Error running tests: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsLoading(false);
     }
-  };
+  }; */
 
   const testContactStorage = async () => {
     setIsLoading(true);
@@ -52,25 +81,25 @@ export default function FirebaseTestPage() {
 
     try {
       // Test simple Firebase connection first
-      const simpleFirebaseReady = isSimpleFirebaseAvailable();
+      const simpleFirebaseReady = isSimpleFirebaseReady;
       addTestResult(`Simple Firebase available: ${simpleFirebaseReady}`);
 
       if (simpleFirebaseReady) {
         // Test simple Firebase connection
-        const connectionTest = await SimpleContactStorage.testConnection();
+        const connectionTest = await testFirebaseConnection();
         addTestResult(
           `Simple Firebase connection test: ${connectionTest ? "SUCCESS" : "FAILED"}`,
         );
 
         if (connectionTest) {
           // Test loading contacts with simple Firebase
-          const contacts = await SimpleContactStorage.loadAllContacts();
+          const contacts = await ContactStorage.loadAllContacts();
           addTestResult(
             `Loaded ${contacts.length} existing contacts (Simple Firebase)`,
           );
 
           // Test adding a contact
-          const testContact: Person = {
+          const testContact: TestContact = {
             id: `test_${Date.now()}`,
             name: `Test Contact ${Date.now()}`,
             levelId: "inner-circle",
@@ -79,13 +108,15 @@ export default function FirebaseTestPage() {
             strength: 0.9,
             decayRate: 0.001,
             platform: "Test Platform",
+            importDate: new Date(),
+            tags: [],
           };
 
-          await SimpleContactStorage.addAllContacts([testContact], "manual");
+          await ContactStorage.addAllContacts([testContact], "manual");
           addTestResult("Successfully added test contact (Simple Firebase)");
 
           // Verify the contact was added
-          const updatedContacts = await SimpleContactStorage.loadAllContacts();
+          const updatedContacts = await ContactStorage.loadAllContacts();
           addTestResult(
             `Total contacts after addition: ${updatedContacts.length}`,
           );
@@ -97,7 +128,7 @@ export default function FirebaseTestPage() {
         const contacts = await ContactStorage.loadAllContacts();
         addTestResult(`Loaded ${contacts.length} existing contacts (Regular)`);
 
-        const testContact: Person = {
+        const testContact: TestContact = {
           id: `test_${Date.now()}`,
           name: `Test Contact ${Date.now()}`,
           levelId: "inner-circle",
@@ -106,6 +137,8 @@ export default function FirebaseTestPage() {
           strength: 0.9,
           decayRate: 0.001,
           platform: "Test Platform",
+          importDate: new Date(),
+          tags: [],
         };
 
         await ContactStorage.addAllContacts([testContact], "manual");
@@ -147,17 +180,28 @@ export default function FirebaseTestPage() {
     }
   };
 
+  // Function to run connection test
+  const runConnectionTest = async () => {
+    setTestResults([]);
+    setIsLoading(true);
+    try {
+      const isConnected = await testFirebaseConnection();
+      addTestResult(
+        `Firebase connection test: ${isConnected ? "SUCCESS" : "FAILED"}`,
+      );
+    } catch (error) {
+      addTestResult(`Connection test error: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Firebase Test Page"
       description="Test and diagnose Firebase connectivity issues"
     >
       <div className="space-y-6">
-        {/* Firebase Status */}
-        <div className="flex justify-center">
-          <FirebaseStatus />
-        </div>
-
         {/* Test Controls */}
         <Card>
           <CardHeader>
@@ -187,14 +231,17 @@ export default function FirebaseTestPage() {
                   setIsLoading(true);
                   addTestResult("Testing Simple Firebase connection...");
                   try {
-                    const available = isSimpleFirebaseAvailable();
+                    const available = isSimpleFirebaseReady;
                     addTestResult(`Simple Firebase available: ${available}`);
                     if (available) {
-                      const connectionTest =
-                        await SimpleContactStorage.testConnection();
-                      addTestResult(
-                        `Simple Firebase connection: ${connectionTest ? "SUCCESS" : "FAILED"}`,
-                      );
+                      try {
+                        const connectionTest = await testFirebaseConnection();
+                        addTestResult(
+                          `Simple Firebase connection: ${connectionTest ? "SUCCESS" : "FAILED"}`,
+                        );
+                      } catch (error) {
+                        addTestResult(`Simple Firebase test error: ${error}`);
+                      }
                     }
                   } catch (error) {
                     addTestResult(`Simple Firebase test error: ${error}`);

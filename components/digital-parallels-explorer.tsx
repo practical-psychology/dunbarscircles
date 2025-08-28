@@ -1,33 +1,32 @@
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  Users,
-  Smartphone,
-  Heart,
-  MessageCircle,
-  Instagram,
-  Linkedin,
-  Facebook,
-  Youtube,
-  Twitter,
-  Mail,
-  Zap,
-  TrendingUp,
-  Bell,
-} from "lucide-react";
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Label } from "./ui/label";
+import { Users } from "lucide-react";
+// Icons need to be replaced with available ones from lucide-react
+// import { Smartphone, Heart, MessageSquare, Camera, Briefcase, Globe, Video, Hash, Mail, TrendingUp, Bell } from "lucide-react";
+
+// Temporary icon placeholders
+const Smartphone = () => <span>📱</span>;
+const Heart = () => <span>❤️</span>;
+const MessageSquare = () => <span>💬</span>;
+const Camera = () => <span>📷</span>;
+const Briefcase = () => <span>💼</span>;
+const Globe = () => <span>🌐</span>;
+const Video = () => <span>📹</span>;
+const Hash = () => <span>#️⃣</span>;
+const Mail = () => <span>✉️</span>;
+const TrendingUp = () => <span>📈</span>;
+const Bell = () => <span>🔔</span>;
 
 interface Level {
   id: string;
@@ -47,7 +46,6 @@ interface DigitalPlatform {
   name: string;
   icon: React.ReactNode;
   color: string;
-  dopamineLevel: number;
   compressionFactor: number; // how much it compresses/expands layers
   primaryLayers: string[];
   features: string[];
@@ -62,9 +60,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "whatsapp",
     name: "WhatsApp",
-    icon: <MessageCircle className="w-5 h-5" />,
+    icon: <MessageSquare className="w-5 h-5" />,
     color: "#25D366",
-    dopamineLevel: 70,
     compressionFactor: 0.8, // compresses - makes intimate feel closer
     primaryLayers: ["inner-circle", "sympathy-group"],
     features: [
@@ -78,9 +75,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "instagram",
     name: "Instagram",
-    icon: <Instagram className="w-5 h-5" />,
+    icon: <Camera className="w-5 h-5" />,
     color: "#E4405F",
-    dopamineLevel: 85,
     compressionFactor: 1.5, // expands - makes distant feel closer
     primaryLayers: ["affinity-group", "active-network", "parasocial-familiar"],
     features: ["Stories", "Likes", "Comments", "DMs", "Reels"],
@@ -89,9 +85,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "linkedin",
     name: "LinkedIn",
-    icon: <Linkedin className="w-5 h-5" />,
+    icon: <Briefcase className="w-5 h-5" />,
     color: "#0077B5",
-    dopamineLevel: 45,
     compressionFactor: 1.2,
     primaryLayers: [
       "active-network",
@@ -104,9 +99,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "facebook",
     name: "Facebook",
-    icon: <Facebook className="w-5 h-5" />,
+    icon: <Globe className="w-5 h-5" />,
     color: "#1877F2",
-    dopamineLevel: 75,
     compressionFactor: 1.3,
     primaryLayers: ["sympathy-group", "affinity-group", "active-network"],
     features: ["News feed", "Reactions", "Comments", "Events", "Groups"],
@@ -115,9 +109,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "youtube",
     name: "YouTube",
-    icon: <Youtube className="w-5 h-5" />,
+    icon: <Video className="w-5 h-5" />,
     color: "#FF0000",
-    dopamineLevel: 80,
     compressionFactor: 2.0, // heavily expands parasocial
     primaryLayers: [
       "parasocial-familiar",
@@ -130,9 +123,8 @@ const digitalPlatforms: DigitalPlatform[] = [
   {
     id: "twitter",
     name: "Twitter/X",
-    icon: <Twitter className="w-5 h-5" />,
+    icon: <Hash className="w-5 h-5" />,
     color: "#1DA1F2",
-    dopamineLevel: 90,
     compressionFactor: 1.8,
     primaryLayers: ["cultural-recognition", "awareness-network"],
     features: ["Tweets", "Retweets", "Likes", "Replies", "Trending"],
@@ -143,7 +135,6 @@ const digitalPlatforms: DigitalPlatform[] = [
     name: "Email",
     icon: <Mail className="w-5 h-5" />,
     color: "#EA4335",
-    dopamineLevel: 30,
     compressionFactor: 0.9,
     primaryLayers: ["inner-circle", "sympathy-group", "active-network"],
     features: ["Messages", "Attachments", "Scheduling", "Groups"],
@@ -156,27 +147,11 @@ export function DigitalParallelsExplorer({
 }: DigitalParallelsExplorerProps) {
   const [viewMode, setViewMode] = useState<"human" | "digital">("human");
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
-  const [showDopamineEffects, setShowDopamineEffects] = useState(true);
-  const [animationPhase, setAnimationPhase] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnimationPhase((prev) => (prev + 1) % 100);
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
 
   const getDigitalEquivalent = (levelId: string) => {
     return digitalPlatforms.filter((platform) =>
       platform.primaryLayers.includes(levelId),
     );
-  };
-
-  const getDopamineIntensity = (platform: DigitalPlatform) => {
-    return showDopamineEffects
-      ? 0.5 +
-          Math.sin(animationPhase * 0.1) * 0.3 * (platform.dopamineLevel / 100)
-      : 0.5;
   };
 
   // In the component, add safety checks for color operations
@@ -205,15 +180,6 @@ export function DigitalParallelsExplorer({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="dopamine-effects"
-              checked={showDopamineEffects}
-              onCheckedChange={setShowDopamineEffects}
-            />
-            <Label htmlFor="dopamine-effects">Dopamine Effects</Label>
-          </div>
-
           <div className="flex items-center space-x-2">
             <Label htmlFor="view-mode">View Mode:</Label>
             <div className="flex bg-gray-100 rounded-lg p-1">
@@ -297,14 +263,14 @@ export function DigitalParallelsExplorer({
           </CardContent>
         </Card>
 
-        {/* Digital Network Side */}
+        {/* Digital Networks */}
         <Card
           className={`transition-all duration-500 ${viewMode === "digital" ? "ring-2 ring-purple-500" : ""}`}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Smartphone className="w-5 h-5" />
-              Digital Network Equivalents
+              Digital Relationshps
             </CardTitle>
             <CardDescription>
               How digital platforms map to and transform relationship layers
@@ -355,11 +321,7 @@ export function DigitalParallelsExplorer({
                         key={platform.id}
                         className="flex items-center gap-1 px-2 py-1 bg-white/70 rounded-full text-xs cursor-pointer hover:bg-white transition-colors"
                         style={{
-                          borderColor: platform.color,
-                          borderWidth: showDopamineEffects
-                            ? `${getDopamineIntensity(platform) * 3}px`
-                            : "1px",
-                          borderStyle: "solid",
+                          border: `1px solid ${platform.color}`,
                         }}
                         onClick={() =>
                           setSelectedPlatform(
@@ -373,14 +335,6 @@ export function DigitalParallelsExplorer({
                           {platform.icon}
                         </div>
                         <span>{platform.name}</span>
-                        {showDopamineEffects && (
-                          <div className="flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-yellow-500" />
-                            <span className="text-xs">
-                              {platform.dopamineLevel}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -409,11 +363,7 @@ export function DigitalParallelsExplorer({
                         }`}
                         style={{
                           width: `${Math.min(compression.compressionRatio * 50, 100)}%`,
-                          opacity: showDopamineEffects
-                            ? getDopamineIntensity(
-                                platforms[0] || digitalPlatforms[0],
-                              )
-                            : 0.7,
+                          opacity: 0.7,
                         }}
                       />
                     </div>
@@ -458,19 +408,7 @@ export function DigitalParallelsExplorer({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        Dopamine Feedback Loop
-                      </h4>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Progress
-                          value={platform.dopamineLevel}
-                          className="flex-1"
-                        />
-                        <span className="text-sm font-medium">
-                          {platform.dopamineLevel}/100
-                        </span>
-                      </div>
+                      <h4 className="font-medium mb-2">Engagement Pattern</h4>
                       <p className="text-sm text-gray-600">
                         {platform.engagementPattern}
                       </p>
@@ -509,13 +447,11 @@ export function DigitalParallelsExplorer({
                       </h4>
                       <div className="flex flex-wrap gap-1">
                         {platform.features.map((feature, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {feature}
-                          </Badge>
+                          <div key={index}>
+                            <Badge variant="outline" className="text-xs">
+                              {feature}
+                            </Badge>
+                          </div>
                         ))}
                       </div>
                     </div>
