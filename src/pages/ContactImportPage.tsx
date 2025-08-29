@@ -261,7 +261,7 @@ export default function ContactImportPage() {
     // If no recognized format found, throw an error
     else {
       throw new Error(
-        "Unrecognized JSON format. Please ensure you're uploading a Facebook friends export file."
+        "Unrecognized JSON format. Please ensure you're uploading a Facebook friends export file.",
       );
     }
 
@@ -287,7 +287,7 @@ export default function ContactImportPage() {
         contacts = parseJSONFile(content);
       } else {
         throw new Error(
-          "Unsupported file format. Please use CSV or JSON files."
+          "Unsupported file format. Please use CSV or JSON files.",
         );
       }
 
@@ -297,7 +297,7 @@ export default function ContactImportPage() {
       const existingResult = await EnhancedContactStorage.loadContacts();
       const existingContacts = existingResult.data || [];
       const existingNames = new Set(
-        existingContacts.map((c: StoredContact) => c.name.toLowerCase())
+        existingContacts.map((c: StoredContact) => c.name.toLowerCase()),
       );
 
       setImportProgress(80);
@@ -369,7 +369,7 @@ export default function ContactImportPage() {
     } catch (err) {
       console.error("Import execution failed:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to import contacts"
+        err instanceof Error ? err.message : "Failed to import contacts",
       );
     } finally {
       setImporting(false);

@@ -5,6 +5,8 @@ import {
   handleRedirectResult,
   signOut,
 } from "../../lib/auth-utils";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../firebase-config";
 import {
   Card,
   CardContent,
@@ -58,15 +60,43 @@ function InfoRow({ label, value }: InfoRowProps) {
 
 export default function DashboardPage() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, _setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [authError, _setAuthError] = useState<string | null>(null);
   const isAuthenticated = !!user;
   const [authLoading, setAuthLoading] = useState(false);
   const [localAuthError, setLocalAuthError] = useState<string | null>(null);
   const [showRedirectOption, setShowRedirectOption] = useState(false);
 
-  // Handle redirect result on page load
+  // Listen for auth state changes and handle redirect result
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const authUser: AuthUser = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          emailVerified: firebaseUser.emailVerified,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          phoneNumber: firebaseUser.phoneNumber,
+          isAnonymous: firebaseUser.isAnonymous,
+          providerData: firebaseUser.providerData,
+          metadata: {
+            creationTime: firebaseUser.metadata.creationTime,
+            lastSignInTime: firebaseUser.metadata.lastSignInTime,
+          },
+        };
+        setUser(authUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
     const checkRedirectResult = async () => {
       try {
         const result = await handleRedirectResult();
@@ -97,6 +127,8 @@ export default function DashboardPage() {
     };
 
     checkRedirectResult();
+
+    return () => unsubscribe();
   }, []);
 
   const handleGoogleSignIn = async () => {
