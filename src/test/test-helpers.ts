@@ -62,12 +62,60 @@ export const restoreStorageMock = () => {
 };
 
 // Helper to mock window.matchMedia with specific queries
-export const mockMatchMedia = (matches: boolean = false) => {
+export const mockMatchMedia = (
+  matches: boolean = false,
+  customQueries?: Record<string, boolean>,
+) => {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: vi.fn().mockImplementation((query) => ({
-      matches,
-      media: query,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => {
+      // Handle custom query mappings if provided
+      let queryMatches = matches;
+      if (customQueries && query in customQueries) {
+        queryMatches = customQueries[query];
+      }
+
+      return {
+        matches: queryMatches,
+        media: query || "",
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+    }),
+  });
+};
+
+// Helper to simulate window.matchMedia being unavailable
+export const mockMatchMediaUnavailable = () => {
+  delete (window as any).matchMedia;
+};
+
+// Helper to simulate window.matchMedia throwing errors
+export const mockMatchMediaError = (
+  errorMessage: string = "matchMedia not supported",
+) => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation(() => {
+      throw new Error(errorMessage);
+    }),
+  });
+};
+
+// Helper to restore window.matchMedia to default mock
+export const restoreMatchMedia = () => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query || "",
       onchange: null,
       addListener: vi.fn(),
       removeListener: vi.fn(),
@@ -323,15 +371,82 @@ export const simulateURLError = (
 
 // Note: setupAnimationFrameMocks is now exported from canvas-mocks.ts to avoid duplication
 
+// Helper to setup Router context mocks
+export const setupRouterMocks = () => {
+  // Ensure Router context is properly mocked
+  vi.mock("react-router-dom", async () => {
+    const actual = await vi.importActual("react-router-dom");
+    return {
+      ...actual,
+      useNavigate: () => vi.fn(),
+      useLocation: () => ({
+        pathname: "/",
+        search: "",
+        hash: "",
+        state: null,
+        key: "test",
+      }),
+      useRouterContext: () => ({
+        basename: "",
+        navigator: {
+          push: vi.fn(),
+          replace: vi.fn(),
+          go: vi.fn(),
+          back: vi.fn(),
+          forward: vi.fn(),
+          createHref: vi.fn(),
+        },
+        static: false,
+      }),
+    };
+  });
+};
+
 // Helper to clean up all mocks
 export const cleanupMocks = () => {
   vi.clearAllMocks();
-  localStorageMock.clear();
-  sessionStorageMock.clear();
-  localStorageMock._clearError();
-  sessionStorageMock._clearError();
+
+  // Use safe cleanup methods that don't throw errors
+  try {
+    if (localStorageMock && typeof localStorageMock._safeClear === "function") {
+      localStorageMock._safeClear();
+    } else if (
+      localStorageMock &&
+      typeof localStorageMock.clear === "function"
+    ) {
+      localStorageMock.clear();
+    }
+  } catch (error) {
+    // Ignore cleanup errors
+  }
+
+  try {
+    if (
+      sessionStorageMock &&
+      typeof sessionStorageMock._safeClear === "function"
+    ) {
+      sessionStorageMock._safeClear();
+    } else if (
+      sessionStorageMock &&
+      typeof sessionStorageMock.clear === "function"
+    ) {
+      sessionStorageMock.clear();
+    }
+  } catch (error) {
+    // Ignore cleanup errors
+  }
+
+  // Clear error states
+  try {
+    localStorageMock._clearError();
+    sessionStorageMock._clearError();
+  } catch (error) {
+    // Ignore if methods don't exist
+  }
+
   restoreStorageMock();
   firebaseMocks.resetAuthState();
+  setupRouterMocks(); // Ensure Router mocks are reset
 };
 
 // Helper to mock network requests (for future API integration)
@@ -398,6 +513,7 @@ export const testHelpers: TestHelpers = {
   restoreCanvasMocks,
   setupURLMocks,
   simulateURLError,
+  setupRouterMocks,
   cleanupMocks,
   mockFetch,
   createMockRelationship,

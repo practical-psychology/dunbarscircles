@@ -47,7 +47,9 @@ export const createStorageMock = () => {
     // Helper methods for testing
     _getStore: () => ({ ...store }),
     _setStore: (newStore: Record<string, string>) => {
-      store = { ...newStore };
+      if (!shouldThrow) {
+        store = { ...newStore };
+      }
     },
     // Error simulation methods
     _simulateError: (message: string = "Storage error") => {
@@ -56,6 +58,18 @@ export const createStorageMock = () => {
     },
     _clearError: () => {
       shouldThrow = false;
+      errorMessage = "Storage error";
+    },
+    // Safe cleanup method that doesn't throw
+    _safeClear: () => {
+      const wasThrowingBefore = shouldThrow;
+      shouldThrow = false;
+      try {
+        store = {};
+      } catch (error) {
+        // Ignore any errors during cleanup
+      }
+      shouldThrow = wasThrowingBefore;
     },
   };
 
@@ -132,5 +146,21 @@ export const restoreStorageMock = (
   Object.defineProperty(window, "localStorage", {
     value: storageMock,
     writable: true,
+    configurable: true,
   });
+};
+
+// Helper to safely clear storage without throwing errors
+export const safeClearStorage = (
+  storage: ReturnType<typeof createStorageMock>,
+) => {
+  try {
+    if (storage && typeof storage._safeClear === "function") {
+      storage._safeClear();
+    } else if (storage && typeof storage.clear === "function") {
+      storage.clear();
+    }
+  } catch (error) {
+    // Ignore cleanup errors
+  }
 };

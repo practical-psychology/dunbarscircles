@@ -42,7 +42,20 @@ export function WelcomeModal({
 
   useEffect(() => {
     // Check if user has seen the welcome modal before
-    const hasSeenWelcome = localStorage.getItem("yakw-welcome-seen");
+    let hasSeenWelcome = false;
+
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.localStorage &&
+        typeof window.localStorage.getItem === "function"
+      ) {
+        hasSeenWelcome = !!localStorage.getItem("yakw-welcome-seen");
+      }
+    } catch (error) {
+      // localStorage is not available or throws an error - treat as first time user
+      console.warn("localStorage is not available for welcome modal:", error);
+    }
 
     if (controlledOpen !== undefined) {
       setIsOpen(controlledOpen);
@@ -57,7 +70,21 @@ export function WelcomeModal({
 
   const handleClose = () => {
     setIsOpen(false);
-    localStorage.setItem("yakw-welcome-seen", "true");
+
+    // Try to save that user has seen the welcome modal
+    try {
+      if (
+        typeof window !== "undefined" &&
+        window.localStorage &&
+        typeof window.localStorage.setItem === "function"
+      ) {
+        localStorage.setItem("yakw-welcome-seen", "true");
+      }
+    } catch (error) {
+      // localStorage is not available or throws an error - ignore silently
+      console.warn("Failed to save welcome modal state:", error);
+    }
+
     onClose?.();
   };
 

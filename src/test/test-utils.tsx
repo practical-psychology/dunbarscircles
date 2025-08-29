@@ -1,9 +1,9 @@
-import { ReactElement, ReactNode, useEffect, useMemo } from "react";
+import { ReactElement, ReactNode, useMemo } from "react";
 import { render, type RenderOptions } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router-dom";
-import { createMemoryHistory, type History } from "history";
+import { createMemoryHistory } from "history";
 import { vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { RouterWrapper } from "./router-test-utils";
 
 // Local TestStoredContact interface for testing
 type TestStoredContact = {
@@ -85,24 +85,6 @@ interface TestProviderProps {
   theme?: "light" | "dark" | "system";
 }
 
-const HistoryRouter = ({
-  children,
-  history,
-}: {
-  children: ReactNode;
-  history: History;
-}) => {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    if (pathname !== history.location.pathname) {
-      history.push(pathname);
-    }
-  }, [history, pathname]);
-
-  return <>{children}</>;
-};
-
 export const TestProviders = ({
   children,
   routerType = "memory",
@@ -114,30 +96,30 @@ export const TestProviders = ({
     [initialEntries],
   );
 
-  return routerType === "memory" ? (
-    <MemoryRouter initialEntries={initialEntries}>
+  return (
+    <RouterWrapper
+      initialEntries={initialEntries}
+      history={routerType === "history" ? history : undefined}
+    >
       <ThemeProvider defaultTheme={theme} storageKey="test-theme">
         {children}
       </ThemeProvider>
-    </MemoryRouter>
-  ) : (
-    <HistoryRouter history={history}>
-      <ThemeProvider defaultTheme={theme} storageKey="test-theme">
-        {children}
-      </ThemeProvider>
-    </HistoryRouter>
+    </RouterWrapper>
   );
 };
 
 interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
   initialEntries?: string[];
   theme?: "light" | "dark" | "system";
-  withRouter?: boolean;
+  withRouter?: boolean; // defaults to true now
   routerType?: RouterType;
 }
 
 const customRender = (ui: ReactElement, options: CustomRenderOptions = {}) => {
-  const Wrapper = options.withRouter
+  // Default to withRouter: true for better compatibility
+  const shouldUseRouter = options.withRouter !== false;
+
+  const Wrapper = shouldUseRouter
     ? ({ children }: { children: ReactNode }) => (
         <TestProviders
           initialEntries={options.initialEntries}
@@ -273,3 +255,6 @@ export const testHelpers: TestHelpers = {
 
 // Export userEvent for testing interactions
 export { userEvent };
+
+// Export enhanced Router utilities
+export { renderWithRouterContext, RouterWrapper } from "./router-test-utils";

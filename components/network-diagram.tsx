@@ -119,14 +119,12 @@ export function NetworkDiagram({
             scale: [1, 1.2, 1],
             x: [0, 30, 0],
             y: [0, -20, 0],
+            rotate: [0, 180, 360],
           }}
           transition={{
             duration: 8,
             repeat: Infinity,
             ease: "easeInOut",
-          }}
-          style={{
-            borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
           }}
         />
         <motion.div
@@ -274,6 +272,21 @@ export function NetworkDiagram({
               ? radius
               : 20;
 
+          // Final validation to prevent any undefined values
+          if (
+            typeof safeRadius !== "number" ||
+            isNaN(safeRadius) ||
+            safeRadius <= 0
+          ) {
+            console.warn("Invalid radius detected, using fallback", {
+              level,
+              size,
+              radius,
+              safeRadius,
+            });
+            return null; // Skip rendering this circle if radius is invalid
+          }
+
           return (
             <motion.g
               key={level.id}
@@ -329,7 +342,7 @@ export function NetworkDiagram({
               <motion.circle
                 cx={pos.x}
                 cy={pos.y}
-                r={safeRadius || 20}
+                r={safeRadius}
                 fill={`url(#gradient-${level.id})`}
                 stroke={isSelected ? "#1f2937" : "white"}
                 strokeWidth={isSelected ? 4 : 2}
@@ -342,12 +355,10 @@ export function NetworkDiagram({
                 onClick={() => handleLevelInteraction(level.id)}
                 onKeyDown={(e) => handleKeyDown(e, level.id)}
                 animate={{
-                  r: Math.max(
-                    (isHovered || isSelected || focusedLevel === level.id
-                      ? safeRadius + 5
-                      : safeRadius) || 20,
-                    20,
-                  ),
+                  r:
+                    isHovered || isSelected || focusedLevel === level.id
+                      ? Math.max(safeRadius + 5, 25)
+                      : safeRadius,
                   strokeWidth: isSelected
                     ? 4
                     : isHovered || focusedLevel === level.id
@@ -369,14 +380,14 @@ export function NetworkDiagram({
                 <motion.circle
                   cx={pos.x}
                   cy={pos.y}
-                  r={safeRadius || 20}
+                  r={safeRadius}
                   fill="none"
                   stroke={`url(#gradient-${level.id})`}
                   strokeWidth={2}
                   strokeOpacity={0.6}
-                  initial={{ r: safeRadius || 20, opacity: 0.6 }}
+                  initial={{ r: safeRadius, opacity: 0.6 }}
                   animate={{
-                    r: Math.max((safeRadius || 20) + 20, 40),
+                    r: Math.max(safeRadius + 20, 40),
                     opacity: 0,
                   }}
                   transition={{ duration: 1.5, repeat: Infinity }}

@@ -95,20 +95,18 @@ export function LiquidShowcase() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center space-y-3">
               <motion.div
-                className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 mx-auto"
+                className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 mx-auto rounded-3xl"
                 animate={{
-                  borderRadius: [
-                    "63% 37% 54% 46% / 55% 48% 52% 45%",
-                    "40% 60% 54% 46% / 49% 60% 40% 51%",
-                    "54% 46% 38% 62% / 49% 70% 30% 51%",
-                    "63% 37% 54% 46% / 55% 48% 52% 45%",
-                  ],
                   scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0],
                 }}
                 transition={{
                   duration: 4,
                   repeat: Infinity,
                   ease: "easeInOut",
+                }}
+                style={{
+                  borderRadius: "50%",
                 }}
               />
               <h4 className="font-semibold">Morphing Blobs</h4>

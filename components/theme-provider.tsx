@@ -29,7 +29,11 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       // Check if localStorage is available and working
-      if (typeof window !== "undefined" && window.localStorage) {
+      if (
+        typeof window !== "undefined" &&
+        window.localStorage &&
+        typeof window.localStorage.getItem === "function"
+      ) {
         const stored = localStorage.getItem(storageKey);
         return (stored as Theme) || defaultTheme;
       }
@@ -49,10 +53,39 @@ export function ThemeProvider({
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
+      let systemTheme = "light"; // Default fallback
+
+      try {
+        // Safely check for matchMedia support with comprehensive validation
+        if (
+          typeof window !== "undefined" &&
+          window.matchMedia &&
+          typeof window.matchMedia === "function"
+        ) {
+          const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+          // Validate that mediaQuery is a valid object with matches property
+          if (
+            mediaQuery &&
+            typeof mediaQuery === "object" &&
+            "matches" in mediaQuery &&
+            typeof mediaQuery.matches === "boolean"
+          ) {
+            systemTheme = mediaQuery.matches ? "dark" : "light";
+          } else {
+            // mediaQuery is invalid or missing matches property
+            console.warn(
+              "matchMedia returned invalid result, using light theme",
+            );
+          }
+        } else {
+          // matchMedia is not available
+          console.warn("matchMedia is not available, using light theme");
+        }
+      } catch (error) {
+        // matchMedia is not available or throws an error
+        console.warn("matchMedia is not available, using light theme:", error);
+      }
 
       root.classList.add(systemTheme);
       return;
@@ -66,7 +99,11 @@ export function ThemeProvider({
     setTheme: (theme: Theme) => {
       try {
         // Check if localStorage is available and working
-        if (typeof window !== "undefined" && window.localStorage) {
+        if (
+          typeof window !== "undefined" &&
+          window.localStorage &&
+          typeof window.localStorage.setItem === "function"
+        ) {
           localStorage.setItem(storageKey, theme);
         }
       } catch (error) {

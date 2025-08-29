@@ -5,6 +5,10 @@ import React from "react";
 
 interface LocalStorageMock extends Storage {
   _clearError?: () => void;
+  _simulateError?: (message?: string) => void;
+  _safeClear?: () => void;
+  _getStore?: () => Record<string, string>;
+  _setStore?: (newStore: Record<string, string>) => void;
 }
 
 // Mock react-router-dom to prevent router nesting issues
@@ -20,51 +24,116 @@ vi.mock("react-router-dom", async () => {
       state: null,
       key: "test",
     }),
+    // Ensure Router context is available for components that need it
+    useRouterContext: () => ({
+      basename: "",
+      navigator: {
+        push: vi.fn(),
+        replace: vi.fn(),
+        go: vi.fn(),
+        back: vi.fn(),
+        forward: vi.fn(),
+        createHref: vi.fn(),
+      },
+      static: false,
+    }),
   };
 });
 
-// Mock window.matchMedia
+// Enhanced window.matchMedia mock with better error handling
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+  configurable: true,
+  value: vi.fn().mockImplementation((query: string) => {
+    // Ensure we always return a valid MediaQueryList-like object
+    const mediaQueryList = {
+      matches: false,
+      media: query || "",
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    };
+
+    // Handle specific queries for theme detection
+    if (query === "(prefers-color-scheme: dark)") {
+      mediaQueryList.matches = false; // Default to light theme in tests
+    }
+
+    return mediaQueryList;
+  }),
 });
 
-// Storage mock implementation
+// Storage mock implementation with enhanced error handling
 const createStorageMock = (): LocalStorageMock => {
   const store: Record<string, string> = {};
+  let shouldThrow = false;
+  let errorMessage = "Storage error";
 
   return {
-    getItem: vi.fn((key: string) => store[key] || null),
+    getItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
+      return store[key] || null;
+    }),
     setItem: vi.fn((key: string, value: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       store[key] = String(value);
     }),
     removeItem: vi.fn((key: string) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       delete store[key];
     }),
     clear: vi.fn(() => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       Object.keys(store).forEach((key) => delete store[key]);
     }),
     key: vi.fn((index: number) => {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       const keys = Object.keys(store);
       return index >= keys.length ? null : keys[index];
     }),
     get length() {
+      if (shouldThrow) {
+        throw new Error(errorMessage);
+      }
       return Object.keys(store).length;
     },
-    _clearError: vi.fn(),
+    _clearError: vi.fn(() => {
+      shouldThrow = false;
+      errorMessage = "Storage error";
+    }),
+    _simulateError: (message: string = "Storage error") => {
+      shouldThrow = true;
+      errorMessage = message;
+    },
+    _safeClear: () => {
+      const wasThrowingBefore = shouldThrow;
+      shouldThrow = false;
+      try {
+        Object.keys(store).forEach((key) => delete store[key]);
+      } catch (error) {
+        // Ignore any errors during cleanup
+      }
+      shouldThrow = wasThrowingBefore;
+    },
     _getStore: () => ({ ...store }),
     _setStore: (newStore: Record<string, string>) => {
-      Object.keys(store).forEach((key) => delete store[key]);
-      Object.assign(store, newStore);
+      if (!shouldThrow) {
+        Object.keys(store).forEach((key) => delete store[key]);
+        Object.assign(store, newStore);
+      }
     },
   };
 };
@@ -146,7 +215,19 @@ beforeAll(() => {
 afterEach(() => {
   // Clean up after each test
   vi.clearAllMocks();
-  localStorage.clear();
+
+  // Safely clear localStorage - handle cases where it might be undefined
+  try {
+    if (
+      typeof window !== "undefined" &&
+      window.localStorage &&
+      typeof window.localStorage.clear === "function"
+    ) {
+      window.localStorage.clear();
+    }
+  } catch (error) {
+    // localStorage might throw errors or be unavailable - ignore silently
+  }
 });
 
 afterAll(() => {
@@ -163,20 +244,7 @@ process.env.NODE_ENV = "test";
 
 // Note: axe-core configuration is handled in individual test files
 
-// Mock window.matchMedia for responsive design testing
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+// Note: window.matchMedia is already mocked above - removed duplicate
 
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -195,34 +263,61 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Import improved Canvas mocking
 import { createCanvasContextMock } from "./canvas-mocks";
 
-// Mock HTMLCanvasElement.getContext for Canvas API testing with proper type compatibility
+// Enhanced Canvas API mocking with better error handling and type compatibility
 const mockCanvasContext = createCanvasContextMock();
 
-HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
-  if (contextType === "2d") {
-    return mockCanvasContext as CanvasRenderingContext2D;
-  }
-  return null;
-}) as any;
+// Store original Canvas methods for restoration if needed
+const originalCanvasMethods = {
+  getContext: HTMLCanvasElement.prototype.getContext,
+  toDataURL: HTMLCanvasElement.prototype.toDataURL,
+  toBlob: HTMLCanvasElement.prototype.toBlob,
+  getBoundingClientRect: HTMLCanvasElement.prototype.getBoundingClientRect,
+};
 
-// Mock Canvas toDataURL method with proper type support and error handling
+// Mock HTMLCanvasElement.getContext with enhanced error handling
+HTMLCanvasElement.prototype.getContext = vi.fn(
+  (contextType: string, contextAttributes?: any) => {
+    // contextAttributes parameter is intentionally unused in mock
+    void contextAttributes;
+    try {
+      if (contextType === "2d") {
+        return mockCanvasContext as CanvasRenderingContext2D;
+      }
+      if (contextType === "webgl" || contextType === "webgl2") {
+        return null; // WebGL not supported in tests
+      }
+      return null;
+    } catch (error) {
+      console.warn("Canvas getContext mock error:", error);
+      return null;
+    }
+  },
+) as any;
+
+// Mock Canvas toDataURL method with enhanced error handling
 HTMLCanvasElement.prototype.toDataURL = vi.fn(
   (type?: string, _quality?: any) => {
-    const mimeType = type || "image/png";
-    return `data:${mimeType};base64,mock`;
+    try {
+      const mimeType = type || "image/png";
+      return `data:${mimeType};base64,mock`;
+    } catch (error) {
+      console.warn("Canvas toDataURL mock error:", error);
+      throw new Error("Canvas export failed. Please try again.");
+    }
   },
 );
 
-// Mock Canvas toBlob method with proper callback handling and error handling
+// Mock Canvas toBlob method with enhanced error handling
 HTMLCanvasElement.prototype.toBlob = vi.fn(
   (callback?: BlobCallback | null, type?: string, _quality?: any) => {
-    const mimeType = type || "image/png";
     try {
+      const mimeType = type || "image/png";
       const blob = new Blob(["mock"], { type: mimeType });
       if (callback) {
         setTimeout(() => callback(blob), 0);
       }
     } catch (error) {
+      console.warn("Canvas toBlob mock error:", error);
       if (callback) {
         setTimeout(() => callback(null), 0);
       }
@@ -231,9 +326,9 @@ HTMLCanvasElement.prototype.toBlob = vi.fn(
 );
 
 // Mock Canvas getBoundingClientRect for positioning
-HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(
-  () =>
-    ({
+HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => {
+  try {
+    return {
       x: 0,
       y: 0,
       width: 300,
@@ -243,8 +338,31 @@ HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(
       bottom: 150,
       right: 300,
       toJSON: () => ({}),
-    }) as DOMRect,
-);
+    } as DOMRect;
+  } catch (error) {
+    console.warn("Canvas getBoundingClientRect mock error:", error);
+    return {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+  }
+});
+
+// Helper function to restore original Canvas methods if needed
+export const restoreCanvasMethods = () => {
+  HTMLCanvasElement.prototype.getContext = originalCanvasMethods.getContext;
+  HTMLCanvasElement.prototype.toDataURL = originalCanvasMethods.toDataURL;
+  HTMLCanvasElement.prototype.toBlob = originalCanvasMethods.toBlob;
+  HTMLCanvasElement.prototype.getBoundingClientRect =
+    originalCanvasMethods.getBoundingClientRect;
+};
 
 // Clean up duplicate storage mock implementation
 
@@ -395,20 +513,38 @@ try {
 beforeEach(() => {
   vi.clearAllMocks();
 
-  // Reset localStorage and sessionStorage mocks
-  if (localStorageMock) {
-    localStorageMock.clear();
-    localStorageMock._clearError?.();
+  // Reset localStorage and sessionStorage mocks safely
+  try {
+    if (localStorageMock) {
+      if (typeof localStorageMock._safeClear === "function") {
+        localStorageMock._safeClear();
+      } else if (typeof localStorageMock.clear === "function") {
+        localStorageMock.clear();
+      }
+      localStorageMock._clearError?.();
+    }
+  } catch (error) {
+    // Ignore localStorage mock errors during cleanup
   }
 
-  if (sessionStorageMock) {
-    sessionStorageMock.clear();
+  try {
+    if (sessionStorageMock) {
+      if (typeof sessionStorageMock._safeClear === "function") {
+        sessionStorageMock._safeClear();
+      } else if (typeof sessionStorageMock.clear === "function") {
+        sessionStorageMock.clear();
+      }
+      sessionStorageMock._clearError?.();
+    }
+  } catch (error) {
+    // Ignore sessionStorage mock errors during cleanup
   }
-  sessionStorageMock._clearError?.();
+
   // Clean up animation frames if cleanup function exists
   if (typeof cleanupAnimationMocks === "function") {
     cleanupAnimationMocks();
   }
+
   // Reset Firebase authentication state
   firebaseMocks.resetAuthState();
 });

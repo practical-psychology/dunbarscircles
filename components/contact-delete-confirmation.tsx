@@ -116,8 +116,7 @@ const AlertDialogTrigger = forwardRef<
   }
 });
 
-const AlertDialogTriggerWithRef = forwardRef(AlertDialogTrigger);
-AlertDialogTriggerWithRef.displayName = "AlertDialogTrigger";
+AlertDialogTrigger.displayName = "AlertDialogTrigger";
 
 interface AlertDialogDescriptionProps {
   children: ReactNode;
@@ -212,8 +211,7 @@ const AlertDialogDescription = forwardRef<
   return content;
 });
 
-const AlertDialogDescriptionWithRef = forwardRef(AlertDialogDescription);
-AlertDialogDescriptionWithRef.displayName = "AlertDialogDescription";
+AlertDialogDescription.displayName = "AlertDialogDescription";
 
 const AlertDialogFooter = ({
   children,
@@ -264,7 +262,7 @@ const AlertDialogCancel = ({
 );
 
 // Button Component
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 
 // Badge Component
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {

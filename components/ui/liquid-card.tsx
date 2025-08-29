@@ -44,22 +44,17 @@ const LiquidCard = React.forwardRef<HTMLDivElement, LiquidCardProps>(
             margin: "-2px",
           }}
           initial={{
-            borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
             opacity: 0,
+            scale: 1,
           }}
           whileHover={{
             opacity: glow ? 1 : 0.5,
-            borderRadius: [
-              "63% 37% 54% 46% / 55% 48% 52% 45%",
-              "40% 60% 54% 46% / 49% 60% 40% 51%",
-              "54% 46% 38% 62% / 49% 70% 30% 51%",
-              "63% 37% 54% 46% / 55% 48% 52% 45%",
-            ],
+            scale: [1, 1.02, 1],
           }}
           transition={{
             opacity: { duration: 0.3 },
-            borderRadius: {
-              duration: 8,
+            scale: {
+              duration: 2,
               repeat: Infinity,
               ease: "easeInOut",
             },

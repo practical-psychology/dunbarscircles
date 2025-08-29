@@ -114,32 +114,20 @@ const config: Config = {
         },
         "liquid-blob": {
           "0%, 100%": {
-            borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
-            transform: "translate(0px, 0px) rotate(0deg)",
+            borderRadius: "50%",
+            transform: "translate(0px, 0px) rotate(0deg) scale(1)",
           },
-          "14%": {
-            borderRadius: "40% 60% 54% 46% / 49% 60% 40% 51%",
-            transform: "translate(0px, 5px) rotate(50deg)",
+          "25%": {
+            borderRadius: "60% 40%",
+            transform: "translate(2px, -2px) rotate(90deg) scale(1.1)",
           },
-          "28%": {
-            borderRadius: "54% 46% 38% 62% / 49% 70% 30% 51%",
-            transform: "translate(5px, 0px) rotate(100deg)",
+          "50%": {
+            borderRadius: "40% 60%",
+            transform: "translate(-2px, 2px) rotate(180deg) scale(0.9)",
           },
-          "42%": {
-            borderRadius: "61% 39% 55% 45% / 61% 38% 62% 39%",
-            transform: "translate(0px, -3px) rotate(150deg)",
-          },
-          "56%": {
-            borderRadius: "61% 39% 67% 33% / 70% 50% 50% 30%",
-            transform: "translate(-5px, 0px) rotate(200deg)",
-          },
-          "70%": {
-            borderRadius: "50% 50% 33% 67% / 55% 68% 32% 45%",
-            transform: "translate(0px, 3px) rotate(250deg)",
-          },
-          "84%": {
-            borderRadius: "46% 54% 50% 50% / 35% 61% 39% 65%",
-            transform: "translate(0px, -2px) rotate(300deg)",
+          "75%": {
+            borderRadius: "55% 45%",
+            transform: "translate(2px, 2px) rotate(270deg) scale(1.05)",
           },
         },
         "liquid-pour": {

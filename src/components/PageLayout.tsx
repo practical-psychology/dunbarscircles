@@ -58,11 +58,9 @@ export default function PageLayout({
       {/* Liquid scroll indicator */}
       <LiquidScrollIndicator />
 
-      {/* Liquid background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 via-purple-50/80 to-cyan-50/80 dark:from-gray-900/80 dark:via-blue-900/80 dark:to-purple-900/80" />
 
       <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header */}
         <motion.div
           className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
@@ -297,9 +295,6 @@ export default function PageLayout({
           duration: 8,
           repeat: Infinity,
           ease: "easeInOut",
-        }}
-        style={{
-          borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
         }}
       />
       <motion.div

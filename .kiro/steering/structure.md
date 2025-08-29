@@ -108,7 +108,6 @@ src/
 
 - `firebase.json` - Firebase hosting configuration
 - `firestore.rules` - Firestore security rules
-- `_redirects` - Netlify redirect rules
 
 ## Import Conventions
 

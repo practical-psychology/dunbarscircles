@@ -170,15 +170,20 @@ export const createCanvasContextMock = () => {
     wordSpacing: "0px",
     letterSpacing: "0px",
 
-    // Canvas reference with proper typing and error handling
+    // Canvas reference with enhanced error handling and type compatibility
     canvas: {
       width: 300,
       height: 150,
       toDataURL: vi.fn((type?: string, quality?: any) => {
-        const mimeType = type || "image/png";
-        // quality parameter is intentionally unused in mock
-        void quality;
-        return `data:${mimeType};base64,mock`;
+        try {
+          const mimeType = type || "image/png";
+          // quality parameter is intentionally unused in mock
+          void quality;
+          return `data:${mimeType};base64,mock`;
+        } catch (error) {
+          console.warn("Canvas toDataURL error in context mock:", error);
+          throw new Error("Canvas export failed. Please try again.");
+        }
       }),
       toBlob: vi.fn(
         (callback?: BlobCallback | null, type?: string, quality?: any) => {
@@ -190,19 +195,25 @@ export const createCanvasContextMock = () => {
               setTimeout(() => callback(blob), 0);
             }
           } catch (error) {
+            console.warn("Canvas toBlob error in context mock:", error);
             if (callback) {
               setTimeout(() => callback(null), 0);
             }
           }
         },
       ),
-      getContext: vi.fn(),
+      getContext: vi.fn((contextType: string) => {
+        if (contextType === "2d") {
+          return createCanvasContextMock();
+        }
+        return null;
+      }),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
-      getBoundingClientRect: vi.fn(
-        () =>
-          ({
+      getBoundingClientRect: vi.fn(() => {
+        try {
+          return {
             x: 0,
             y: 0,
             width: 300,
@@ -212,8 +223,25 @@ export const createCanvasContextMock = () => {
             bottom: 150,
             right: 300,
             toJSON: () => ({}),
-          }) as DOMRect,
-      ),
+          } as DOMRect;
+        } catch (error) {
+          console.warn(
+            "Canvas getBoundingClientRect error in context mock:",
+            error,
+          );
+          return {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            toJSON: () => ({}),
+          } as DOMRect;
+        }
+      }),
     } as unknown as HTMLCanvasElement,
 
     // Additional Canvas API methods
@@ -258,7 +286,7 @@ export const createCanvasContextMock = () => {
   };
 };
 
-// Mock HTMLCanvasElement with proper type compatibility and error handling
+// Enhanced Canvas mock with better error handling and type compatibility
 export const mockCanvas = {
   getContext: vi.fn((contextType: string, contextAttributes?: any) => {
     // contextAttributes parameter is intentionally unused in mock
@@ -275,16 +303,29 @@ export const mockCanvas = {
     const mimeType = type || "image/png";
     // quality parameter is intentionally unused in mock
     void quality;
-    return `data:${mimeType};base64,mock`;
+    try {
+      return `data:${mimeType};base64,mock`;
+    } catch (error) {
+      // Handle Canvas export errors gracefully in tests
+      console.warn("Canvas toDataURL mock error:", error);
+      throw new Error("Canvas export failed. Please try again.");
+    }
   }),
   toBlob: vi.fn(
     (callback?: BlobCallback | null, type?: string, quality?: any) => {
       const mimeType = type || "image/png";
       // quality parameter is intentionally unused in mock
       void quality;
-      const blob = new Blob(["mock"], { type: mimeType });
-      if (callback) {
-        setTimeout(() => callback(blob), 0);
+      try {
+        const blob = new Blob(["mock"], { type: mimeType });
+        if (callback) {
+          setTimeout(() => callback(blob), 0);
+        }
+      } catch (error) {
+        console.warn("Canvas toBlob mock error:", error);
+        if (callback) {
+          setTimeout(() => callback(null), 0);
+        }
       }
     },
   ),
@@ -444,4 +485,121 @@ export const simulateCanvasDrawing = (context: any) => {
   context.arc(50, 50, 20, 0, Math.PI * 2);
   context.fill();
   return context._getDrawCalls();
+};
+
+// Enhanced Canvas error testing utilities
+export const mockCanvasWithError = (
+  errorType: "toDataURL" | "toBlob" | "getContext",
+) => {
+  const originalMethods = {
+    toDataURL: HTMLCanvasElement.prototype.toDataURL,
+    toBlob: HTMLCanvasElement.prototype.toBlob,
+    getContext: HTMLCanvasElement.prototype.getContext,
+  };
+
+  const cleanup = () => {
+    HTMLCanvasElement.prototype.toDataURL = originalMethods.toDataURL;
+    HTMLCanvasElement.prototype.toBlob = originalMethods.toBlob;
+    HTMLCanvasElement.prototype.getContext = originalMethods.getContext;
+  };
+
+  switch (errorType) {
+    case "toDataURL":
+      HTMLCanvasElement.prototype.toDataURL = vi.fn(() => {
+        throw new Error("Canvas toDataURL failed");
+      });
+      break;
+    case "toBlob":
+      HTMLCanvasElement.prototype.toBlob = vi.fn(
+        (callback?: BlobCallback | null) => {
+          if (callback) {
+            setTimeout(() => callback(null), 0);
+          }
+        },
+      );
+      break;
+    case "getContext":
+      HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
+      break;
+  }
+
+  return { cleanup };
+};
+
+// Safe Canvas export testing utility
+export const testCanvasExport = async (
+  exportFunction: () => void | Promise<void>,
+  expectError: boolean = false,
+) => {
+  let errorCaught = false;
+  let result: any = null;
+
+  try {
+    result = await exportFunction();
+  } catch (error) {
+    errorCaught = true;
+    if (!expectError) {
+      console.warn("Unexpected Canvas export error:", error);
+    }
+  }
+
+  return {
+    success: !errorCaught,
+    errorCaught,
+    result,
+    expectError,
+  };
+};
+
+// Canvas context validation utility
+export const validateCanvasContext = (canvas: HTMLCanvasElement | null) => {
+  if (!canvas) {
+    return { valid: false, error: "Canvas element not found" };
+  }
+
+  try {
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return { valid: false, error: "2D context not available" };
+    }
+
+    // Test basic context methods
+    if (typeof context.fillRect !== "function") {
+      return { valid: false, error: "Context methods not available" };
+    }
+
+    return { valid: true, context };
+  } catch (error) {
+    return { valid: false, error: `Context validation failed: ${error}` };
+  }
+};
+
+// Mock Canvas with specific dimensions and properties
+export const createMockCanvasElement = (width = 300, height = 150) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  // Override methods with mocks
+  canvas.getContext = vi.fn((contextType: string) => {
+    if (contextType === "2d") {
+      return createCanvasContextMock() as unknown as CanvasRenderingContext2D;
+    }
+    return null;
+  }) as any;
+
+  canvas.toDataURL = vi.fn((type?: string) => {
+    const mimeType = type || "image/png";
+    return `data:${mimeType};base64,mock`;
+  });
+
+  canvas.toBlob = vi.fn((callback?: BlobCallback | null, type?: string) => {
+    const mimeType = type || "image/png";
+    const blob = new Blob(["mock"], { type: mimeType });
+    if (callback) {
+      setTimeout(() => callback(blob), 0);
+    }
+  });
+
+  return canvas;
 };

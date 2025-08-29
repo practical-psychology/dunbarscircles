@@ -15,14 +15,12 @@ const LiquidLoadingScreen = ({}: LiquidLoadingScreenProps) => {
             scale: [1, 1.2, 1],
             x: [0, 50, 0],
             y: [0, -30, 0],
+            rotate: [0, 180, 360],
           }}
           transition={{
             duration: 4,
             repeat: Infinity,
             ease: "easeInOut",
-          }}
-          style={{
-            borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
           }}
         />
         <motion.div

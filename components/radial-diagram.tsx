@@ -237,6 +237,13 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                   (maxRadius / safeLength) * (index + 1),
                   10,
                 );
+
+                // Additional safety check for radius
+                const safeRadius =
+                  typeof radius === "number" && !isNaN(radius) && radius > 0
+                    ? radius
+                    : 10;
+
                 const opacity =
                   0.1 +
                   Math.sin((animationPhase + index * 40) * (Math.PI / 180)) *
@@ -246,7 +253,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                     key={`bg-${level.id}`}
                     cx={centerX}
                     cy={centerY}
-                    r={radius || 10}
+                    r={safeRadius}
                     fill="none"
                     stroke={level.color.replace("bg-", "#")}
                     strokeWidth="1"
@@ -266,6 +273,19 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                 );
                 const prevRadius =
                   index > 0 ? Math.max((maxRadius / safeLength) * index, 5) : 0;
+
+                // Additional safety checks for radius values
+                const safeRadius =
+                  typeof radius === "number" && !isNaN(radius) && radius > 0
+                    ? radius
+                    : 10;
+                const safePrevRadius =
+                  typeof prevRadius === "number" &&
+                  !isNaN(prevRadius) &&
+                  prevRadius >= 0
+                    ? prevRadius
+                    : 5;
+
                 const isSelected = selectedLevel === level.id;
                 const isHovered = hoveredLevel === level.id;
                 // const isZoomed = zoomedLevel === level.id;
@@ -280,7 +300,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                     <circle
                       cx={centerX}
                       cy={centerY}
-                      r={radius || 10}
+                      r={safeRadius}
                       fill={safeColor}
                       fillOpacity={
                         isHovered || isSelected || focusedLevel === level.id
@@ -311,7 +331,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       <circle
                         cx={centerX}
                         cy={centerY}
-                        r={prevRadius || 5}
+                        r={safePrevRadius}
                         fill="white"
                         fillOpacity={0.9}
                         className="pointer-events-none"

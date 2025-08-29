@@ -73,6 +73,7 @@ export interface TestHelpers {
   restoreCanvasMocks(): void;
   setupURLMocks(): void;
   simulateURLError(errorMessage?: string): void;
+  setupRouterMocks(): void;
   mockFetch(response: any, status?: number): void;
 
   // Firebase auth error helpers
