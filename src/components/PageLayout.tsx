@@ -62,7 +62,7 @@ export default function PageLayout({
   description,
 }: PageLayoutProps) {
   const location = useLocation();
-  
+
   // Authentication state
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
@@ -72,7 +72,7 @@ export default function PageLayout({
   // Listen for auth state changes
   useEffect(() => {
     if (!auth) return;
-    
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
     });
@@ -87,7 +87,7 @@ export default function PageLayout({
       } catch (error) {
         console.error("Error handling redirect result:", error);
         setAuthError(
-          error instanceof Error ? error.message : "Failed to complete sign-in"
+          error instanceof Error ? error.message : "Failed to complete sign-in",
         );
       }
     };
@@ -108,7 +108,9 @@ export default function PageLayout({
     } catch (error: unknown) {
       console.error("Error signing in with Google:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to sign in with Google";
+        error instanceof Error
+          ? error.message
+          : "Failed to sign in with Google";
       setAuthError(errorMessage);
 
       // Show redirect option if popup was blocked or closed
@@ -132,7 +134,7 @@ export default function PageLayout({
       setAuthError(
         error instanceof Error
           ? error.message
-          : "Failed to initiate sign-in redirect"
+          : "Failed to initiate sign-in redirect",
       );
       setAuthLoading(false);
     }
@@ -147,7 +149,7 @@ export default function PageLayout({
     } catch (error: unknown) {
       console.error("Error signing out:", error);
       setAuthError(
-        error instanceof Error ? error.message : "Failed to sign out"
+        error instanceof Error ? error.message : "Failed to sign out",
       );
     } finally {
       setAuthLoading(false);
@@ -362,7 +364,7 @@ export default function PageLayout({
                       </>
                     )}
                   </button>
-                  
+
                   {showRedirectOption && (
                     <button
                       onClick={handleGoogleSignInRedirect}
@@ -385,7 +387,7 @@ export default function PageLayout({
                       <span>Try Redirect</span>
                     </button>
                   )}
-                  
+
                   {authError && (
                     <div className="p-2 text-xs text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-900/20 rounded-lg max-w-xs mx-auto text-center">
                       {authError}

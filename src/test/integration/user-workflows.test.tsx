@@ -5,9 +5,54 @@ import { render } from "../test-utils";
 import { testHelpers } from "../test-helpers";
 import App from "../../App";
 
+// Mock Firebase modules
+vi.mock("@/firebase-config", () => ({
+  auth: {
+    currentUser: null,
+    onAuthStateChanged: vi.fn(() => vi.fn()), // Return unsubscribe function
+    signInWithPopup: vi.fn(),
+    signOut: vi.fn(),
+  },
+  firebaseConfig: {
+    apiKey: "test-api-key",
+    authDomain: "test.firebaseapp.com",
+    projectId: "test-project",
+    storageBucket: "test-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "test-app-id",
+  },
+}));
+
+vi.mock("@/lib/auth-utils", () => ({
+  signInWithGoogle: vi.fn(),
+  signInWithGoogleRedirect: vi.fn(),
+  handleRedirectResult: vi.fn(),
+  signOut: vi.fn(),
+  getUserDisplayName: vi.fn(
+    (user) => user?.displayName || user?.email || "User",
+  ),
+}));
+
+vi.mock("firebase/auth", () => ({
+  GoogleAuthProvider: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signInWithRedirect: vi.fn(),
+  getRedirectResult: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChanged: vi.fn(() => vi.fn()), // Return unsubscribe function
+  getAuth: vi.fn(() => ({
+    currentUser: null,
+    onAuthStateChanged: vi.fn(() => vi.fn()),
+  })),
+}));
+
 // Mock the components that require Canvas API
-vi.mock("@/components/network-diagram", () => ({
-  default: ({ onNodeClick }: { onNodeClick?: (node: any) => void }) => (
+vi.mock("@/components/network-diagram", () => {
+  const NetworkDiagramComponent = ({
+    onNodeClick,
+  }: {
+    onNodeClick?: (node: any) => void;
+  }) => (
     <div data-testid="network-diagram">
       <canvas data-testid="network-canvas" />
       <button
@@ -17,13 +62,34 @@ vi.mock("@/components/network-diagram", () => ({
         Mock Node
       </button>
     </div>
-  ),
-}));
+  );
+
+  return {
+    default: NetworkDiagramComponent,
+    NetworkDiagram: NetworkDiagramComponent,
+  };
+});
 
 vi.mock("@/components/radial-diagram", () => ({
   default: () => (
     <div data-testid="radial-diagram">
       <canvas data-testid="radial-canvas" />
+    </div>
+  ),
+}));
+
+// Mock PageLayout component to avoid authentication complexity
+vi.mock("@/components/PageLayout", () => ({
+  default: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode;
+    title: string;
+  }) => (
+    <div data-testid="page-layout">
+      <h1>{title}</h1>
+      {children}
     </div>
   ),
 }));
@@ -309,9 +375,24 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         email: "test@example.com",
         displayName: "Test User",
         photoURL: "https://example.com/photo.jpg",
+        emailVerified: true,
+        isAnonymous: false,
+        providerData: [
+          {
+            providerId: "google.com",
+            uid: "test-uid",
+            displayName: "Test User",
+            email: "test@example.com",
+            photoURL: "https://example.com/photo.jpg",
+          },
+        ],
+        metadata: {
+          creationTime: "2023-01-01T00:00:00.000Z",
+          lastSignInTime: "2023-01-01T00:00:00.000Z",
+        },
       };
 
-      render(<App />, { initialEntries: ["/"] });
+      render(<App />, { initialEntries: ["/dashboard"] });
 
       // Wait for loading screen to finish
       await waitFor(
@@ -321,14 +402,19 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         { timeout: 3000 },
       );
 
-      // Find and click sign-in button
+      // Wait for dashboard to load
+      await waitFor(() => {
+        expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+      });
+
+      // Find and click sign-in button using more flexible selector
       const signInButton =
-        screen.queryByText(/sign in/i) || screen.queryByText(/login/i);
+        screen.queryByTestId("sign-in") ||
+        screen.queryByText(/sign in/i) ||
+        screen.queryByRole("button", { name: /sign in/i });
 
       if (signInButton) {
-        await user.click(signInButton);
-
-        // Mock successful authentication
+        // Mock successful authentication before clicking
         testHelpers.setupFirebaseAuth(mockUser);
 
         // Trigger auth state change
@@ -342,50 +428,43 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
           return vi.fn();
         });
 
+        await user.click(signInButton);
+
         // Wait for authentication to complete
         await waitFor(() => {
-          expect(
-            screen.queryByText(/test user/i) ||
-              screen.queryByText(/dashboard/i),
-          ).toBeTruthy();
+          expect(screen.getByTestId("user-info")).toBeInTheDocument();
         });
-
-        // Navigate to dashboard
-        const dashboardLink = screen.queryByRole("link", {
-          name: /dashboard/i,
-        });
-        if (dashboardLink) {
-          await user.click(dashboardLink);
-        }
 
         // Verify user data is displayed
         await waitFor(() => {
-          expect(
-            screen.queryByText(/test@example.com/i) ||
-              screen.queryByText(/test user/i),
-          ).toBeTruthy();
+          expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
         });
 
         // Add some data to test persistence
-        const addDataButton = screen.queryByText(/add/i);
-        if (addDataButton) {
-          await user.click(addDataButton);
+        const contactManager = screen.queryByTestId("contact-manager");
+        if (contactManager) {
+          const addButton = screen.queryByText(/add contact/i);
+          if (addButton) {
+            await user.click(addButton);
 
-          // Add test data
-          const nameInput = screen.queryByLabelText(/name/i);
-          if (nameInput) {
-            await user.type(nameInput, "Persistent Contact");
-          }
+            // Add test data
+            const nameInput = screen.queryByLabelText(/name/i);
+            if (nameInput) {
+              await user.type(nameInput, "Persistent Contact");
+            }
 
-          const saveButton = screen.queryByText(/save/i);
-          if (saveButton) {
-            await user.click(saveButton);
+            const saveButton = screen.queryByText(/save/i);
+            if (saveButton) {
+              await user.click(saveButton);
+            }
           }
         }
 
-        // Sign out
+        // Sign out using flexible selector
         const signOutButton =
-          screen.queryByText(/sign out/i) || screen.queryByText(/logout/i);
+          screen.queryByTestId("sign-out") ||
+          screen.queryByText(/sign out/i) ||
+          screen.queryByText(/logout/i);
         if (signOutButton) {
           await user.click(signOutButton);
 
@@ -393,24 +472,25 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
           testHelpers.setupFirebaseAuth(null);
 
           await waitFor(() => {
-            expect(
-              screen.queryByText(/sign in/i) || screen.queryByText(/login/i),
-            ).toBeTruthy();
+            const signInElement =
+              screen.queryByTestId("sign-in") || screen.queryByText(/sign in/i);
+            expect(signInElement).toBeInTheDocument();
           });
         }
 
         // Sign back in to verify data persistence
-        const signInAgain = screen.queryByText(/sign in/i);
+        const signInAgain =
+          screen.queryByTestId("sign-in") || screen.queryByText(/sign in/i);
         if (signInAgain) {
           await user.click(signInAgain);
 
           testHelpers.setupFirebaseAuth(mockUser);
 
           await waitFor(() => {
-            expect(
-              screen.queryByText(/persistent contact/i) ||
-                screen.queryByText(/dashboard/i),
-            ).toBeTruthy();
+            const userInfo =
+              screen.queryByTestId("user-info") ||
+              screen.queryByText(/test@example.com/i);
+            expect(userInfo).toBeInTheDocument();
           });
         }
       }

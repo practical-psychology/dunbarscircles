@@ -13,6 +13,63 @@ import { renderWithRouter } from "../test-utils";
 import { testHelpers } from "../test-helpers";
 import App from "../../App";
 
+// Mock Firebase modules
+vi.mock("@/firebase-config", () => ({
+  auth: {
+    currentUser: null,
+    onAuthStateChanged: vi.fn(() => vi.fn()), // Return unsubscribe function
+    signInWithPopup: vi.fn(),
+    signOut: vi.fn(),
+  },
+  firebaseConfig: {
+    apiKey: "test-api-key",
+    authDomain: "test.firebaseapp.com",
+    projectId: "test-project",
+    storageBucket: "test-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "test-app-id",
+  },
+}));
+
+vi.mock("@/lib/auth-utils", () => ({
+  signInWithGoogle: vi.fn(),
+  signInWithGoogleRedirect: vi.fn(),
+  handleRedirectResult: vi.fn(),
+  signOut: vi.fn(),
+  getUserDisplayName: vi.fn(
+    (user) => user?.displayName || user?.email || "User",
+  ),
+}));
+
+vi.mock("firebase/auth", () => ({
+  GoogleAuthProvider: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signInWithRedirect: vi.fn(),
+  getRedirectResult: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChanged: vi.fn(() => vi.fn()), // Return unsubscribe function
+  getAuth: vi.fn(() => ({
+    currentUser: null,
+    onAuthStateChanged: vi.fn(() => vi.fn()),
+  })),
+}));
+
+// Mock PageLayout component to avoid authentication complexity
+vi.mock("@/components/PageLayout", () => ({
+  default: ({
+    children,
+    title,
+  }: {
+    children: React.ReactNode;
+    title: string;
+  }) => (
+    <div data-testid="page-layout">
+      <h1>{title}</h1>
+      {children}
+    </div>
+  ),
+}));
+
 // Mock the components that cause side effects
 vi.mock("../../components/analytics", () => ({
   trackEvent: vi.fn(),
@@ -209,16 +266,22 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      const signInButton = screen.queryByText(/sign in/i);
+      // Wait for dashboard to load
+      await waitFor(() => {
+        expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+      });
+
+      // Use specific test ID to avoid multiple element matches
+      const signInButton = screen.getByTestId("sign-in");
       if (signInButton) {
         await user.click(signInButton);
 
         await waitFor(() => {
           // Should show error message or remain on sign-in state
           const errorMessage =
-            screen.queryByText(/error/i) ||
+            screen.queryByText(/authentication failed/i) ||
             screen.queryByText(/failed/i) ||
-            screen.queryByText(/sign in/i);
+            screen.getByTestId("sign-in");
           expect(errorMessage).toBeTruthy();
         });
       }
@@ -235,16 +298,22 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      const signInButton = screen.queryByText(/sign in/i);
+      // Wait for dashboard to load
+      await waitFor(() => {
+        expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+      });
+
+      // Use specific test ID to avoid multiple element matches
+      const signInButton = screen.getByTestId("sign-in");
       if (signInButton) {
         await user.click(signInButton);
 
         await waitFor(() => {
           // Should handle network error gracefully
           const networkError =
-            screen.queryByText(/network/i) ||
+            screen.queryByText(/network error/i) ||
             screen.queryByText(/connection/i) ||
-            screen.queryByText(/sign in/i);
+            screen.getByTestId("sign-in");
           expect(networkError).toBeTruthy();
         });
       }

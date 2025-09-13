@@ -9,11 +9,39 @@ import { createCanvasContextMock } from "./canvas-mocks";
 import type { TestHelpers } from "./test-helpers.types";
 
 // Helper to setup Firebase mocks with specific user state
-export const setupFirebaseAuth = (user: any = null) => {
+export const setupFirebaseAuth = async (user: any = null) => {
   if (user) {
     firebaseMocks.setAuthUser(user);
   } else {
     firebaseMocks.clearAuthUser();
+  }
+
+  // Also mock the auth-utils functions
+  try {
+    const authUtils = await vi.importMock("../lib/auth-utils");
+    if (authUtils) {
+      const mockAuthUtils = authUtils as {
+        signInWithGoogle: {
+          mockResolvedValue: (value: any) => void;
+          mockRejectedValue: (error: Error) => void;
+        };
+        signOut: {
+          mockResolvedValue: (value: void) => void;
+        };
+      };
+
+      if (user) {
+        mockAuthUtils.signInWithGoogle?.mockResolvedValue({ user });
+        mockAuthUtils.signOut?.mockResolvedValue(undefined);
+      } else {
+        mockAuthUtils.signInWithGoogle?.mockRejectedValue(
+          new Error("Not authenticated"),
+        );
+        mockAuthUtils.signOut?.mockResolvedValue(undefined);
+      }
+    }
+  } catch (error) {
+    // Ignore if auth-utils is not mocked
   }
 };
 
