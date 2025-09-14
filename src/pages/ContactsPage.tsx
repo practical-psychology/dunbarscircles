@@ -63,6 +63,43 @@ export default function ContactsPage() {
           console.error("Failed to load contacts:", result.error);
           setContacts([]);
         }
+
+        // One-time migration: move contacts from legacy key used by EnhancedContactStorage
+        try {
+          const LEGACY_KEY = "yakw_imported_contacts";
+          const legacy = localStorage.getItem(LEGACY_KEY);
+          if (legacy) {
+            const parsed = JSON.parse(legacy) as Array<any>;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.info(
+                `Found ${parsed.length} contacts in legacy storage. Migrating to current storage...`,
+              );
+              for (const c of parsed) {
+                // Best-effort mapping to ContactForm expected by ContactStorageService
+                await contactStorage.createContact({
+                  name: c.name || "",
+                  email: c.email || "",
+                  phone: c.phone || "",
+                  notes: c.notes || "",
+                  levelId: c.levelId || "active-network",
+                  platform: c.platform || "manual",
+                  tags: c.tags || [],
+                  contactFrequency: c.contactFrequency || 90,
+                  strength: c.strength || 0.3,
+                });
+              }
+              // Clear legacy key after migration
+              localStorage.removeItem(LEGACY_KEY);
+              // Reload contacts from current storage
+              const migrated = await contactStorage.readContacts();
+              if (migrated.success && migrated.data) {
+                setContacts(migrated.data);
+              }
+            }
+          }
+        } catch (migrationErr) {
+          console.warn("Legacy contacts migration skipped:", migrationErr);
+        }
       } catch (error) {
         console.error("Failed to load contacts:", error);
         setContacts([]);

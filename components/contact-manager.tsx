@@ -18,7 +18,14 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, Trash2 } from "lucide-react";
+import { Plus, User, MoreVertical, Edit, Move, Trash } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -83,6 +90,14 @@ export function ContactManager({ levels }: ContactManagerProps) {
   });
 
   const [isAddingContact, setIsAddingContact] = useState(false);
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editContact, setEditContact] = useState({
+    name: "",
+    levelId: "",
+    notes: "",
+    lastContact: "",
+  });
 
   const addContact = () => {
     if (newContact.name && newContact.levelId) {
@@ -98,6 +113,36 @@ export function ContactManager({ levels }: ContactManagerProps) {
 
   const removeContact = (id: string) => {
     setContacts(contacts.filter((c) => c.id !== id));
+  };
+
+  const openEdit = (contact: Contact) => {
+    setEditingContactId(contact.id);
+    setEditContact({
+      name: contact.name,
+      levelId: contact.levelId,
+      notes: contact.notes,
+      lastContact: contact.lastContact || "",
+    });
+    setIsEditingContact(true);
+  };
+
+  const saveEdit = () => {
+    if (!editingContactId) return;
+    setContacts((prev) =>
+      prev.map((c) =>
+        c.id === editingContactId
+          ? {
+              ...c,
+              name: editContact.name,
+              levelId: editContact.levelId,
+              notes: editContact.notes,
+              lastContact: editContact.lastContact,
+            }
+          : c,
+      ),
+    );
+    setIsEditingContact(false);
+    setEditingContactId(null);
   };
 
   const getContactStats = () => {
@@ -294,16 +339,60 @@ export function ContactManager({ levels }: ContactManagerProps) {
                             )}
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeContact(contact.id)}
-                          className="text-red-600 hover:text-red-700"
-                          aria-label={`Remove ${contact.name} from contacts`}
-                          title={`Remove ${contact.name}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Open actions for ${contact.name}`}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              data-testid="edit-contact"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                openEdit(contact);
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-2" /> Edit Contact
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Move className="w-4 h-4 mr-2" /> Move to Inner
+                              Circle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Move className="w-4 h-4 mr-2" /> Move to Sympathy
+                              Group
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Move className="w-4 h-4 mr-2" /> Move to Affinity
+                              Group
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Move className="w-4 h-4 mr-2" /> Move to Active
+                              Network
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Move className="w-4 h-4 mr-2" /> Move to
+                              Recognition Group
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-700"
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                removeContact(contact.id);
+                              }}
+                              data-testid="delete-contact"
+                            >
+                              <Trash className="w-4 h-4 mr-2" /> Delete Contact
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     ))}
                   </div>
@@ -313,6 +402,88 @@ export function ContactManager({ levels }: ContactManagerProps) {
           );
         })}
       </div>
+
+      {/* Edit Contact Modal */}
+      <Dialog open={isEditingContact} onOpenChange={setIsEditingContact}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Contact</DialogTitle>
+            <DialogDescription>
+              Update contact details and circle.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editContact.name}
+                onChange={(e) =>
+                  setEditContact({ ...editContact, name: e.target.value })
+                }
+                placeholder="Enter contact name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-level">Relationship Level</Label>
+              <Select
+                value={editContact.levelId}
+                onValueChange={(value) =>
+                  setEditContact({ ...editContact, levelId: value })
+                }
+              >
+                <SelectTrigger
+                  id="edit-level"
+                  aria-label="Select relationship level for editing contact"
+                >
+                  <SelectValue placeholder="Select relationship level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {levels.map((level) => (
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name} ({level.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-notes">Notes</Label>
+              <Textarea
+                id="edit-notes"
+                value={editContact.notes}
+                onChange={(e) =>
+                  setEditContact({ ...editContact, notes: e.target.value })
+                }
+                placeholder="Add notes about this relationship"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-lastContact">Last Contact</Label>
+              <Input
+                id="edit-lastContact"
+                type="date"
+                value={editContact.lastContact}
+                onChange={(e) =>
+                  setEditContact({
+                    ...editContact,
+                    lastContact: e.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditingContact(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveEdit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

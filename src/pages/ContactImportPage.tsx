@@ -24,8 +24,8 @@ import {
   Eye,
 } from "lucide-react";
 
-import type { StoredContact } from "@/lib/contact-storage";
-import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+import type { StoredContact } from "@/lib/contact-storage-service";
+import { ContactStorageService } from "@/lib/contact-storage-service";
 
 interface ImportStats {
   total: number;
@@ -34,8 +34,27 @@ interface ImportStats {
   duplicates: number;
 }
 
+// Minimal contact shape used for preview/import before saving via service
+type ImportedContact = {
+  id: string;
+  name: string;
+  levelId: string;
+  lastContact: Date;
+  contactFrequency: number;
+  strength: number;
+  decayRate: number;
+  platform: string;
+  source: "facebook" | "linkedin" | "manual";
+  importDate: Date;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  tags?: string[];
+  firestoreId?: string;
+};
+
 interface ImportPreview {
-  contacts: StoredContact[];
+  contacts: ImportedContact[];
   stats: ImportStats;
   errors: string[];
 }
@@ -50,6 +69,7 @@ export default function ContactImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const contactStorage = ContactStorageService.getInstance();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,13 +81,13 @@ export default function ContactImportPage() {
     }
   };
 
-  const parseCSVFile = (content: string): StoredContact[] => {
+  const parseCSVFile = (content: string): ImportedContact[] => {
     const lines = content.split("\n").filter((line) => line.trim());
     if (lines.length < 2)
       throw new Error("CSV file must have at least a header and one data row");
 
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const contacts: StoredContact[] = [];
+    const contacts: ImportedContact[] = [];
     const now = new Date();
 
     for (let i = 1; i < lines.length; i++) {
@@ -76,7 +96,7 @@ export default function ContactImportPage() {
       if (values.length < headers.length) continue; // Skip incomplete rows
 
       // Create a new contact with all required fields and defaults
-      const contact: StoredContact = {
+      const contact: ImportedContact = {
         id: `import_${Date.now()}_${i}`,
         name: "",
         levelId: "active-network", // Default level
@@ -91,15 +111,6 @@ export default function ContactImportPage() {
         email: "",
         phone: "",
         notes: "",
-        // Optional fields from Person interface
-        x: 0,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        // Optional fields from StoredContact
-        firestoreId: undefined,
-        syncStatus: undefined,
-        lastSyncAt: undefined,
         tags: [],
       };
 
@@ -156,7 +167,7 @@ export default function ContactImportPage() {
     return contacts;
   };
 
-  const parseJSONFile = (content: string): StoredContact[] => {
+  const parseJSONFile = (content: string): ImportedContact[] => {
     let data;
     try {
       data = JSON.parse(content);
@@ -164,11 +175,11 @@ export default function ContactImportPage() {
       throw new Error("Invalid JSON format. Please check your file.");
     }
 
-    const contacts: StoredContact[] = [];
+    const contacts: ImportedContact[] = [];
     const now = new Date();
 
     // Create a base contact with all required fields and defaults
-    const createBaseContact = (): StoredContact => ({
+    const createBaseContact = (): ImportedContact => ({
       id: `import_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
       name: "",
       levelId: "active-network",
@@ -183,15 +194,6 @@ export default function ContactImportPage() {
       email: "",
       phone: "",
       notes: "",
-      // Optional fields from Person interface
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0,
-      // Optional fields from StoredContact
-      firestoreId: undefined,
-      syncStatus: undefined,
-      lastSyncAt: undefined,
       tags: [],
     });
 
@@ -279,7 +281,7 @@ export default function ContactImportPage() {
       const content = await selectedFile.text();
       setImportProgress(30);
 
-      let contacts: StoredContact[] = [];
+      let contacts: ImportedContact[] = [];
 
       if (selectedFile.name.toLowerCase().endsWith(".csv")) {
         contacts = parseCSVFile(content);
@@ -293,8 +295,8 @@ export default function ContactImportPage() {
 
       setImportProgress(60);
 
-      // Load existing contacts to check for duplicates
-      const existingResult = await EnhancedContactStorage.loadContacts();
+      // Load existing contacts to check for duplicates (use the same service as /contacts page)
+      const existingResult = await contactStorage.readContacts();
       const existingContacts = existingResult.data || [];
       const existingNames = new Set(
         existingContacts.map((c: StoredContact) => c.name.toLowerCase()),
@@ -303,8 +305,8 @@ export default function ContactImportPage() {
       setImportProgress(80);
 
       // Categorize contacts
-      const newContacts: StoredContact[] = [];
-      const duplicates: StoredContact[] = [];
+      const newContacts: ImportedContact[] = [];
+      const duplicates: ImportedContact[] = [];
 
       contacts.forEach((contact) => {
         if (existingNames.has(contact.name.toLowerCase())) {
@@ -345,19 +347,35 @@ export default function ContactImportPage() {
     setImportProgress(10);
 
     try {
-      // Load existing contacts
-      const existingResult = await EnhancedContactStorage.loadContacts();
-      const existingContacts = existingResult.data || [];
+      // Create each new contact via ContactStorageService so it's saved under yakw_contacts
+      const total = preview.stats.successful;
+      let created = 0;
+      for (const c of preview.contacts) {
+        // Map to ContactForm fields expected by the service
+        const result = await contactStorage.createContact({
+          name: c.name,
+          email: c.email || "",
+          phone: c.phone || "",
+          notes: c.notes || "",
+          levelId: c.levelId,
+          platform: c.platform || "manual",
+          tags: c.tags || [],
+          contactFrequency: c.contactFrequency || 90,
+          strength: c.strength || 0.3,
+        });
+        if (result.success) {
+          created++;
+        } else {
+          console.error("Failed to create contact:", result.error);
+        }
+        // Update progress roughly proportionally
+        const base = 30; // after starting
+        const range = 60 - base; // up to before finalizing
+        const pct = base + Math.round((created / Math.max(1, total)) * range);
+        setImportProgress(pct);
+      }
 
-      setImportProgress(30);
-
-      // Merge with new contacts
-      const allContacts = [...existingContacts, ...preview.contacts];
-
-      setImportProgress(60);
-
-      // Save to storage
-      await EnhancedContactStorage.saveContacts(allContacts);
+      setImportProgress(90);
 
       setImportProgress(100);
       setImportComplete(true);
