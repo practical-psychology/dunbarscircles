@@ -71,7 +71,7 @@ src/
 ## Data Directory (`data/`)
 
 - `facebook_friends.json` - Sample Facebook data format
-- `linkedin_connections.csv` - Sample LinkedIn data format
+- `linkedin_connections_v2.csv` - Sample LinkedIn data format
 - Static configuration and sample data files
 
 ## Styling Conventions

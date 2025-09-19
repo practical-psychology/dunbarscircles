@@ -392,7 +392,7 @@ const tutorialSteps: TutorialStep[] = [
                   Export your LinkedIn connections and upload the CSV file.
                 </p>
                 <div className="bg-muted/50 rounded p-3">
-                  <p className="text-xs font-mono">linkedin_connections.csv</p>
+                  <p className="text-xs font-mono">Connections.csv</p>
                 </div>
                 <Badge variant="secondary">Supported Format: CSV</Badge>
               </div>

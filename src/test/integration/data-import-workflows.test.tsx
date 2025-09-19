@@ -237,9 +237,9 @@ describe("Data Import Workflow Tests", () => {
   describe("LinkedIn CSV Import Workflow", () => {
     it("should complete LinkedIn CSV import workflow: file upload → parsing → categorization → visualization", async () => {
       // Setup mock file reader for CSV import
-      const csvContent = `First Name,Last Name,Email Address,Company,Position,Connected On
-John,Doe,john.doe@example.com,Example Corp,Software Engineer,01-Jan-2023
-Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
+      const csvContent = `First Name,Last Name,URL,Email,Company,Position,Connected On
+John,Doe,https://www.linkedin.com/in/johndoe,john@example.com,Acme Inc,Developer,10 Jan 2023
+Jane,Smith,https://www.linkedin.com/janesmith,jane.smith@example.com,Tech Inc,Product Manager,15 Feb 2023`;
 
       testHelpers.mockFileReader(csvContent);
 
@@ -290,7 +290,7 @@ Bob,Wilson,bob@startup.com,StartupXYZ,Developer,2023-02-20`;
       });
 
       const linkedinFileInput = screen.getByTestId("linkedin-file-input");
-      const csvFile = new File([csvContent], "linkedin_connections.csv", {
+      const csvFile = new File([csvContent], "linkedin_connections_v2.csv", {
         type: "text/csv",
       });
 

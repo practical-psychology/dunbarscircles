@@ -1966,20 +1966,90 @@ export class ContactStorageService {
       const initialQueueLength = this.syncQueue.length;
       await this.processSyncQueue();
       const remainingQueueLength = this.syncQueue.length;
-
       const synced = initialQueueLength - remainingQueueLength;
-      const failed = remainingQueueLength;
 
       return {
-        success: synced > 0,
-        data: { synced, failed },
+        success: true,
+        data: {
+          synced,
+          failed: remainingQueueLength,
+        },
         source: "firestore",
       };
     } catch (error) {
       return {
         success: false,
-        error: `Force sync failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        error: `Failed to sync: ${error instanceof Error ? error.message : "Unknown error"}`,
+        source: "localStorage",
+      };
+    }
+  }
+
+  /**
+   * Sync all contacts to Firestore
+   */
+  public async syncContacts(
+    contacts: StoredContact[],
+  ): Promise<ContactOperationResult<{ synced: number; failed: number }>> {
+    if (!this.currentUser || !this.isOnline) {
+      return {
+        success: false,
+        error: "User not authenticated or offline",
+        source: "localStorage",
+        offline: true,
+      };
+    }
+
+    if (!db) {
+      return {
+        success: false,
+        error: "Firestore not initialized",
+        source: "localStorage",
+      };
+    }
+
+    try {
+      const batch = writeBatch(db);
+      let synced = 0;
+      let failed = 0;
+
+      // Process each contact
+      for (const contact of contacts) {
+        try {
+          const contactData = this.prepareForFirestore(contact);
+
+          if (contact.firestoreId) {
+            // Update existing document
+            const docRef = doc(db, CONTACTS_COLLECTION, contact.firestoreId);
+            batch.update(docRef, contactData);
+          } else {
+            // Create new document
+            const docRef = doc(collection(db, CONTACTS_COLLECTION));
+            batch.set(docRef, contactData);
+          }
+          synced++;
+        } catch (error) {
+          console.error(`Failed to sync contact ${contact.id}:`, error);
+          failed++;
+        }
+      }
+
+      // Commit the batch
+      await batch.commit();
+
+      return {
+        success: true,
+        data: { synced, failed },
         source: "firestore",
+        offline: false,
+      };
+    } catch (error) {
+      console.error("Failed to sync contacts:", error);
+      return {
+        success: false,
+        error: `Failed to sync contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
+        source: "firestore",
+        offline: !this.isOnline,
       };
     }
   }

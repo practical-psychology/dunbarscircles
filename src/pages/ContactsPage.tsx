@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import PageLayout from "../components/PageLayout";
+import { Button } from "@/components/ui/button";
+import { Loader2, Upload } from "lucide-react";
 // UI Components
 import { ContactsDashboard } from "../../components/contacts-dashboard";
 import { ContactList } from "../../components/contact-list";
@@ -28,14 +31,10 @@ import { Users } from "lucide-react";
 
 // Fallback components for missing icons
 const Plus = () => <span>+</span>;
-const Upload = () => <span>⬆️</span>;
 const Search = () => <span>🔍</span>;
 const Filter = () => <span>⚙️</span>;
 const Download = () => <span>⬇️</span>;
 const Settings = () => <span>⚙️</span>;
-const BarChart3 = () => <span>📊</span>;
-const List = () => <span>≡</span>;
-const Grid = () => <span>☰</span>;
 import { dunbarLevels } from "../data/dunbarLevels";
 import {
   ContactStorageService,
@@ -45,10 +44,36 @@ import { exportToJSON } from "@/lib/export-utils";
 
 export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [contacts, setContacts] = useState<StoredContact[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
   const contactStorage = ContactStorageService.getInstance();
+
+  // Handle saving contacts to Firebase
+  const handleSaveToCloud = useCallback(async () => {
+    if (!contacts.length) {
+      toast.info("No contacts to save");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // This will trigger the sync process in ContactStorageService
+      const result = await contactStorage.syncContacts(contacts);
+
+      if (result.success) {
+        toast.success("Contacts saved to cloud successfully!");
+      } else {
+        throw new Error(result.error || "Failed to save contacts to cloud");
+      }
+    } catch (error) {
+      console.error("Failed to save contacts to cloud:", error);
+      toast.error("Failed to save contacts to cloud. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [contacts]);
 
   // Load contacts on component mount
   useEffect(() => {
@@ -426,23 +451,29 @@ export default function ContactsPage() {
             onValueChange={setActiveTab}
             className="space-y-6"
           >
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="list" className="flex items-center gap-2">
-                <List className="w-4 h-4" />
-                Contact List
-              </TabsTrigger>
-              <TabsTrigger
-                value="dashboard"
-                className="flex items-center gap-2"
+            <div className="flex justify-between items-center w-full gap-4">
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="contacts">All Contacts</TabsTrigger>
+              </TabsList>
+              <Button
+                onClick={handleSaveToCloud}
+                disabled={isSaving || !contacts.length}
+                className="gap-2"
               >
-                <Grid className="w-4 h-4" />
-                Dashboard
-              </TabsTrigger>
-            </TabsList>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Save to Cloud
+                  </>
+                )}
+              </Button>
+            </div>
 
             <TabsContent value="overview" className="space-y-6">
               <ContactStatsDashboard
