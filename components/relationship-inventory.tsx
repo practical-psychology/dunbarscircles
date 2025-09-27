@@ -10,6 +10,10 @@ import {
   CardTitle,
 } from "./ui/card";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+import {
+  ContactStorageService,
+  type StoredContact,
+} from "@/lib/contact-storage-service";
 import { ErrorBoundary, DataErrorFallback } from "@/components/error-boundary";
 import { DataStatus } from "@/components/data-status";
 import {
@@ -117,22 +121,61 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   useEffect(() => {
     const loadContacts = async () => {
       try {
-        const result = await EnhancedContactStorage.loadContacts();
-        if (result.success && result.data) {
-          setPeople(result.data);
+        // Primary source: ContactStorageService (used by /contacts page and scoped to logged-in user)
+        const contactStorage = ContactStorageService.getInstance();
+        const result = await contactStorage.readContacts();
 
-          // Show status message if fallback was used
-          if (result.fallbackUsed) {
+        if (result.success && result.data) {
+          // Map StoredContact -> Person for visualization
+          const mapped: Person[] = (result.data as StoredContact[]).map(
+            (c) => ({
+              id: c.id,
+              name: c.name,
+              levelId: c.levelId || "recognition-group",
+              lastContact:
+                c.lastContact instanceof Date
+                  ? c.lastContact
+                  : new Date(c.lastContact as any),
+              contactFrequency:
+                typeof c.contactFrequency === "number"
+                  ? c.contactFrequency
+                  : 90,
+              strength: typeof c.strength === "number" ? c.strength : 0.3,
+              decayRate:
+                typeof (c as any).decayRate === "number"
+                  ? (c as any).decayRate
+                  : 0.01,
+              platform: c.platform || "manual",
+              importDate:
+                (c as any).importDate instanceof Date
+                  ? (c as any).importDate
+                  : new Date(),
+              source: ((c as any).source as any) || "manual",
+              // preserve any existing layout to minimize jumpiness if present
+              x: (c as any).x,
+              y: (c as any).y,
+              vx: (c as any).vx,
+              vy: (c as any).vy,
+            }),
+          );
+          setPeople(mapped);
+        } else {
+          // Fallback: EnhancedContactStorage (legacy/sample)
+          const legacy = await EnhancedContactStorage.loadContacts();
+          if (legacy.success && legacy.data) {
+            setPeople(legacy.data);
+            if ((legacy as any).fallbackUsed) {
+              setImportStatus(
+                `Loaded ${legacy.data.length} contacts from ${legacy.source} (some sample data included)`,
+              );
+              setTimeout(() => setImportStatus(""), 5000);
+            }
+          } else {
             setImportStatus(
-              `Loaded ${result.data.length} contacts from ${result.source} (some sample data included)`,
+              `Failed to load contacts: ${(result as any).error || (legacy as any).error || "Unknown error"}`,
             );
             setTimeout(() => setImportStatus(""), 5000);
           }
-        } else {
-          setImportStatus(
-            `Failed to load contacts: ${result.error || "Unknown error"}`,
-          );
-          setTimeout(() => setImportStatus(""), 5000);
         }
       } catch (error) {
         console.error("Failed to load contacts:", error);
