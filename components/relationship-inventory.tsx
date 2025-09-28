@@ -15,7 +15,6 @@ import {
   type StoredContact,
 } from "@/lib/contact-storage-service";
 import { ErrorBoundary, DataErrorFallback } from "@/components/error-boundary";
-import { DataStatus } from "@/components/data-status";
 import {
   exportToJSON,
   exportToCSV,
@@ -48,15 +47,7 @@ import {
   Image,
   Share2,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+// Removed Dialog imports; using inline panels instead of modals
 
 // Add these interfaces at the top of the file
 interface FacebookFriend {
@@ -656,11 +647,6 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         role="region"
         aria-label="Relationship inventory management system"
       >
-        {/* Data Status Component */}
-        <DataStatus
-          onImportClick={() => setIsImporting(true)}
-          onRefresh={() => window.location.reload()}
-        />
         {/* Header with stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -778,23 +764,29 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             Decay Warnings
           </Button>
 
-          <Dialog open={isImporting} onOpenChange={setIsImporting}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4 mr-2" />
-                Import Contacts
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Import Social Graph Data</DialogTitle>
-                <DialogDescription>
-                  Upload your Facebook friends export (JSON - supports both old
-                  and new formats) or LinkedIn connections (CSV) to
-                  automatically map your network.
-                </DialogDescription>
-              </DialogHeader>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsImporting((v) => !v)}
+            aria-expanded={isImporting}
+            aria-controls="import-panel"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {isImporting ? "Hide Import" : "Import Contacts"}
+          </Button>
+        </div>
 
+        {isImporting && (
+          <Card id="import-panel" className="max-w-5xl">
+            <CardHeader>
+              <CardTitle>Import Social Graph Data</CardTitle>
+              <CardDescription>
+                Upload your Facebook friends export (JSON - supports both old
+                and new formats) or LinkedIn connections (CSV) to automatically
+                map your network.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-6">
                 {importStatus && (
                   <div
@@ -890,40 +882,19 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                     {importedData.linkedin && (
                       <div className="p-3 bg-blue-50 rounded-lg">
                         <p className="text-sm font-medium text-blue-700">
-                          &quot;Imported {importedData.linkedin.length}&quot;
+                          &quot;Imported {importedData.linkedin?.length}&quot;
                           LinkedIn connections
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
-
-                {/* Import Instructions */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">How to get your data:</h4>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div>
-                      <strong>Facebook:</strong> Settings → Your Facebook
-                      Information → Download Your Information → Select
-                      &quot;&quot;Friends&quot;&quot; → JSON format
-                    </div>
-                    <div>
-                      <strong>LinkedIn:</strong> Settings → Data Privacy → Get a
-                      copy of your data → Select
-                      &quot;&quot;Connections&quot;&quot; → Download CSV
-                    </div>
-                  </div>
-                </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsImporting(false)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
+        <div className="flex flex-wrap items-center gap-4">
           <Button
             variant="outline"
             size="sm"
@@ -962,95 +933,96 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             Save Contacts
           </Button>
 
-          <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={people.length === 0}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export Data
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Export Relationship Data</DialogTitle>
-                <DialogDescription>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={people.length === 0}
+            onClick={() => setShowExportDialog((v) => !v)}
+            aria-expanded={showExportDialog}
+            aria-controls="export-panel"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {showExportDialog ? "Hide Export" : "Export Data"}
+          </Button>
+          {showExportDialog && (
+            <Card id="export-panel" className="max-w-md mt-3">
+              <CardHeader>
+                <CardTitle>Export Relationship Data</CardTitle>
+                <CardDescription>
                   Export your {people.length} relationships and network analysis
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={handleExportJSON}
-                  variant="outline"
-                  className="w-full justify-start"
-                  data-testid="export-json"
-                >
-                  <FileText className="w-4 h-4 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">JSON Format</div>
-                    <div className="text-xs text-gray-500">
-                      Complete data with metadata
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleExportJSON}
+                    variant="outline"
+                    className="w-full justify-start"
+                    data-testid="export-json"
+                  >
+                    <FileText className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">JSON Format</div>
+                      <div className="text-xs text-gray-500">
+                        Complete data with metadata
+                      </div>
                     </div>
-                  </div>
-                </Button>
+                  </Button>
 
-                <Button
-                  onClick={handleExportCSV}
-                  variant="outline"
-                  className="w-full justify-start"
-                  data-testid="export-csv"
-                >
-                  <FileText className="w-4 h-4 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">CSV Format</div>
-                    <div className="text-xs text-gray-500">
-                      Spreadsheet compatible
+                  <Button
+                    onClick={handleExportCSV}
+                    variant="outline"
+                    className="w-full justify-start"
+                    data-testid="export-csv"
+                  >
+                    <FileText className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">CSV Format</div>
+                      <div className="text-xs text-gray-500">
+                        Spreadsheet compatible
+                      </div>
                     </div>
-                  </div>
-                </Button>
+                  </Button>
 
-                <Button
-                  onClick={handlePrintReport}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Image className="w-4 h-4 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Print Report</div>
-                    <div className="text-xs text-gray-500">
-                      Formatted for printing
+                  <Button
+                    onClick={handlePrintReport}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <Image className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Print Report</div>
+                      <div className="text-xs text-gray-500">
+                        Formatted for printing
+                      </div>
                     </div>
-                  </div>
-                </Button>
+                  </Button>
 
-                <Button
-                  onClick={handleShareData}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Share2 className="w-4 h-4 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Share Summary</div>
-                    <div className="text-xs text-gray-500">
-                      Share network statistics
+                  <Button
+                    onClick={handleShareData}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
+                    <Share2 className="w-4 h-4 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Share Summary</div>
+                      <div className="text-xs text-gray-500">
+                        Share network statistics
+                      </div>
                     </div>
-                  </div>
-                </Button>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowExportDialog(false)}
-                >
-                  Cancel
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  </Button>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowExportDialog(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Main network graph */}

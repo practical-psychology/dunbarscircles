@@ -48,11 +48,11 @@ const navigationItems = [
   { path: "/", label: "Overview", icon: Brain },
   { path: "/dashboard", label: "Dashboard", icon: Book },
   { path: "/contacts", label: "Contacts", icon: UserCheck },
+  { path: "/network", label: "Network Graph", icon: Heart },
+  { path: "/radial", label: "Radial View", icon: Eye },
   { path: "/levels", label: "Levels", icon: Users },
   { path: "/lifecycle", label: "Life Stages", icon: Clock },
-  { path: "/network", label: "Network Graph", icon: Heart },
   { path: "/digital", label: "Digital", icon: Smartphone },
-  { path: "/radial", label: "Radial View", icon: Eye },
   { path: "/sitemap", label: "Sitemap", icon: Plane },
 ];
 
@@ -63,13 +63,11 @@ export default function PageLayout({
 }: PageLayoutProps) {
   const location = useLocation();
 
-  // Authentication state
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [showRedirectOption, setShowRedirectOption] = useState(false);
 
-  // Listen for auth state changes
   useEffect(() => {
     if (!auth) return;
 
@@ -77,7 +75,6 @@ export default function PageLayout({
       setUser(user);
     });
 
-    // Handle redirect result on page load
     const checkRedirectResult = async () => {
       try {
         const result = await handleRedirectResult();
@@ -113,7 +110,6 @@ export default function PageLayout({
           : "Failed to sign in with Google";
       setAuthError(errorMessage);
 
-      // Show redirect option if popup was blocked or closed
       if (errorMessage.includes("popup") || errorMessage.includes("blocked")) {
         setShowRedirectOption(true);
       }
@@ -128,7 +124,6 @@ export default function PageLayout({
 
     try {
       await signInWithGoogleRedirect();
-      // The page will redirect, so we don't need to handle the result here
     } catch (error: unknown) {
       console.error("Error initiating Google redirect sign-in:", error);
       setAuthError(
@@ -158,7 +153,6 @@ export default function PageLayout({
 
   return (
     <div className="min-h-screen relative">
-      {/* Liquid scroll indicator */}
       <LiquidScrollIndicator />
 
       <div className="fixed inset-0 bg-gradient-to-br from-blue-50/80 via-purple-50/80 to-cyan-50/80 dark:from-gray-900/80 dark:via-blue-900/80 dark:to-purple-900/80" />
@@ -192,12 +186,11 @@ export default function PageLayout({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Explore the cognitive limits of human social relationships across
-            different levels of intimacy and frequency of contact.
+            Explore your relationships across different levels of intimacy and
+            frequency of contact
           </motion.p>
         </motion.div>
 
-        {/* Navigation */}
         <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: 20 }}
@@ -230,7 +223,6 @@ export default function PageLayout({
                         : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
                     }`}
                   >
-                    {/* Liquid hover effect */}
                     {!isActive && (
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100"
@@ -271,7 +263,6 @@ export default function PageLayout({
               );
             })}
 
-            {/* User Authentication Section */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}

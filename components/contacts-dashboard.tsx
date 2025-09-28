@@ -46,15 +46,7 @@ import {
   generateFilename,
   type ExportData,
 } from "@/lib/export-utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+// Dialog imports removed; using inline panels instead of modals
 import type { Level } from "@/types/relationships";
 import {
   DropdownMenu,
@@ -553,7 +545,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       )}
 
       {/* Filters and Search */}
-      {!loading && (
+      {false && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -627,99 +619,97 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     />
                     Refresh
                   </Button>
-                  <Dialog
-                    open={showExportDialog}
-                    onOpenChange={setShowExportDialog}
+                  <Button
+                    variant="outline"
+                    disabled={contacts.length === 0 || loading}
+                    className="text-green-600 hover:text-green-700"
+                    aria-label={`Export ${contacts.length} contacts in various formats`}
+                    title="Export contacts in various formats"
+                    onClick={() => setShowExportDialog((v) => !v)}
+                    aria-expanded={showExportDialog}
+                    aria-controls="export-contacts-panel"
                   >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        disabled={contacts.length === 0 || loading}
-                        className="text-green-600 hover:text-green-700"
-                        aria-label={`Export ${contacts.length} contacts in various formats`}
-                        title="Export contacts in various formats"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Export Contacts</DialogTitle>
-                        <DialogDescription>
+                    <Download className="w-4 h-4 mr-2" />
+                    {showExportDialog ? "Hide Export" : "Export"}
+                  </Button>
+                  {showExportDialog && (
+                    <Card id="export-contacts-panel" className="max-w-md mt-3">
+                      <CardHeader>
+                        <CardTitle>Export Contacts</CardTitle>
+                        <CardDescription>
                           Choose how you'd like to export your {contacts.length}{" "}
                           contacts
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="space-y-3">
-                        <Button
-                          onClick={handleExportJSON}
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <FileText className="w-4 h-4 mr-3" />
-                          <div className="text-left">
-                            <div className="font-medium">JSON Format</div>
-                            <div className="text-xs text-gray-500">
-                              Complete data with metadata
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleExportJSON}
+                            variant="outline"
+                            className="w-full justify-start"
+                          >
+                            <FileText className="w-4 h-4 mr-3" />
+                            <div className="text-left">
+                              <div className="font-medium">JSON Format</div>
+                              <div className="text-xs text-gray-500">
+                                Complete data with metadata
+                              </div>
                             </div>
-                          </div>
-                        </Button>
+                          </Button>
 
-                        <Button
-                          onClick={handleExportCSV}
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <FileText className="w-4 h-4 mr-3" />
-                          <div className="text-left">
-                            <div className="font-medium">CSV Format</div>
-                            <div className="text-xs text-gray-500">
-                              Spreadsheet compatible
+                          <Button
+                            onClick={handleExportCSV}
+                            variant="outline"
+                            className="w-full justify-start"
+                          >
+                            <FileText className="w-4 h-4 mr-3" />
+                            <div className="text-left">
+                              <div className="font-medium">CSV Format</div>
+                              <div className="text-xs text-gray-500">
+                                Spreadsheet compatible
+                              </div>
                             </div>
-                          </div>
-                        </Button>
+                          </Button>
 
-                        <Button
-                          onClick={handlePrintReport}
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <Image className="w-4 h-4 mr-3" />
-                          <div className="text-left">
-                            <div className="font-medium">Print Report</div>
-                            <div className="text-xs text-gray-500">
-                              Formatted for printing
+                          <Button
+                            onClick={handlePrintReport}
+                            variant="outline"
+                            className="w-full justify-start"
+                          >
+                            <Image className="w-4 h-4 mr-3" />
+                            <div className="text-left">
+                              <div className="font-medium">Print Report</div>
+                              <div className="text-xs text-gray-500">
+                                Formatted for printing
+                              </div>
                             </div>
-                          </div>
-                        </Button>
+                          </Button>
 
-                        <Button
-                          onClick={handleShareData}
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <Share2 className="w-4 h-4 mr-3" />
-                          <div className="text-left">
-                            <div className="font-medium">Share Summary</div>
-                            <div className="text-xs text-gray-500">
-                              Share network statistics
+                          <Button
+                            onClick={handleShareData}
+                            variant="outline"
+                            className="w-full justify-start"
+                          >
+                            <Share2 className="w-4 h-4 mr-3" />
+                            <div className="text-left">
+                              <div className="font-medium">Share Summary</div>
+                              <div className="text-xs text-gray-500">
+                                Share network statistics
+                              </div>
                             </div>
-                          </div>
-                        </Button>
-                      </div>
-
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowExportDialog(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                          </Button>
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowExportDialog(false)}
+                          >
+                            Close
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                   <Button
                     variant="outline"
                     onClick={async () => {

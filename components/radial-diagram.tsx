@@ -15,14 +15,16 @@ interface Level {
   id: string;
   name: string;
   count: number;
-  description: string;
-  contactFrequency: string;
-  digitalParallel: string;
-  maintenanceCost: string;
-  color: string;
-  textColor: string;
-  bgColor: string;
-  category: string;
+  description?: string;
+  contactFrequency?: string;
+  digitalParallel?: string;
+  maintenanceCost?: string;
+  color?: string;
+  textColor?: string;
+  bgColor?: string;
+  category?: string;
+  mentalLoad?: number;
+  examples?: string[];
 }
 
 interface RadialDiagramProps {
@@ -35,84 +37,15 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
   const [focusedLevel, setFocusedLevel] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState(0);
 
-  // Mental load calculations
+  // Mental load comes from data (Firestore). Fallback to 0 if missing.
   const getMentalLoad = (level: Level) => {
-    const loadMap: { [key: string]: number } = {
-      "inner-circle": 95,
-      "sympathy-group": 80,
-      "affinity-group": 60,
-      "active-network": 40,
-      "recognition-group": 25,
-      "acquaintance-network": 15,
-      "parasocial-familiar": 10,
-      "cultural-recognition": 5,
-      "awareness-network": 2,
-    };
-    return loadMap[level.id] || 0;
+    return typeof level.mentalLoad === "number" && !isNaN(level.mentalLoad)
+      ? level.mentalLoad
+      : 0;
   };
-
-  const getExampleRelationships = (levelId: string) => {
-    const examples: { [key: string]: string[] } = {
-      "inner-circle": [
-        "Spouse/Partner",
-        "Best Friend",
-        "Parent",
-        "Child",
-        "Sibling",
-      ],
-      "sympathy-group": [
-        "Close Work Friend",
-        "College Roommate",
-        "Neighbor",
-        "Gym Buddy",
-        "Book Club Friend",
-      ],
-      "affinity-group": [
-        "Coworker",
-        "High School Friend",
-        "Cousin",
-        "Tennis Partner",
-        "Former Colleague",
-      ],
-      "active-network": [
-        "LinkedIn Connection",
-        "Conference Contact",
-        "Friend of Friend",
-        "Local Business Owner",
-      ],
-      "recognition-group": [
-        "Barista at Coffee Shop",
-        "Mailman",
-        "Grocery Store Clerk",
-        "Uber Driver",
-      ],
-      "acquaintance-network": [
-        "Wedding Guest",
-        "Conference Attendee",
-        "Old Neighbor",
-        "Customer",
-      ],
-      "parasocial-familiar": [
-        "YouTuber",
-        "Local News Anchor",
-        "Coworker from Other Dept",
-        "Instagram Influencer",
-      ],
-      "cultural-recognition": [
-        "Local Politician",
-        "Regional Celebrity",
-        "Community Leader",
-        "Viral Personality",
-      ],
-      "awareness-network": [
-        "Minor Celebrity",
-        "Industry Person",
-        "Author",
-        "Podcast Host",
-      ],
-    };
-    return examples[levelId] || [];
-  };
+  // Examples provided by data. If absent, show none.
+  const getExamples = (level: Level) =>
+    Array.isArray(level.examples) ? level.examples : [];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -255,7 +188,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                     cy={centerY}
                     r={safeRadius}
                     fill="none"
-                    stroke={level.color.replace("bg-", "#")}
+                    stroke={(level.color || "bg-gray-500").replace("bg-", "#")}
                     strokeWidth="1"
                     strokeOpacity={opacity}
                     strokeDasharray="5,5"
@@ -343,7 +276,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       x={centerX + radius - 20}
                       y={centerY - 10}
                       className="text-sm font-bold pointer-events-none"
-                      fill={level.color.replace("bg-", "#")}
+                      fill={(level.color || "bg-gray-500").replace("bg-", "#")}
                       aria-hidden="true"
                     >
                       {level.count.toLocaleString()}
@@ -352,7 +285,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       x={centerX + radius - 20}
                       y={centerY + 5}
                       className="text-xs pointer-events-none"
-                      fill={level.color.replace("bg-", "#")}
+                      fill={(level.color || "bg-gray-500").replace("bg-", "#")}
                       aria-hidden="true"
                     >
                       {level.name.split(" ")[0]}
@@ -373,7 +306,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                       y={centerY + 15}
                       width={(30 * getMentalLoad(level)) / 100}
                       height={4}
-                      fill={level.color.replace("bg-", "#")}
+                      fill={(level.color || "bg-gray-500").replace("bg-", "#")}
                       rx={2}
                       className="pointer-events-none"
                     />
@@ -483,7 +416,7 @@ export function RadialDiagram({ levels }: RadialDiagramProps) {
                 {(() => {
                   const level = levels.find((l) => l.id === selectedLevel);
                   if (!level) return null;
-                  const examples = getExampleRelationships(level.id);
+                  const examples = getExamples(level);
                   return (
                     <>
                       <div>

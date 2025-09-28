@@ -16,6 +16,7 @@ lerna-debug.log*
 !.vscode/extensions.json
 .idea
 .firebase/
+lib/yakw-aab4f-firebase-adminsdk-st8db-508ae511c2.json
 .DS_Store
 *.suo
 *.ntvs*

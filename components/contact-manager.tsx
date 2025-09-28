@@ -26,15 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+// Removed Dialog imports; this component now renders inline panels instead of modals
 
 interface Level {
   id: string;
@@ -165,98 +157,101 @@ export function ContactManager({ levels }: ContactManagerProps) {
           </p>
         </div>
 
-        <Dialog open={isAddingContact} onOpenChange={setIsAddingContact}>
-          <DialogTrigger asChild>
-            <Button
-              className="flex items-center gap-2"
-              data-testid="add-contact"
-            >
-              <Plus className="w-4 h-4" />
-              Add Contact
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Contact</DialogTitle>
-              <DialogDescription>
+        <div>
+          <Button
+            className="flex items-center gap-2"
+            data-testid="add-contact"
+            onClick={() => setIsAddingContact((v) => !v)}
+            aria-expanded={isAddingContact}
+            aria-controls="add-contact-panel"
+          >
+            <Plus className="w-4 h-4" />
+            {isAddingContact ? "Hide Add Contact" : "Add Contact"}
+          </Button>
+        </div>
+        {isAddingContact && (
+          <Card id="add-contact-panel" className="mt-4">
+            <CardHeader>
+              <CardTitle>Add New Contact</CardTitle>
+              <CardDescription>
                 Add someone to your social network and categorize them according
                 to Dunbar&apos;s hierarchy.
-              </DialogDescription>
-            </DialogHeader>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={newContact.name}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, name: e.target.value })
+                    }
+                    placeholder="Enter contact name"
+                  />
+                </div>
 
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={newContact.name}
-                  onChange={(e) =>
-                    setNewContact({ ...newContact, name: e.target.value })
-                  }
-                  placeholder="Enter contact name"
-                />
+                <div>
+                  <Label htmlFor="level">Relationship Level</Label>
+                  <Select
+                    value={newContact.levelId}
+                    onValueChange={(value) =>
+                      setNewContact({ ...newContact, levelId: value })
+                    }
+                  >
+                    <SelectTrigger aria-label="Select relationship level for new contact">
+                      <SelectValue placeholder="Select relationship level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {levels.map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.name} ({level.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={newContact.notes}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, notes: e.target.value })
+                    }
+                    placeholder="Add notes about this relationship"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="lastContact">Last Contact</Label>
+                  <Input
+                    id="lastContact"
+                    type="date"
+                    value={newContact.lastContact}
+                    onChange={(e) =>
+                      setNewContact({
+                        ...newContact,
+                        lastContact: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
-
-              <div>
-                <Label htmlFor="level">Relationship Level</Label>
-                <Select
-                  value={newContact.levelId}
-                  onValueChange={(value) =>
-                    setNewContact({ ...newContact, levelId: value })
-                  }
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddingContact(false)}
                 >
-                  <SelectTrigger aria-label="Select relationship level for new contact">
-                    <SelectValue placeholder="Select relationship level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {levels.map((level) => (
-                      <SelectItem key={level.id} value={level.id}>
-                        {level.name} ({level.count})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Cancel
+                </Button>
+                <Button onClick={addContact}>Add Contact</Button>
               </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={newContact.notes}
-                  onChange={(e) =>
-                    setNewContact({ ...newContact, notes: e.target.value })
-                  }
-                  placeholder="Add notes about this relationship"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="lastContact">Last Contact</Label>
-                <Input
-                  id="lastContact"
-                  type="date"
-                  value={newContact.lastContact}
-                  onChange={(e) =>
-                    setNewContact({
-                      ...newContact,
-                      lastContact: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsAddingContact(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={addContact}>Add Contact</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Network Statistics */}
@@ -403,87 +398,89 @@ export function ContactManager({ levels }: ContactManagerProps) {
         })}
       </div>
 
-      {/* Edit Contact Modal */}
-      <Dialog open={isEditingContact} onOpenChange={setIsEditingContact}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Contact</DialogTitle>
-            <DialogDescription>
+      {/* Edit Contact Inline Panel */}
+      {isEditingContact && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Edit Contact</CardTitle>
+            <CardDescription>
               Update contact details and circle.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                value={editContact.name}
-                onChange={(e) =>
-                  setEditContact({ ...editContact, name: e.target.value })
-                }
-                placeholder="Enter contact name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-level">Relationship Level</Label>
-              <Select
-                value={editContact.levelId}
-                onValueChange={(value) =>
-                  setEditContact({ ...editContact, levelId: value })
-                }
-              >
-                <SelectTrigger
-                  id="edit-level"
-                  aria-label="Select relationship level for editing contact"
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editContact.name}
+                  onChange={(e) =>
+                    setEditContact({ ...editContact, name: e.target.value })
+                  }
+                  placeholder="Enter contact name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-level">Relationship Level</Label>
+                <Select
+                  value={editContact.levelId}
+                  onValueChange={(value) =>
+                    setEditContact({ ...editContact, levelId: value })
+                  }
                 >
-                  <SelectValue placeholder="Select relationship level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {levels.map((level) => (
-                    <SelectItem key={level.id} value={level.id}>
-                      {level.name} ({level.count})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <SelectTrigger
+                    id="edit-level"
+                    aria-label="Select relationship level for editing contact"
+                  >
+                    <SelectValue placeholder="Select relationship level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels.map((level) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.name} ({level.count})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Textarea
+                  id="edit-notes"
+                  value={editContact.notes}
+                  onChange={(e) =>
+                    setEditContact({ ...editContact, notes: e.target.value })
+                  }
+                  placeholder="Add notes about this relationship"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-lastContact">Last Contact</Label>
+                <Input
+                  id="edit-lastContact"
+                  type="date"
+                  value={editContact.lastContact}
+                  onChange={(e) =>
+                    setEditContact({
+                      ...editContact,
+                      lastContact: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="edit-notes">Notes</Label>
-              <Textarea
-                id="edit-notes"
-                value={editContact.notes}
-                onChange={(e) =>
-                  setEditContact({ ...editContact, notes: e.target.value })
-                }
-                placeholder="Add notes about this relationship"
-              />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingContact(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={saveEdit}>Save Changes</Button>
             </div>
-            <div>
-              <Label htmlFor="edit-lastContact">Last Contact</Label>
-              <Input
-                id="edit-lastContact"
-                type="date"
-                value={editContact.lastContact}
-                onChange={(e) =>
-                  setEditContact({
-                    ...editContact,
-                    lastContact: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditingContact(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
