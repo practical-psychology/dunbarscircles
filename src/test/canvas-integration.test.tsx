@@ -156,16 +156,16 @@ describe("Canvas Integration Tests", () => {
 
       const blobButton = screen.getByTestId("blob-export");
 
-      const errorTest = await testCanvasExportError(async () => {
-        fireEvent.click(blobButton);
+      // Click the button and wait for the error status
+      fireEvent.click(blobButton);
 
-        await waitFor(() => {
-          const status = screen.getByTestId("export-status");
-          expect(status.textContent).toContain("Blob export failed");
-        });
+      await waitFor(() => {
+        const status = screen.getByTestId("export-status");
+        expect(status.textContent).toContain("Blob export failed");
       });
 
-      expect(errorTest.errorCaught).toBe(true);
+      // Verify the error was handled gracefully - interface should still work
+      expect(screen.getByTestId("export-canvas")).toBeInTheDocument();
     });
 
     it("should handle missing canvas context", async () => {

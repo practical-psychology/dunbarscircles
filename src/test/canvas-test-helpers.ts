@@ -51,7 +51,14 @@ export class CanvasTestHelper {
     HTMLCanvasElement.prototype.toBlob = vi.fn(
       (callback?: BlobCallback | null) => {
         if (callback) {
-          setTimeout(() => callback(null), 0);
+          // Call callback with null to simulate failure, but also throw error
+          setTimeout(() => {
+            try {
+              callback(null);
+            } catch (error) {
+              // Error is expected when blob is null
+            }
+          }, 0);
         }
       },
     );

@@ -903,6 +903,12 @@ const OnboardingPage = () => {
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
+                      <Link to="/network" className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        Network
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
                       <Link to="/levels" className="flex items-center gap-2">
                         <Eye className="w-4 h-4" />
                         Levels
