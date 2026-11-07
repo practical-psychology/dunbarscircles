@@ -420,14 +420,19 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         // Wait for authentication to complete
         // user-info might be in PageLayout or might be shown differently
         // Also check for dashboard content as a sign that auth completed
-        await waitFor(() => {
-          const userInfo = screen.queryByTestId("user-info");
-          const userEmail = screen.queryByText(/test@example.com/i);
-          const userDisplayName = screen.queryByText(/test user/i);
-          const dashboardContent = screen.queryByText(/dashboard/i);
-          // At least one of these should be present
-          expect(userInfo || userEmail || userDisplayName || dashboardContent).toBeTruthy();
-        }, { timeout: 5000 });
+        await waitFor(
+          () => {
+            const userInfo = screen.queryByTestId("user-info");
+            const userEmail = screen.queryByText(/test@example.com/i);
+            const userDisplayName = screen.queryByText(/test user/i);
+            const dashboardContent = screen.queryByText(/dashboard/i);
+            // At least one of these should be present
+            expect(
+              userInfo || userEmail || userDisplayName || dashboardContent,
+            ).toBeTruthy();
+          },
+          { timeout: 5000 },
+        );
 
         // Add some data to test persistence
         const contactManager = screen.queryByTestId("contact-manager");

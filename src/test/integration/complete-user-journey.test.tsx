@@ -426,14 +426,17 @@ Jane,Smith,Extra`;
     const networkLink = screen.queryByRole("link", { name: /network/i });
     if (networkLink) {
       // Wait for any modals/overlays to close before clicking
-      await waitFor(() => {
-        const body = document.body;
-        const hasPointerEvents = body.style.pointerEvents !== "none";
-        expect(hasPointerEvents).toBe(true);
-      }, { timeout: 2000 }).catch(() => {
+      await waitFor(
+        () => {
+          const body = document.body;
+          const hasPointerEvents = body.style.pointerEvents !== "none";
+          expect(hasPointerEvents).toBe(true);
+        },
+        { timeout: 2000 },
+      ).catch(() => {
         // If modal is still open, try to close it or continue
       });
-      
+
       await user.click(networkLink);
     }
 

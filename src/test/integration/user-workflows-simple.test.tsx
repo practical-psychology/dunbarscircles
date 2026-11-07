@@ -528,7 +528,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         },
         { timeout: 5000 },
       );
-      
+
       // Then wait for the diagram to appear (or the "no levels" message)
       // If we get the "no levels" message, that's also acceptable for the test
       await waitFor(
@@ -539,7 +539,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         },
         { timeout: 3000 },
       );
-      
+
       // If diagram is present, test export
       const diagram = screen.queryByTestId("radial-diagram");
       if (!diagram) {
@@ -646,7 +646,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
         },
         { timeout: 5000 },
       );
-      
+
       // Then wait for the diagram to appear
       await waitFor(
         () => {
