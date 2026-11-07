@@ -99,7 +99,7 @@ export function WelcomeModal({
 
   const steps = [
     {
-      title: "Welcome to Dunbar Circles",
+      title: "Welcome to Dunbar's Circles",
       description: "Your personal relationship visualization tool",
       content: (
         <div className="space-y-6">
@@ -119,7 +119,7 @@ export function WelcomeModal({
               <Users className="w-10 h-10 text-white" />
             </motion.div>
             <h3 className="text-2xl font-bold mb-2">
-              Welcome to Dunbar Circles
+              See who's in your inner circle, and who's drifted out
             </h3>
             <p className="text-muted-foreground">
               Discover and visualize your social relationships using Robin

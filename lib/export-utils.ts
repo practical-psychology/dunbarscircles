@@ -199,7 +199,7 @@ export const generatePrintHTML = (data: ExportData): string => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Dunbar Circles - Relationship Network Report</title>
+      <title>Dunbar's Circles - Relationship Network Report</title>
       <style>
         @media print {
           body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
@@ -221,7 +221,7 @@ export const generatePrintHTML = (data: ExportData): string => {
     </head>
     <body>
       <div class="header">
-        <h1>Dunbar Circles - Personal Relationship Network</h1>
+        <h1>Dunbar's Circles - Personal Relationship Network</h1>
         <p>Generated on ${new Date(metadata.exportDate).toLocaleDateString()}</p>
       </div>
 

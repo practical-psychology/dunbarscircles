@@ -1,4 +1,4 @@
-# Dunbar Circles Quick Start Guide
+# Dunbar's Circles Quick Start Guide
 
 ## 🚀 Get Started in 5 Minutes
 

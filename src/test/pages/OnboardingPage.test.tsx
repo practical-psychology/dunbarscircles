@@ -21,7 +21,7 @@ describe("OnboardingPage", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Welcome to Dunbar Circles",
+        name: "Welcome to Dunbar's Circles",
         level: 1,
       }),
     ).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe("OnboardingPage", () => {
     renderWithRouter(<OnboardingPage />);
 
     expect(screen.getByText("Tutorial Steps")).toBeInTheDocument();
-    expect(screen.getAllByText("Welcome to Dunbar Circles")).toHaveLength(4); // Title, sidebar, content title, and step content
+    expect(screen.getAllByText("Welcome to Dunbar's Circles")).toHaveLength(3); // Title, sidebar, content title (step heading is now a benefit subhead)
     expect(screen.getByText("Navigation Overview")).toBeInTheDocument();
   });
 

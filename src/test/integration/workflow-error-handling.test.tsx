@@ -333,7 +333,8 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("link", { name: /network/i }));
+      await user.click(screen.getByRole("button", { name: /visualizations/i }));
+      await user.click(await screen.findByRole("link", { name: /network/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -371,7 +372,8 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("link", { name: /network/i }));
+      await user.click(screen.getByRole("button", { name: /visualizations/i }));
+      await user.click(await screen.findByRole("link", { name: /network/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -475,7 +477,8 @@ Jane,Smith,jane@example.com,Extra,Column`;
       });
 
       // Navigate to visualization with large dataset
-      await user.click(screen.getByRole("link", { name: /network/i }));
+      await user.click(screen.getByRole("button", { name: /visualizations/i }));
+      await user.click(await screen.findByRole("link", { name: /network/i }));
 
       // Should load without crashing
       await waitFor(
@@ -546,7 +549,8 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("link", { name: /network/i }));
+      await user.click(screen.getByRole("button", { name: /visualizations/i }));
+      await user.click(await screen.findByRole("link", { name: /network/i }));
 
       // Should handle missing Canvas API gracefully
       await waitFor(() => {

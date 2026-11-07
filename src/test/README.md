@@ -1,6 +1,6 @@
 # Testing Utilities
 
-This directory contains comprehensive testing utilities and mocks for the Dunbar Circles application.
+This directory contains comprehensive testing utilities and mocks for the Dunbar's Circles application.
 
 ## Overview
 

@@ -1,6 +1,6 @@
-# Dunbar Circles Documentation Index
+# Dunbar's Circles Documentation Index
 
-Welcome to the Dunbar Circles documentation! This index will help you find the right information for your needs.
+Welcome to the Dunbar's Circles documentation! This index will help you find the right information for your needs.
 
 ## 📚 Documentation Overview
 
@@ -23,7 +23,7 @@ Welcome to the Dunbar Circles documentation! This index will help you find the r
 
 ## 🎯 Choose Your Path
 
-### I'm completely new to Dunbar Circles
+### I'm completely new to Dunbar's Circles
 
 1. Start with the **[Interactive Tutorial](/onboarding)** in the app
 2. Read the **[Quick Start Guide](QUICK_START.md)** for essential info
@@ -122,7 +122,7 @@ We welcome contributions to improve the documentation:
 - **Corrections**: Fix errors or outdated information
 - **Clarifications**: Improve explanations that are unclear
 - **Examples**: Add helpful examples or use cases
-- **Translations**: Help make Dunbar Circles accessible in other languages
+- **Translations**: Help make Dunbar's Circles accessible in other languages
 
 ---
 

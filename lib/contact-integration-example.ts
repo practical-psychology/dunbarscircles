@@ -1,5 +1,5 @@
 /**
- * Example of how to integrate the new contact models with existing Dunbar Circles components
+ * Example of how to integrate the new contact models with existing Dunbar's Circles components
  * This shows how to use the contact validation and utilities with the existing Person type
  */
 

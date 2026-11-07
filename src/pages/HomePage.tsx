@@ -120,9 +120,9 @@ export default function HomePage() {
                   <Heart className="w-5 h-5" />
                 </motion.div>
                 <div>
-                  <h3 className="text-xl font-bold text-red-600 dark:text-red-400">
+                  <h2 className="text-xl font-bold text-red-600 dark:text-red-400">
                     Intimate Levels
-                  </h3>
+                  </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     5-50 people
                   </p>
@@ -154,9 +154,9 @@ export default function HomePage() {
                   <Users className="w-5 h-5" />
                 </motion.div>
                 <div>
-                  <h3 className="text-xl font-bold text-green-600 dark:text-green-400">
+                  <h2 className="text-xl font-bold text-green-600 dark:text-green-400">
                     Social Levels
-                  </h3>
+                  </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     150-1,500 people
                   </p>
@@ -187,9 +187,9 @@ export default function HomePage() {
                   <Share2 className="w-5 h-5" />
                 </motion.div>
                 <div>
-                  <h3 className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                  <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">
                     Extended Levels
-                  </h3>
+                  </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     5,000-50,000 people
                   </p>
@@ -212,7 +212,7 @@ export default function HomePage() {
 
         {/* Floating action section */}
         <motion.div variants={itemVariants} className="text-center space-y-4">
-          <motion.h3
+          <motion.h2
             className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent"
             animate={{
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -224,7 +224,7 @@ export default function HomePage() {
             }}
           >
             Ready to explore your social network?
-          </motion.h3>
+          </motion.h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/dashboard">
               <LiquidButton

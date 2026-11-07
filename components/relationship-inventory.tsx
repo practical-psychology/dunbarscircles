@@ -595,7 +595,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   const handleShareData = async () => {
     try {
       const data = prepareExportData();
-      await shareData(data, "My Dunbar Circles Relationship Network");
+      await shareData(data, "My Dunbar's Circles Relationship Network");
       setShowExportDialog(false);
     } catch (error) {
       console.error("Share failed:", error);

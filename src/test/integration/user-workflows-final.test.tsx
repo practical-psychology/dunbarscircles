@@ -8,7 +8,7 @@ import { testHelpers } from "../test-helpers";
 const TestWorkflowComponent = () => {
   return (
     <div data-testid="workflow-test">
-      <h1>Dunbar Circles Integration Test</h1>
+      <h1>Dunbar's Circles Integration Test</h1>
 
       {/* Data Import Section */}
       <div data-testid="import-section">

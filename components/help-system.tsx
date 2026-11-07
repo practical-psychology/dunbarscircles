@@ -44,12 +44,12 @@ const helpTopics: HelpTopic[] = [
   {
     id: "getting-started",
     title: "Getting Started",
-    description: "Learn the basics of Dunbar Circles and Dunbar's theory",
+    description: "Learn the basics of Dunbar's Circles and Dunbar's theory",
     category: "basics",
     icon: <PlayCircle className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>Welcome to Dunbar Circles! Here's how to get started:</p>
+        <p>Welcome to Dunbar's Circles! Here's how to get started:</p>
         <ol className="list-decimal list-inside space-y-2 text-sm">
           <li>
             Take the interactive tutorial by clicking "Tutorial & Guide" on the
@@ -134,7 +134,7 @@ const helpTopics: HelpTopic[] = [
     content: (
       <div className="space-y-4">
         <p>
-          Dunbar Circles has several main pages, each with a specific purpose:
+          Dunbar's Circles has several main pages, each with a specific purpose:
         </p>
         <div className="grid gap-3">
           <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
@@ -222,7 +222,7 @@ const helpTopics: HelpTopic[] = [
     content: (
       <div className="space-y-4">
         <p>
-          Dunbar Circles offers several ways to visualize your relationships:
+          Dunbar's Circles offers several ways to visualize your relationships:
         </p>
         <div className="space-y-3">
           <div>
@@ -294,7 +294,7 @@ const helpTopics: HelpTopic[] = [
     icon: <MessageSquare className="w-4 h-4" />,
     content: (
       <div className="space-y-4">
-        <p>If Dunbar Circles is running slowly, try these solutions:</p>
+        <p>If Dunbar's Circles is running slowly, try these solutions:</p>
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold">Browser Optimization</h4>
@@ -379,7 +379,7 @@ export function HelpSystem({
           size="sm"
           className={className}
           aria-label="Open help center and documentation"
-          title="Get help and learn how to use Dunbar Circles"
+          title="Get help and learn how to use Dunbar's Circles"
         >
           <CircleHelp className="w-4 h-4 mr-2" />
           Help
@@ -389,10 +389,10 @@ export function HelpSystem({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Book className="w-5 h-5" />
-            Dunbar Circles Help Center
+            Dunbar's Circles Help Center
           </DialogTitle>
           <DialogDescription>
-            Find answers to common questions and learn how to use Dunbar Circles
+            Find answers to common questions and learn how to use Dunbar's Circles
             effectively.
           </DialogDescription>
         </DialogHeader>

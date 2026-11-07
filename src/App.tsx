@@ -2,24 +2,26 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider } from "@/components/theme-provider";
 import HomePage from "./pages/HomePage";
-import OnboardingPage from "./pages/OnboardingPage";
-import RadialPage from "./pages/RadialPage";
-import LevelsPage from "./pages/LevelsPage";
-import NetworkPage from "./pages/NetworkPage";
-import DigitalPage from "./pages/DigitalPage";
-import LifecyclePage from "./pages/LifecyclePage";
-import DashboardPage from "./pages/DashboardPage";
-import FirebaseTestPage from "./pages/FirebaseTestPage";
-import SitemapPage from "./pages/SitemapPage";
-import ContactsPage from "./pages/ContactsPage";
-import ContactEditPage from "./pages/ContactEditPage";
-import ContactImportPage from "./pages/ContactImportPage";
-import ColorContrastTestPage from "./pages/ColorContrastTestPage";
-import NotFoundPage from "./pages/NotFoundPage";
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const RadialPage = lazy(() => import("./pages/RadialPage"));
+const LevelsPage = lazy(() => import("./pages/LevelsPage"));
+const NetworkPage = lazy(() => import("./pages/NetworkPage"));
+const DigitalPage = lazy(() => import("./pages/DigitalPage"));
+const LifecyclePage = lazy(() => import("./pages/LifecyclePage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const FirebaseTestPage = lazy(() => import("./pages/FirebaseTestPage"));
+const SitemapPage = lazy(() => import("./pages/SitemapPage"));
+const ContactsPage = lazy(() => import("./pages/ContactsPage"));
+const ContactEditPage = lazy(() => import("./pages/ContactEditPage"));
+const ContactImportPage = lazy(() => import("./pages/ContactImportPage"));
+const ColorContrastTestPage = lazy(
+  () => import("./pages/ColorContrastTestPage"),
+);
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 
 const liquidPageVariants = {
   initial: {
@@ -63,7 +65,7 @@ function AppContent() {
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [isTestEnvironment]);
@@ -109,26 +111,37 @@ function AppContent() {
           transition={liquidPageTransition}
           className="relative z-10"
         >
-          <Routes location={location}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/radial" element={<RadialPage />} />
-            <Route path="/levels" element={<LevelsPage />} />
-            <Route path="/network" element={<NetworkPage />} />
-            <Route path="/digital" element={<DigitalPage />} />
-            <Route path="/lifecycle" element={<LifecyclePage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/contacts" element={<ContactsPage />} />
-            <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
-            <Route path="/contacts/import" element={<ContactImportPage />} />
-            <Route
-              path="/color-contrast-test"
-              element={<ColorContrastTestPage />}
-            />
-            <Route path="/firebase-test" element={<FirebaseTestPage />} />
-            <Route path="/sitemap" element={<SitemapPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+          <Suspense
+            fallback={
+              <div
+                role="status"
+                className="p-12 text-center text-gray-600 dark:text-gray-300"
+              >
+                Loading…
+              </div>
+            }
+          >
+            <Routes location={location}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/radial" element={<RadialPage />} />
+              <Route path="/levels" element={<LevelsPage />} />
+              <Route path="/network" element={<NetworkPage />} />
+              <Route path="/digital" element={<DigitalPage />} />
+              <Route path="/lifecycle" element={<LifecyclePage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/contacts" element={<ContactsPage />} />
+              <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
+              <Route path="/contacts/import" element={<ContactImportPage />} />
+              <Route
+                path="/color-contrast-test"
+                element={<ColorContrastTestPage />}
+              />
+              <Route path="/firebase-test" element={<FirebaseTestPage />} />
+              <Route path="/sitemap" element={<SitemapPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
         </motion.div>
       </AnimatePresence>
     </div>

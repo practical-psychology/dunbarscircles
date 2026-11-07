@@ -125,7 +125,7 @@ export function TutorialBadge({
                     Well done!
                   </p>
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    You've mastered Dunbar Circles
+                    You've mastered Dunbar's Circles
                   </p>
                 </div>
               </div>

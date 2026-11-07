@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 // Temporarily disable missing module imports
 // import { LiquidScrollIndicator } from "../../components/ui/liquid-scroll-indicator";
 // import { HelpSystem, useContextualHelp } from "../../components/help-system";
@@ -25,8 +25,8 @@ import {
   Smartphone,
   Clock,
   Book,
-  Plane,
   UserCheck,
+  ChevronDown,
 } from "lucide-react";
 import {
   signInWithGoogle,
@@ -48,12 +48,14 @@ const navigationItems = [
   { path: "/", label: "Overview", icon: Brain },
   { path: "/dashboard", label: "Dashboard", icon: Book },
   { path: "/contacts", label: "Contacts", icon: UserCheck },
+];
+
+const visualizationItems = [
   { path: "/network", label: "Network Graph", icon: Heart },
   { path: "/radial", label: "Radial View", icon: Eye },
   { path: "/levels", label: "Levels", icon: Users },
   { path: "/lifecycle", label: "Life Stages", icon: Clock },
   { path: "/digital", label: "Digital", icon: Smartphone },
-  { path: "/sitemap", label: "Sitemap", icon: Plane },
 ];
 
 export default function PageLayout({
@@ -62,6 +64,28 @@ export default function PageLayout({
   description,
 }: PageLayoutProps) {
   const location = useLocation();
+  const [vizOpen, setVizOpen] = useState(false);
+  const vizMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!vizOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (!vizMenuRef.current?.contains(e.target as Node)) setVizOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setVizOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [vizOpen]);
+
+  const isVisualizationActive = visualizationItems.some(
+    (item) => item.path === location.pathname,
+  );
 
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
@@ -178,7 +202,7 @@ export default function PageLayout({
               backgroundSize: "200% 200%",
             }}
           >
-            Dunbar Circles
+            Dunbar's Circles
           </motion.h1>
           <motion.p
             className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
@@ -197,7 +221,10 @@ export default function PageLayout({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <nav className="flex flex-wrap justify-center items-center gap-2 p-3 bg-white/60 dark:bg-gray-900/60 rounded-2xl backdrop-blur-xl border border-white/20 dark:border-gray-700/20">
+          <nav
+            aria-label="Main navigation"
+            className="flex flex-wrap justify-center items-center gap-2 p-3 bg-white/60 dark:bg-gray-900/60 rounded-2xl backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+          >
             {navigationItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -263,12 +290,58 @@ export default function PageLayout({
               );
             })}
 
+            <div className="relative" ref={vizMenuRef}>
+              <button
+                type="button"
+                aria-expanded={vizOpen}
+                aria-controls="visualizations-menu"
+                onClick={() => setVizOpen((o) => !o)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                  isVisualizationActive
+                    ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
+                    : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                }`}
+              >
+                <Eye className="w-4 h-4" aria-hidden="true" />
+                Visualizations
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${vizOpen ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                />
+              </button>
+              {vizOpen && (
+                <ul
+                  id="visualizations-menu"
+                  className="absolute left-1/2 -translate-x-1/2 mt-2 min-w-[12rem] z-50 p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl"
+                >
+                  {visualizationItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.path}>
+                        <Link
+                          to={item.path}
+                          aria-current={
+                            location.pathname === item.path ? "page" : undefined
+                          }
+                          onClick={() => setVizOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-800 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-gray-800"
+                        >
+                          <Icon className="w-4 h-4" aria-hidden="true" />
+                          {item.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{
                 duration: 0.4,
-                delay: 0.4 + navigationItems.length * 0.05,
+                delay: 0.4 + (navigationItems.length + 1) * 0.05,
                 type: "spring",
                 stiffness: 400,
                 damping: 17,
@@ -409,14 +482,46 @@ export default function PageLayout({
         </motion.div>
 
         {/* Page Content */}
-        <motion.div
+        <motion.main
+          id="main-content"
+          tabIndex={-1}
           className="space-y-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           {children}
-        </motion.div>
+        </motion.main>
+
+        <footer className="mt-16 border-t border-gray-200/60 dark:border-gray-700/60 pt-6 text-center text-sm text-gray-600 dark:text-gray-300 space-y-2">
+          <p>
+            Based on the anthropological research of Professor Robin Dunbar
+            (University of Oxford).
+          </p>
+          <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <Link
+              to="/onboarding"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Tutorial &amp; Guide
+            </Link>
+            <Link
+              to="/sitemap"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Sitemap
+            </Link>
+            <a
+              href="https://github.com/practical-psychology/dunbarscircles"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              GitHub
+            </a>
+          </p>
+          <p>&copy; {new Date().getFullYear()} Dunbar&apos;s Circles</p>
+        </footer>
       </div>
 
       {/* Floating liquid elements */}

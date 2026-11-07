@@ -11,3 +11,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+// Tell assistive tech the app has finished booting (see aria-busy in index.html)
+requestAnimationFrame(() =>
+  document.getElementById("root")?.setAttribute("aria-busy", "false"),
+);

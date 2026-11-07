@@ -1,6 +1,6 @@
 # Facebook Import Format Support
 
-The Dunbar Circles application now supports both old and new Facebook export formats for importing friend data.
+The Dunbar's Circles application now supports both old and new Facebook export formats for importing friend data.
 
 ## Supported Formats
 

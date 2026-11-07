@@ -2,21 +2,21 @@
 
 ## General Questions
 
-### What is Dunbar Circles?
+### What is Dunbar's Circles?
 
-Dunbar Circles (Yet Another Knowledge Worker) is a web application that helps you visualize and understand your social relationships using Robin Dunbar's theory of social cognition. It provides interactive tools to explore how your relationships are distributed across different levels of social connection.
+Dunbar's Circles (Yet Another Knowledge Worker) is a web application that helps you visualize and understand your social relationships using Robin Dunbar's theory of social cognition. It provides interactive tools to explore how your relationships are distributed across different levels of social connection.
 
 ### Do I need to create an account?
 
-No! Dunbar Circles works without any registration or account creation. You can start using it immediately. There's an optional Google sign-in for personalization, but it's not required for core functionality.
+No! Dunbar's Circles works without any registration or account creation. You can start using it immediately. There's an optional Google sign-in for personalization, but it's not required for core functionality.
 
-### Is Dunbar Circles free to use?
+### Is Dunbar's Circles free to use?
 
-Yes, Dunbar Circles is completely free and open-source. There are no premium features, subscriptions, or hidden costs.
+Yes, Dunbar's Circles is completely free and open-source. There are no premium features, subscriptions, or hidden costs.
 
 ### What browsers are supported?
 
-Dunbar Circles works best on modern browsers:
+Dunbar's Circles works best on modern browsers:
 
 - ✅ Chrome (recommended)
 - ✅ Firefox
@@ -52,9 +52,9 @@ Yes, you can:
 - Clear all data by clearing your browser's local storage
 - Export your data first if you want to keep a backup
 
-### Does Dunbar Circles track my usage?
+### Does Dunbar's Circles track my usage?
 
-No. Dunbar Circles doesn't use any analytics, tracking pixels, or user behavior monitoring. Your usage patterns are completely private.
+No. Dunbar's Circles doesn't use any analytics, tracking pixels, or user behavior monitoring. Your usage patterns are completely private.
 
 ## Using the Application
 
@@ -84,7 +84,7 @@ The auto-categorization makes educated guesses based on:
 
 However, you know your relationships best! Always review and adjust the categories as needed.
 
-### Can I use Dunbar Circles without importing social media data?
+### Can I use Dunbar's Circles without importing social media data?
 
 Absolutely! You can:
 
@@ -104,9 +104,9 @@ Common causes and solutions:
 - **Browser cache**: Clear cache and cookies
 - **Old browser**: Update to the latest version
 
-### Can I use Dunbar Circles on mobile?
+### Can I use Dunbar's Circles on mobile?
 
-Yes! Dunbar Circles is responsive and works on mobile devices, though some features work better on larger screens:
+Yes! Dunbar's Circles is responsive and works on mobile devices, though some features work better on larger screens:
 
 - Touch gestures work for navigation
 - Rotate to landscape for better visualization viewing
@@ -186,7 +186,7 @@ Yes! You can export:
 
 ### Can I track relationship changes over time?
 
-Currently, Dunbar Circles provides:
+Currently, Dunbar's Circles provides:
 
 - Last contact date tracking
 - Relationship strength indicators
