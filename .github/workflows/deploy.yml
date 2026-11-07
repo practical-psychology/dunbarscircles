@@ -21,7 +21,7 @@ jobs:
     # Production deploys use the protected "production" environment.
     environment: ${{ github.event_name == 'push' && 'production' || 'preview' }}
     env:
-      HAS_FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES != '' }}
+      HAS_FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,19 +47,27 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID: ${{ github.event_name == 'push' && secrets.VITE_FIREBASE_MEASUREMENT_ID || '' }}
 
       - name: Warn when deploy credentials are missing
-        if: env.HAS_FIREBASE_SA != 'true'
-        run: echo "::warning::Secret FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES is not set; build verified but nothing was deployed. See docs/ops/ENVIRONMENT.md."
+        if: env.HAS_FIREBASE_TOKEN != 'true'
+        run: echo "::warning::Secret FIREBASE_TOKEN is not set; build verified but nothing was deployed. See docs/ops/ENVIRONMENT.md."
 
-      # Pushes to main go live; same-repo pull requests get a 7-day preview channel.
-      - name: Deploy to Firebase Hosting
-        if: env.HAS_FIREBASE_SA == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES }}
-          channelId: ${{ github.event_name == 'push' && 'live' || '' }}
-          expires: 7d
-          projectId: dunbarscircles
+      # Pushes to main go live. Same-repo pull requests get a 7-day preview channel.
+      # Uses only the Firebase CLI and a Firebase CI token (no Google Cloud service account).
+      - name: Deploy to production (Firebase CLI)
+        if: env.HAS_FIREBASE_TOKEN == 'true' && github.event_name == 'push'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx --yes firebase-tools@latest deploy --only hosting --project dunbarscircles --non-interactive
+
+      - name: Deploy preview channel (Firebase CLI)
+        if: env.HAS_FIREBASE_TOKEN == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          out=$(npx --yes firebase-tools@latest hosting:channel:deploy "pr-${{ github.event.number }}" --expires 7d --project dunbarscircles --non-interactive --json)
+          url=$(echo "$out" | jq -r '.result | to_entries[0].value.url')
+          echo "Preview: $url"
+          gh pr comment "${{ github.event.number }}" --body "Preview (expires in 7 days, not indexed): $url"
 
   smoke:
     name: production smoke test
