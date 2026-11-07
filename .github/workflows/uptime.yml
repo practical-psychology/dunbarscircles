@@ -1,0 +1,21 @@
+name: Uptime check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe Firebase URL
+        run: bash scripts/smoke-test.sh https://dunbarscircles.web.app
+      - name: Probe canonical domain (informational until DNS cutover)
+        continue-on-error: true
+        run: bash scripts/smoke-test.sh https://dunbarscircles.com

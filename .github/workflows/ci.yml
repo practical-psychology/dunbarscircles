@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+      - name: Audit production dependencies (high and critical)
+        # Advisory until the remaining upstream findings are cleared (docs/ops/SECURITY.md).
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+      - name: Build
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ci-placeholder
+          VITE_FIREBASE_AUTH_DOMAIN: dunbarscircles.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: dunbarscircles
+          VITE_FIREBASE_STORAGE_BUCKET: dunbarscircles.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "0"
+          VITE_FIREBASE_APP_ID: ci-placeholder
+      - name: Report bundle size
+        run: du -sh dist && ls -lS dist/assets | head -8

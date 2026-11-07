@@ -10,20 +10,28 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Production deploys use the protected "production" environment.
+    environment: ${{ github.event_name == 'push' && 'production' || 'preview' }}
+    env:
+      HAS_FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES != '' }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      # package-lock.json is gitignored in this repo, so use install instead of ci
-      - run: npm install --no-audit --no-fund
-
-      - run: npm run type-check || true
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
 
       - name: Build
         run: npm run build
@@ -35,13 +43,29 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: dunbarscircles.firebasestorage.app
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          # Analytics measurement ID is only injected for production builds.
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ github.event_name == 'push' && secrets.VITE_FIREBASE_MEASUREMENT_ID || '' }}
 
-      # Pushes to main go live; pull requests get a temporary preview channel
+      - name: Warn when deploy credentials are missing
+        if: env.HAS_FIREBASE_SA != 'true'
+        run: echo "::warning::Secret FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES is not set; build verified but nothing was deployed. See docs/ops/ENVIRONMENT.md."
+
+      # Pushes to main go live; same-repo pull requests get a 7-day preview channel.
       - name: Deploy to Firebase Hosting
+        if: env.HAS_FIREBASE_SA == 'true' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DUNBARSCIRCLES }}
           channelId: ${{ github.event_name == 'push' && 'live' || '' }}
+          expires: 7d
           projectId: dunbarscircles
+
+  smoke:
+    name: production smoke test
+    needs: build_and_deploy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/smoke-test.sh https://dunbarscircles.web.app

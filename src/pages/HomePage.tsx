@@ -1,3 +1,4 @@
+import { trackEvent } from "../../lib/analytics";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -247,7 +248,12 @@ export default function HomePage() {
             Ready to map your social circles?
           </motion.h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/dashboard">
+            <Link
+              to="/dashboard"
+              onClick={() =>
+                trackEvent("cta_click", { cta: "explore_network" })
+              }
+            >
               <LiquidButton
                 variant="primary"
                 size="lg"
@@ -256,7 +262,7 @@ export default function HomePage() {
                 Explore Your Network
               </LiquidButton>
             </Link>
-            <Link to="/onboarding">
+            <Link to="/onboarding" onClick={() => trackEvent("start_tour")}>
               <LiquidButton
                 variant="ghost"
                 size="lg"

@@ -18,9 +18,13 @@ const ColorContrastTestPage = lazy(
   () => import("./pages/ColorContrastTestPage"),
 );
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const EvidencePage = lazy(() => import("./pages/EvidencePage"));
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
+import { ConsentBanner } from "@/components/consent-banner";
 import { Toaster } from "@/components/ui/toaster";
 import { lazy, Suspense, useState, useEffect } from "react";
 
@@ -103,6 +107,7 @@ function AppContent() {
 
       {/* Welcome Modal for first-time users */}
       <WelcomeModal />
+      <ConsentBanner />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -136,12 +141,20 @@ function AppContent() {
               <Route path="/contacts" element={<ContactsPage />} />
               <Route path="/contacts/edit/:id" element={<ContactEditPage />} />
               <Route path="/contacts/import" element={<ContactImportPage />} />
-              <Route
-                path="/color-contrast-test"
-                element={<ColorContrastTestPage />}
-              />
-              <Route path="/firebase-test" element={<FirebaseTestPage />} />
+              {import.meta.env.DEV && (
+                <>
+                  <Route
+                    path="/color-contrast-test"
+                    element={<ColorContrastTestPage />}
+                  />
+
+                  <Route path="/firebase-test" element={<FirebaseTestPage />} />
+                </>
+              )}
               <Route path="/sitemap" element={<SitemapPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/evidence" element={<EvidencePage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

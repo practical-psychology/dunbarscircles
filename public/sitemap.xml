@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://dunbarscircles.com/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://dunbarscircles.com/levels</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/radial</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/network</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/lifecycle</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/digital</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/onboarding</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://dunbarscircles.com/sitemap</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://dunbarscircles.com/</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://dunbarscircles.com/levels</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/radial</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/network</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/lifecycle</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/digital</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/evidence</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/onboarding</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/about</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://dunbarscircles.com/privacy</loc><lastmod>2026-11-07</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>

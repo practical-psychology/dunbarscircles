@@ -337,7 +337,9 @@ Jane,Smith,jane@example.com,Extra,Column`;
       await user.click(
         await screen.findByRole("button", { name: /visualizations/i }),
       );
-      await user.click(await screen.findByRole("link", { name: /network graph/i }));
+      await user.click(
+        await screen.findByRole("link", { name: /network graph/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -379,7 +381,9 @@ Jane,Smith,jane@example.com,Extra,Column`;
       await user.click(
         await screen.findByRole("button", { name: /visualizations/i }),
       );
-      await user.click(await screen.findByRole("link", { name: /network graph/i }));
+      await user.click(
+        await screen.findByRole("link", { name: /network graph/i }),
+      );
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -487,7 +491,9 @@ Jane,Smith,jane@example.com,Extra,Column`;
       await user.click(
         await screen.findByRole("button", { name: /visualizations/i }),
       );
-      await user.click(await screen.findByRole("link", { name: /network graph/i }));
+      await user.click(
+        await screen.findByRole("link", { name: /network graph/i }),
+      );
 
       // Should load without crashing
       await waitFor(
@@ -562,7 +568,9 @@ Jane,Smith,jane@example.com,Extra,Column`;
       await user.click(
         await screen.findByRole("button", { name: /visualizations/i }),
       );
-      await user.click(await screen.findByRole("link", { name: /network graph/i }));
+      await user.click(
+        await screen.findByRole("link", { name: /network graph/i }),
+      );
 
       // Should handle missing Canvas API gracefully
       await waitFor(() => {

@@ -19,11 +19,17 @@ const routes = [
   { path: "/lifecycle", label: "Life Stages", icon: "🔄" },
   { path: "/contacts", label: "All Contacts", icon: "👤" },
   { path: "/contacts/import", label: "Import Contacts", icon: "📥" },
-  { path: "/contacts/new", label: "Add New Contact", icon: "➕" },
   { path: "/color-contrast-test", label: "Color Contrast Test", icon: "🎨" },
   { path: "/firebase-test", label: "Firebase Test", icon: "🔥" },
+  { path: "/evidence", label: "Evidence & Limitations", icon: "🔬" },
+  { path: "/about", label: "About & Contact", icon: "ℹ️" },
+  { path: "/privacy", label: "Privacy & Cookies", icon: "🔒" },
   { path: "/sitemap", label: "Sitemap", icon: "🗺️" },
-];
+].filter(
+  (route) =>
+    import.meta.env.DEV ||
+    !["/color-contrast-test", "/firebase-test"].includes(route.path),
+);
 
 export default function SitemapPage() {
   const routeSections = {
@@ -34,15 +40,17 @@ export default function SitemapPage() {
       ["/radial", "/network", "/levels"].includes(route.path),
     ),
     content: routes.filter((route) =>
-      ["/digital", "/lifecycle"].includes(route.path),
+      ["/digital", "/lifecycle", "/evidence"].includes(route.path),
     ),
     contacts: routes.filter((route) =>
-      ["/contacts", "/contacts/import", "/contacts/new"].includes(route.path),
+      ["/contacts", "/contacts/import"].includes(route.path),
     ),
     development: routes.filter((route) =>
       ["/color-contrast-test", "/firebase-test"].includes(route.path),
     ),
-    utilities: routes.filter((route) => route.path === "/sitemap"),
+    utilities: routes.filter((route) =>
+      ["/sitemap", "/about", "/privacy"].includes(route.path),
+    ),
   };
 
   return (
