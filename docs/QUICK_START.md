@@ -68,13 +68,13 @@
 - **Import**: Supports Facebook JSON, LinkedIn CSV
 - **Export**: PNG, SVG, JSON, CSV formats
 - **Backup**: Regular JSON exports recommended
-- **Privacy**: All processing happens locally
+- **Privacy**: Processing happens in your browser
 
 ## 🛡️ Privacy & Security
 
-- ✅ **100% Local Processing** - No data sent to servers
+- ✅ **Processed in Your Browser** - Imports and visualizations run locally
 - ✅ **No Registration Required** - Use immediately
-- ✅ **No Tracking** - Your data stays private
+- ✅ **Optional Cloud Backup** - Only if you sign in; only you can read it
 - ✅ **Open Source** - Code available for review
 
 ## 🆘 Quick Troubleshooting

@@ -407,8 +407,9 @@ const tutorialSteps: TutorialStep[] = [
             Privacy First
           </h4>
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            All data processing happens locally in your browser. Your social
-            media data never leaves your device.
+            Import files are processed in your browser. Contacts are stored in
+            your browser, and are backed up to your account in the cloud only if
+            you sign in.
           </p>
         </div>
 
@@ -735,7 +736,9 @@ const OnboardingPage = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Welcome to Dunbar's Circles</h1>
+          <h1 className="text-4xl font-bold mb-2">
+            Welcome to Dunbar's Circles
+          </h1>
           <p className="text-xl text-muted-foreground mb-4">
             Learn how to visualize and understand your relationships
           </p>

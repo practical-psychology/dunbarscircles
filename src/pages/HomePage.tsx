@@ -353,7 +353,7 @@ export default function HomePage() {
               ],
               [
                 "Where is my data stored?",
-                "Contacts are saved in your browser's local storage, and may also be synced to the app's Firebase backend when it is available.",
+                "Contacts are saved in your browser's local storage. If you choose to sign in, a backup copy is also saved to your account in the cloud.",
               ],
               [
                 "Can I take my data with me?",

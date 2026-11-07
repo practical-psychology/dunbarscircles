@@ -214,14 +214,14 @@ Each level requires different amounts of mental energy to maintain:
 - **File Type**: JSON (.json)
 - **How to Get**: Facebook Settings > Your Facebook Information > Download Your Information
 - **What's Included**: Friend names, connection dates, mutual friends
-- **Privacy**: All processing happens locally in your browser
+- **Privacy**: The file is processed in your browser
 
 **LinkedIn Connections Export**
 
 - **File Type**: CSV (.csv)
 - **How to Get**: LinkedIn Settings > Data Privacy > Get a copy of your data
 - **What's Included**: Connection names, companies, positions, connection dates
-- **Privacy**: Data never leaves your device
+- **Privacy**: The file is processed in your browser
 
 #### Import Process
 
@@ -297,8 +297,8 @@ The app uses several factors to automatically assign Dunbar levels:
 
 #### Local Storage
 
-- All data is stored locally in your browser
-- No server uploads or cloud storage
+- Contacts are stored in your browser's local storage
+- Optional cloud backup to your own account if you sign in with Google
 - Data persists between browser sessions
 - Clearing browser data will remove your information
 
@@ -515,28 +515,27 @@ The Levels page (`/levels`) provides detailed information about each Dunbar leve
 
 ### Data Protection Principles
 
-#### Local Processing Only
+#### Local First
 
-- **No Server Uploads**: All data processing happens in your browser
-- **No Cloud Storage**: Your relationship data never leaves your device
-- **No User Accounts**: No registration or personal information required
-- **No Tracking**: No analytics or user behavior tracking
+- **Processed in Your Browser**: Imports and visualizations run in your browser
+- **Optional Cloud Backup**: If you sign in, contacts are also saved to your own account, protected so only you can read them
+- **No Account Required**: You can use the app without signing in
+- **Analytics**: Basic Firebase Analytics may collect anonymous usage data
 
 #### What Data Is Stored
 
-**Locally in Your Browser:**
+**In Your Browser (always):**
 
 - Contact names and relationship information you enter
 - Imported social media data (processed locally)
 - Your categorization choices and notes
 - Application preferences and settings
 
-**Never Stored or Transmitted:**
+**Never Stored:**
 
 - Your social media login credentials
 - Raw social media export files (processed then discarded)
 - Personal identifying information beyond what you choose to enter
-- Usage patterns or behavioral data
 
 ### Security Best Practices
 

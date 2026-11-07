@@ -28,12 +28,12 @@ Dunbar's Circles works best on modern browsers:
 
 ### Is my data safe?
 
-Yes! Your data is completely private:
+Your data is kept private:
 
-- All processing happens locally in your browser
-- No data is sent to any servers
-- No tracking or analytics
-- Your relationship information never leaves your device
+- Imports and visualizations are processed in your browser
+- Contacts are stored in your browser's local storage
+- If you sign in, a backup copy is saved to your own account, and database rules allow only you to read it
+- Basic Firebase Analytics may collect anonymous usage data
 
 ### What happens to my imported social media data?
 

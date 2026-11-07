@@ -2,10 +2,38 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access for development
-    // TODO: Implement proper authentication rules for production
+
+    // A document belongs to the signed-in user who created it.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function ownsExisting() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownsIncoming() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Contacts synced from the app (only written when the user is signed in).
+    match /user_contacts/{contactId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming();
+      // Owners may edit, but may never reassign a document to someone else.
+      allow update: if ownsExisting() && ownsIncoming();
+    }
+
+    // Legacy collection, same ownership rules.
+    match /contacts/{contactId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming();
+    }
+
+    // Everything else is closed.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

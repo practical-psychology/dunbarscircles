@@ -174,7 +174,8 @@ export function WelcomeModal({
                   <div>
                     <h4 className="font-semibold">Privacy First</h4>
                     <p className="text-sm text-muted-foreground">
-                      All data processing happens locally in your browser
+                      Your contacts are stored in your browser. Cloud backup
+                      happens only if you sign in.
                     </p>
                   </div>
                 </div>

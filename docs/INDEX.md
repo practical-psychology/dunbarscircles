@@ -53,7 +53,7 @@ Welcome to the Dunbar's Circles documentation! This index will help you find the
 
 - **Dunbar's Number**: ~150 stable relationships humans can maintain
 - **Five Levels**: Inner Circle (5) → Sympathy Group (15) → Affinity Group (50) → Active Network (150) → Recognition Group (500)
-- **Local Processing**: All data stays in your browser, no server uploads
+- **Local First**: Data is stored in your browser; cloud backup only if you sign in
 
 ### Essential Pages
 

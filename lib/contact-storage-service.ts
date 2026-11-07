@@ -815,6 +815,7 @@ export class ContactStorageService {
           // If not found by document ID, search by contact ID field
           const q = query(
             collection(db, CONTACTS_COLLECTION),
+            where("userId", "==", this.currentUser.uid),
             where("id", "==", contactId),
             limit(1),
           );

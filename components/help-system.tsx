@@ -66,8 +66,8 @@ const helpTopics: HelpTopic[] = [
         </ol>
         <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Tip:</strong> No account required! Your data stays private
-            and local to your browser.
+            <strong>Tip:</strong> No account required! Your data is stored in
+            your browser unless you choose to sign in for cloud backup.
           </p>
         </div>
       </div>
@@ -206,8 +206,9 @@ const helpTopics: HelpTopic[] = [
         </div>
         <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
           <p className="text-sm text-green-700 dark:text-green-300">
-            <strong>Privacy:</strong> All processing happens locally in your
-            browser. Your data never leaves your device.
+            <strong>Privacy:</strong> Your contacts are stored in your browser.
+            If you choose to sign in, a backup copy is saved to your own account
+            in the cloud.
           </p>
         </div>
       </div>
@@ -392,8 +393,8 @@ export function HelpSystem({
             Dunbar's Circles Help Center
           </DialogTitle>
           <DialogDescription>
-            Find answers to common questions and learn how to use Dunbar's Circles
-            effectively.
+            Find answers to common questions and learn how to use Dunbar's
+            Circles effectively.
           </DialogDescription>
         </DialogHeader>
 
