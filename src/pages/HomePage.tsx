@@ -11,6 +11,13 @@ import { dunbarLevels } from "../data/dunbarLevels";
 export default function HomePage() {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
 
+  const exploreLevel = (levelId: string) => {
+    setSelectedLevel(levelId);
+    document
+      .getElementById("network-diagram-section")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -47,7 +54,7 @@ export default function HomePage() {
       >
         <motion.div variants={itemVariants}>
           <LiquidCard glow>
-            <div className="space-y-4">
+            <div className="space-y-4" id="network-diagram-section">
               <div className="flex items-center gap-3">
                 <motion.div
                   className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white"
@@ -61,8 +68,7 @@ export default function HomePage() {
                     Interactive Network Diagram
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Click on any level to explore the details of that
-                    relationship category
+                    Click any circle to explore that level.
                   </p>
                 </div>
               </div>
@@ -73,6 +79,18 @@ export default function HomePage() {
                   selectedLevel={selectedLevel}
                   onLevelSelect={setSelectedLevel}
                 />
+
+                {!selectedLevel && (
+                  <motion.div
+                    className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-gray-900/80 px-4 py-2 text-sm text-white shadow-lg pointer-events-none"
+                    animate={{ opacity: [0.7, 1, 0.7], y: [0, -3, 0] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}
+                    role="note"
+                  >
+                    <Eye className="w-4 h-4" aria-hidden="true" />
+                    Click a circle to explore it
+                  </motion.div>
+                )}
 
                 {/* Liquid overlay effects */}
                 <motion.div
@@ -137,6 +155,7 @@ export default function HomePage() {
                 size="sm"
                 className="w-full"
                 aria-label="Explore intimate relationship levels (5-50 people)"
+                onClick={() => exploreLevel("inner-circle")}
               >
                 Explore Intimate Bonds
               </LiquidButton>
@@ -170,6 +189,7 @@ export default function HomePage() {
                 size="sm"
                 className="w-full"
                 aria-label="Discover social relationship levels (150-1,500 people)"
+                onClick={() => exploreLevel("active-network")}
               >
                 Discover Social Circles
               </LiquidButton>
@@ -203,6 +223,7 @@ export default function HomePage() {
                 size="sm"
                 className="w-full"
                 aria-label="View extended network levels (5,000-50,000 people)"
+                onClick={() => exploreLevel("recognition-group")}
               >
                 View Extended Network
               </LiquidButton>
@@ -223,16 +244,16 @@ export default function HomePage() {
               ease: "easeInOut",
             }}
           >
-            Ready to explore your social network?
+            Ready to map your social circles?
           </motion.h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/dashboard">
               <LiquidButton
                 variant="primary"
                 size="lg"
-                aria-label="Start exploring your social network visualization"
+                aria-label="Open the dashboard and explore your network"
               >
-                Start Visualization
+                Explore Your Network
               </LiquidButton>
             </Link>
             <Link to="/onboarding">
@@ -240,14 +261,121 @@ export default function HomePage() {
                 variant="ghost"
                 size="lg"
                 className="flex items-center gap-2"
-                aria-label="Start interactive tutorial and user guide"
+                aria-label="Start the interactive tour and user guide"
               >
                 <Book className="w-4 h-4" />
-                Tutorial & Guide
+                Start Interactive Tour
               </LiquidButton>
             </Link>
           </div>
         </motion.div>
+
+        {/* The five layers */}
+        <motion.section
+          variants={itemVariants}
+          aria-labelledby="layers-heading"
+        >
+          <h2
+            id="layers-heading"
+            className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white"
+          >
+            The 5 layers of Dunbar&apos;s number
+          </h2>
+          <ul className="flex flex-wrap justify-center gap-3 text-sm">
+            {[
+              ["5", "Inner Circle"],
+              ["15", "Sympathy Group"],
+              ["50", "Affinity Group"],
+              ["150", "Active Network"],
+              ["500", "Recognition Group"],
+            ].map(([n, name]) => (
+              <li
+                key={n}
+                className="rounded-full border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60 px-4 py-2 text-gray-800 dark:text-gray-100"
+              >
+                <strong>{n}</strong> {name}
+              </li>
+            ))}
+          </ul>
+        </motion.section>
+
+        {/* How it works */}
+        <motion.section variants={itemVariants} aria-labelledby="how-heading">
+          <h2
+            id="how-heading"
+            className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white"
+          >
+            How it works
+          </h2>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-800 dark:text-gray-100">
+            {[
+              [
+                "1. List your people",
+                "Enter the people you regularly stay in touch with.",
+              ],
+              [
+                "2. See your circles",
+                "Each person lands in one of the five relationship layers.",
+              ],
+              [
+                "3. Explore connections",
+                "Click any circle to see who is in that layer.",
+              ],
+            ].map(([t, d]) => (
+              <li
+                key={t}
+                className="rounded-xl bg-white/70 dark:bg-gray-900/60 p-4 border border-gray-200 dark:border-gray-700"
+              >
+                <h3 className="font-semibold mb-1">{t}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{d}</p>
+              </li>
+            ))}
+          </ol>
+        </motion.section>
+
+        {/* FAQ */}
+        <motion.section
+          variants={itemVariants}
+          aria-labelledby="faq-heading"
+          className="max-w-3xl mx-auto w-full"
+        >
+          <h2
+            id="faq-heading"
+            className="text-2xl font-bold text-center mb-4 text-gray-900 dark:text-white"
+          >
+            Frequently asked questions
+          </h2>
+          <div className="space-y-2 text-gray-800 dark:text-gray-100">
+            {[
+              [
+                "Do I need an account?",
+                "No. You can use everything without signing in. Signing in with Google is optional and is only for cloud backup.",
+              ],
+              [
+                "Where is my data stored?",
+                "Contacts are saved in your browser's local storage, and may also be synced to the app's Firebase backend when it is available.",
+              ],
+              [
+                "Can I take my data with me?",
+                "Yes. You can download your contacts as JSON or CSV, or print a report.",
+              ],
+              [
+                "Is this based on real research?",
+                "Yes. It is based on the anthropological research of Professor Robin Dunbar (University of Oxford), who proposed that people can maintain roughly 150 meaningful relationships.",
+              ],
+            ].map(([q, a]) => (
+              <details
+                key={q}
+                className="rounded-xl bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 p-4"
+              >
+                <summary className="cursor-pointer font-medium">{q}</summary>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  {a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </motion.section>
       </motion.div>
     </PageLayout>
   );

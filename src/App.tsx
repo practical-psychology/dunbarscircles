@@ -21,6 +21,7 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
+import { Toaster } from "@/components/ui/toaster";
 import { lazy, Suspense, useState, useEffect } from "react";
 
 const liquidPageVariants = {
@@ -97,6 +98,8 @@ function AppContent() {
       <div className="fixed top-4 right-4 z-50">
         <LiquidThemeToggle />
       </div>
+
+      <Toaster />
 
       {/* Welcome Modal for first-time users */}
       <WelcomeModal />

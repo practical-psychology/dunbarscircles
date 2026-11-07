@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -389,17 +391,24 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     };
   };
 
+  const { toast } = useToast();
+
   const handleExportJSON = () => {
     const data = prepareExportData();
-    const filename = generateFilename("yakw_contacts", "json");
+    const filename = generateFilename("dunbars-circles-contacts", "json");
     exportToJSON(data, filename);
     setShowExportDialog(false);
+    toast({ title: "Export complete", description: `Saved ${filename}` });
   };
 
   const handleExportCSV = () => {
     const data = prepareExportData();
     exportToCSV(data.people, data.levels);
     setShowExportDialog(false);
+    toast({
+      title: "Export complete",
+      description: "Your CSV file was downloaded.",
+    });
   };
 
   const handlePrintReport = () => {
@@ -415,9 +424,15 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       setShowExportDialog(false);
     } catch (error) {
       console.error("Share failed:", error);
-      alert("Sharing failed. Please try again.");
+      toast({
+        title: "Sharing failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
+  const isSampleNotice = !!error && error.includes("sample data");
 
   return (
     <div className="space-y-6">
@@ -433,8 +448,26 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
         </Card>
       )}
 
-      {/* Error State */}
-      {error && (
+      {/* Sample data / error banner */}
+      {error && isSampleNotice && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
+          <CardContent className="py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                <span className="text-sm font-medium">
+                  You&apos;re viewing sample data. Replace it with your own
+                  contacts to see your real network.
+                </span>
+              </div>
+              <Button asChild size="sm">
+                <Link to="/contacts">Enter real contacts</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {error && !isSampleNotice && (
         <Card className="border-yellow-200 bg-yellow-50">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
@@ -780,9 +813,14 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                 </h3>
                 <p className="text-gray-500">
                   {contacts.length === 0
-                    ? "Import contacts from the Network page to see them here."
+                    ? "Your network is empty. Start by entering the people you regularly contact."
                     : "Try adjusting your search or filter criteria."}
                 </p>
+                {contacts.length === 0 && (
+                  <Button asChild className="mt-4">
+                    <Link to="/contacts">Enter your first contact</Link>
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

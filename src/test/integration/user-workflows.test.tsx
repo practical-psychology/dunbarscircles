@@ -663,7 +663,7 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
       }
 
       // Step 3: Visualize data
-      const networkLink = screen.queryByRole("link", { name: /network/i });
+      const networkLink = screen.queryByRole("link", { name: /network graph/i });
       if (networkLink) {
         await user.click(networkLink);
 

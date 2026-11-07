@@ -378,6 +378,7 @@ export default function PageLayout({
                   <button
                     onClick={handleGoogleSignIn}
                     disabled={authLoading}
+                    title="Optional: sign in to back up your contacts to the cloud"
                     className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs mx-auto"
                   >
                     {authLoading ? (
@@ -424,7 +425,7 @@ export default function PageLayout({
                             fill="#EA4335"
                           />
                         </svg>
-                        <span>Sign in</span>
+                        <span>Sign in (optional)</span>
                       </>
                     )}
                   </button>

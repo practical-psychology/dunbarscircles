@@ -71,7 +71,7 @@ describe("Complete User Journey Integration Tests", () => {
     // Step 1: User lands on homepage (onboarding)
     await waitFor(() => {
       const homeContent =
-        screen.queryByText(/dunbar/i) ||
+        screen.queryAllByText(/dunbar/i)[0] ||
         screen.queryByRole("main") ||
         screen.queryByText(/welcome/i);
       expect(homeContent).toBeTruthy();
@@ -84,7 +84,7 @@ describe("Complete User Journey Integration Tests", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText(/levels/i) || screen.getByText(/dunbar/i),
+          screen.getByText(/levels/i) || screen.getAllByText(/dunbar/i)[0],
         ).toBeTruthy();
       });
     }
@@ -228,7 +228,7 @@ Eve,Miller,eve@example.com,Startup Inc,Founder,01-May-2023`;
 
     // Step 6: Explore different visualizations
     // Network diagram
-    await user.click(screen.getByRole("link", { name: /network/i }));
+    await user.click(screen.getByRole("link", { name: /network graph/i }));
 
     await waitFor(() => {
       expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -423,7 +423,7 @@ Jane,Smith,Extra`;
     }
 
     // Test visualization with limited data
-    const networkLink = screen.queryByRole("link", { name: /network/i });
+    const networkLink = screen.queryByRole("link", { name: /network graph/i });
     if (networkLink) {
       // Wait for any modals/overlays to close before clicking
       await waitFor(

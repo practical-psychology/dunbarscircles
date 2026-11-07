@@ -161,8 +161,8 @@ export function NetworkDiagram({
           Interactive network diagram showing {safeLevels.length} relationship
           levels. Click on circles to select levels and view details.
           {selectedLevel
-            ? `Currently selected: ${safeLevels.find((l) => l.id === selectedLevel)?.name}`
-            : "No level selected"}
+            ? ` Currently selected: ${safeLevels.find((l) => l.id === selectedLevel)?.name}.`
+            : " Select a circle to explore that relationship tier."}
         </desc>
         {/* Liquid gradient definitions */}
         <defs>

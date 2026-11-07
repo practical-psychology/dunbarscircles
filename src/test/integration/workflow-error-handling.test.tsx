@@ -333,8 +333,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("button", { name: /visualizations/i }));
-      await user.click(await screen.findByRole("link", { name: /network/i }));
+      // Pages are lazy-loaded, so wait for the nav to render
+      await user.click(
+        await screen.findByRole("button", { name: /visualizations/i }),
+      );
+      await user.click(await screen.findByRole("link", { name: /network graph/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -372,8 +375,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("button", { name: /visualizations/i }));
-      await user.click(await screen.findByRole("link", { name: /network/i }));
+      // Pages are lazy-loaded, so wait for the nav to render
+      await user.click(
+        await screen.findByRole("button", { name: /visualizations/i }),
+      );
+      await user.click(await screen.findByRole("link", { name: /network graph/i }));
 
       await waitFor(() => {
         expect(screen.getByTestId("network-diagram")).toBeInTheDocument();
@@ -432,7 +438,7 @@ Jane,Smith,jane@example.com,Extra,Column`;
         expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
       });
 
-      const addButton = screen.queryByText(/add/i);
+      const addButton = screen.queryAllByText(/add/i)[0];
       if (addButton) {
         await user.click(addButton);
 
@@ -477,8 +483,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
       });
 
       // Navigate to visualization with large dataset
-      await user.click(screen.getByRole("button", { name: /visualizations/i }));
-      await user.click(await screen.findByRole("link", { name: /network/i }));
+      // Pages are lazy-loaded, so wait for the nav to render
+      await user.click(
+        await screen.findByRole("button", { name: /visualizations/i }),
+      );
+      await user.click(await screen.findByRole("link", { name: /network graph/i }));
 
       // Should load without crashing
       await waitFor(
@@ -549,8 +558,11 @@ Jane,Smith,jane@example.com,Extra,Column`;
         });
       });
 
-      await user.click(screen.getByRole("button", { name: /visualizations/i }));
-      await user.click(await screen.findByRole("link", { name: /network/i }));
+      // Pages are lazy-loaded, so wait for the nav to render
+      await user.click(
+        await screen.findByRole("button", { name: /visualizations/i }),
+      );
+      await user.click(await screen.findByRole("link", { name: /network graph/i }));
 
       // Should handle missing Canvas API gracefully
       await waitFor(() => {

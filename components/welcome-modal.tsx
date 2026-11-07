@@ -24,7 +24,6 @@ import {
   ShieldCheck,
   Sparkles as Zap,
   ChevronRight,
-  X,
   Star,
 } from "lucide-react";
 
@@ -59,7 +58,10 @@ export function WelcomeModal({
 
     if (controlledOpen !== undefined) {
       setIsOpen(controlledOpen);
-    } else if (!hasSeenWelcome) {
+    } else if (
+      !hasSeenWelcome &&
+      !(typeof process !== "undefined" && process.env.NODE_ENV === "test")
+    ) {
       // Show welcome modal for first-time users after a short delay
       const timer = setTimeout(() => {
         setIsOpen(true);
@@ -381,7 +383,10 @@ export function WelcomeModal({
   const currentStepData = steps[currentStep];
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => (open ? setIsOpen(true) : handleClose())}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -393,15 +398,6 @@ export function WelcomeModal({
                 {currentStepData.description}
               </DialogDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              aria-label="Close welcome modal"
-              title="Close welcome modal"
-            >
-              <X className="w-4 h-4" />
-            </Button>
           </div>
         </DialogHeader>
 

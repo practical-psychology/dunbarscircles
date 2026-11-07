@@ -446,14 +446,16 @@ export function LifeStageComparison({ levels }: LifeStageComparisonProps) {
             />
 
             {/* Life stage markers */}
-            <div className="relative h-8">
-              {lifeStages.map((stage) => (
+            <div className="relative h-14 sm:h-10">
+              {lifeStages.map((stage, index) => (
                 <div
                   key={stage.id}
                   className="absolute flex flex-col items-center cursor-pointer"
                   style={{
                     left: `${(stage.ageRange[0] / 80) * 100}%`,
-                    transform: "translateX(-50%)",
+                    transform:
+                      index === 0 ? "translateX(-8px)" : "translateX(-50%)",
+                    top: `${(index % 3) * 0.75}rem`,
                   }}
                   onClick={() => setCurrentAge([stage.ageRange[0]])}
                 >
@@ -462,7 +464,7 @@ export function LifeStageComparison({ levels }: LifeStageComparisonProps) {
                     style={{ backgroundColor: stage.color }}
                   />
                   <span
-                    className="text-xs mt-1 whitespace-nowrap"
+                    className="text-[10px] sm:text-xs mt-0.5 whitespace-nowrap"
                     style={{ color: stage.color }}
                   >
                     {stage.name}

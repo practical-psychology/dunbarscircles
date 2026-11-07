@@ -93,7 +93,9 @@ function DefaultErrorFallback({
           </div>
           <CardTitle className="text-red-900">Something went wrong</CardTitle>
           <CardDescription>
-            An unexpected error occurred while loading this component.
+            {typeof navigator !== "undefined" && !navigator.onLine
+              ? "You're offline. Your data is still saved locally in this browser."
+              : "An unexpected error occurred while loading this component."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
