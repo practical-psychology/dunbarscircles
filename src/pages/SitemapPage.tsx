@@ -19,8 +19,6 @@ const routes = [
   { path: "/lifecycle", label: "Life Stages", icon: "🔄" },
   { path: "/contacts", label: "All Contacts", icon: "👤" },
   { path: "/contacts/import", label: "Import Contacts", icon: "📥" },
-  { path: "/color-contrast-test", label: "Color Contrast Test", icon: "🎨" },
-  { path: "/firebase-test", label: "Firebase Test", icon: "🔥" },
   { path: "/evidence", label: "Evidence & Limitations", icon: "🔬" },
   { path: "/about", label: "About & Contact", icon: "ℹ️" },
   { path: "/privacy", label: "Privacy & Cookies", icon: "🔒" },

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { ContactStorageService } from "@/lib/contact-storage-service";
+import { SAMPLE_CONTACTS } from "@/lib/sample-contacts";
 import {
   Dialog,
   DialogContent,
@@ -9,22 +11,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
 import {
   Users,
-  PlayCircle,
-  Book,
   ShieldCheck,
   Sparkles as Zap,
   ChevronRight,
-  Star,
 } from "lucide-react";
 
 interface WelcomeModalProps {
@@ -38,6 +29,8 @@ export function WelcomeModal({
 }: WelcomeModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [loadingSample, setLoadingSample] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user has seen the welcome modal before
@@ -90,9 +83,19 @@ export function WelcomeModal({
     onClose?.();
   };
 
-  const handleStartTutorial = () => {
-    handleClose();
-    // Navigation will be handled by the Link component
+  const handleSampleData = async () => {
+    setLoadingSample(true);
+    try {
+      const service = ContactStorageService.getInstance();
+      for (const contact of SAMPLE_CONTACTS) {
+        await service.createContact(contact);
+      }
+      handleClose();
+      navigate("/contacts");
+    } catch (error) {
+      console.error("Failed to load sample data:", error);
+      setLoadingSample(false);
+    }
   };
 
   const handleSkip = () => {
@@ -101,281 +104,85 @@ export function WelcomeModal({
 
   const steps = [
     {
-      title: "Welcome to Dunbar's Circles",
-      description: "Your personal relationship visualization tool",
+      title: "See who's in your inner circle",
+      description: "Map the people in your life across Dunbar's five layers",
       content: (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div className="text-center">
             <motion.div
-              className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
-              animate={{
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
+              className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Users className="w-10 h-10 text-white" />
+              <Users className="w-8 h-8 text-white" aria-hidden="true" />
             </motion.div>
-            <h3 className="text-2xl font-bold mb-2">
-              See who's in your inner circle, and who's drifted out
-            </h3>
             <p className="text-muted-foreground">
-              Discover and visualize your social relationships using Robin
-              Dunbar's research
+              Based on Robin Dunbar's research: roughly 5 closest, 15 good
+              friends, 50 friends, 150 meaningful contacts and 500
+              acquaintances.
             </p>
           </div>
-
-          <div className="grid gap-4">
-            <Card className="border-blue-200 dark:border-blue-800">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Users className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Understand Your Network</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Explore the five levels of human relationships
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-green-200 dark:border-green-800">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">
-                      Interactive Visualizations
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      See your relationships in radial diagrams and network
-                      graphs
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-purple-200 dark:border-purple-800">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    <ShieldCheck className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Privacy First</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Your contacts are stored in your browser. Cloud backup
-                      happens only if you sign in.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ul className="grid gap-3">
+            <li className="flex items-start gap-3">
+              <Zap
+                className="w-5 h-5 mt-0.5 text-green-600 shrink-0"
+                aria-hidden="true"
+              />
+              <span>
+                <strong>Spot who has drifted.</strong> See the people you meant
+                to stay in touch with.
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <ShieldCheck
+                className="w-5 h-5 mt-0.5 text-purple-600 shrink-0"
+                aria-hidden="true"
+              />
+              <span>
+                <strong>Private by default.</strong> Contacts stay in your
+                browser. Cloud backup happens only if you sign in.
+              </span>
+            </li>
+          </ul>
         </div>
       ),
     },
     {
-      title: "Dunbar's Five Levels",
-      description: "Understanding the hierarchy of human relationships",
+      title: "Start your map",
+      description: "Pick how you want to begin",
       content: (
         <div className="space-y-4">
-          <p className="text-center text-muted-foreground mb-6">
-            Research shows humans can maintain stable relationships with ~150
-            people, organized in five levels:
+          <p className="text-muted-foreground">
+            Add someone you talk to often, or load ten made-up people to see how
+            the circles look. You can delete the samples at any time.
           </p>
-
-          <div className="space-y-3">
-            <motion.div
-              className="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/20"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button asChild size="lg" onClick={handleClose}>
+              <Link to="/contacts/import">
+                Add my first contact
+                <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleSampleData}
+              disabled={loadingSample}
             >
-              <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                5
-              </div>
-              <div>
-                <strong>Inner Circle</strong> - Daily contact, highest emotional
-                investment
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                15
-              </div>
-              <div>
-                <strong>Sympathy Group</strong> - Weekly contact, close friends
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                50
-              </div>
-              <div>
-                <strong>Affinity Group</strong> - Monthly contact, party
-                invitees
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/20"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                150
-              </div>
-              <div>
-                <strong>Active Network</strong> - Quarterly contact, meaningful
-                conversations
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                500
-              </div>
-              <div>
-                <strong>Recognition Group</strong> - Yearly contact, faces and
-                names
-              </div>
-            </motion.div>
+              {loadingSample ? "Loading…" : "Start with sample data"}
+            </Button>
           </div>
-        </div>
-      ),
-    },
-    {
-      title: "Ready to Explore?",
-      description: "Choose how you'd like to get started",
-      content: (
-        <div className="space-y-6">
-          <div className="text-center">
-            <motion.div
-              className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center"
-              animate={{
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
+          <p className="text-sm text-muted-foreground">
+            Prefer a guided walkthrough?{" "}
+            <Link
+              to="/onboarding"
+              onClick={handleClose}
+              className="underline underline-offset-2"
             >
-              <Star className="w-8 h-8 text-white" />
-            </motion.div>
-            <h3 className="text-xl font-bold mb-2">You're all set!</h3>
-            <p className="text-muted-foreground">
-              Choose how you'd like to begin exploring your relationships
-            </p>
-          </div>
-
-          <div className="grid gap-4">
-            <Card className="border-blue-200 dark:border-blue-800 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <PlayCircle className="w-4 h-4 text-blue-500" />
-                  Interactive Tutorial
-                  <Badge variant="secondary">Recommended</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Step-by-step guided tour of all features (10 minutes)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to="/onboarding" onClick={handleStartTutorial}>
-                  <Button className="w-full">
-                    Start Tutorial
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="border-green-200 dark:border-green-800 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Book className="w-4 h-4 text-green-500" />
-                  Quick Start Guide
-                </CardTitle>
-                <CardDescription>
-                  Essential information to get started immediately
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleClose}
-                >
-                  <a
-                    href="/docs/QUICK_START.md"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center w-full justify-center"
-                  >
-                    Read Guide
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-purple-200 dark:border-purple-800 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="w-4 h-4 text-purple-500" />
-                  Explore Freely
-                </CardTitle>
-                <CardDescription>
-                  Jump right in and discover features on your own
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={handleClose}
-                >
-                  Start Exploring
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center text-sm text-muted-foreground">
-            You can always access help and tutorials from any page using the
-            Help button
-          </div>
+              Take the 10 minute tour
+            </Link>
+            .
+          </p>
         </div>
       ),
     },
@@ -418,39 +225,47 @@ export function WelcomeModal({
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-4 border-t">
-          <div className="flex gap-2">
+          <div className="flex gap-0">
             {steps.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentStep(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentStep
-                    ? "bg-blue-500"
-                    : index < currentStep
-                      ? "bg-green-500"
-                      : "bg-gray-300 dark:bg-gray-600"
-                }`}
+                className="flex h-11 w-11 items-center justify-center"
                 aria-label={`Go to step ${index + 1} of ${steps.length}`}
                 aria-current={index === currentStep ? "step" : undefined}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  className={`block h-2.5 w-2.5 rounded-full transition-colors ${
+                    index === currentStep
+                      ? "bg-blue-600"
+                      : index < currentStep
+                        ? "bg-green-600"
+                        : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                />
+              </button>
             ))}
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-4">
             {currentStep < steps.length - 1 ? (
               <>
                 <Button variant="ghost" onClick={handleSkip}>
                   Skip
                 </Button>
-                <Button onClick={() => setCurrentStep(currentStep + 1)}>
+                <Button
+                  onClick={() => setCurrentStep(currentStep + 1)}
+                  aria-label="Next step"
+                >
                   Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
                 </Button>
               </>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                Choose an option above to continue
-              </div>
+              <Button variant="ghost" onClick={handleSkip}>
+                Skip for now
+              </Button>
             )}
           </div>
         </div>

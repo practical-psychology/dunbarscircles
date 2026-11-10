@@ -41,6 +41,7 @@ import {
   type StoredContact,
 } from "@/lib/contact-storage-service";
 import { exportToJSON } from "@/lib/export-utils";
+import { BackupPanel } from "../../components/backup-panel";
 
 export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -261,6 +262,16 @@ export default function ContactsPage() {
     } catch (error) {
       console.error("Failed to bulk move contacts:", error);
     }
+  };
+
+  const handleBackupAdd = async (contact: ContactForm): Promise<boolean> => {
+    const result = await contactStorage.createContact(contact);
+    return result.success;
+  };
+
+  const reloadContacts = async () => {
+    const result = await contactStorage.readContacts();
+    if (result.success && result.data) setContacts(result.data);
   };
 
   const handleBulkExport = (contactIds: string[]) => {
@@ -499,6 +510,16 @@ export default function ContactsPage() {
               <ContactsDashboard levels={dunbarLevels} />
             </TabsContent>
           </Tabs>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <LiquidCard>
+            <BackupPanel
+              contacts={contacts}
+              onAddContact={handleBackupAdd}
+              onImported={() => void reloadContacts()}
+            />
+          </LiquidCard>
         </motion.div>
 
         {/* Navigation Help */}

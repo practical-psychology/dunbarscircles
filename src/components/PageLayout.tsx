@@ -42,6 +42,8 @@ interface PageLayoutProps {
   children: React.ReactNode;
   title: string;
   description: string;
+  /** Optional hero subhead; defaults to the generic line. */
+  subtitle?: string;
 }
 
 const navigationItems = [
@@ -160,6 +162,7 @@ export default function PageLayout({
   children,
   title,
   description,
+  subtitle,
 }: PageLayoutProps) {
   const location = useLocation();
   usePageMeta(title, description, location.pathname);
@@ -309,8 +312,8 @@ export default function PageLayout({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Explore your relationships across different levels of intimacy and
-            frequency of contact
+            {subtitle ??
+              "Explore your relationships across different levels of intimacy and frequency of contact"}
           </motion.p>
         </motion.div>
 

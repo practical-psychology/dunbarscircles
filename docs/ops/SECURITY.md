@@ -10,7 +10,8 @@
 
 ## Open items (owner)
 
-- [ ] Secret scan of git history: `docker run --rm -v "$PWD:/repo" zricethezav/gitleaks detect -s /repo` ; rotate anything found.
+- [x] Secret scan of git history (manual `git log -S` for `AIza`, admin SDK and service-account files, 2026-11-10): the only hit is the Firebase **web** API key of the OLD project `yakw-aab4f`, committed in `.env` in 641975a and removed in 2032164. No admin SDK keys or service-account files were ever committed. GitHub secret-scanning alert #1 covers this key.
+- [ ] Close GitHub alert #1 after the old key is deleted or restricted (see docs/ops/OWNER_STEPS.md, section 1). Also run gitleaks for a second opinion.
 - [ ] Restrict the Firebase web API key by HTTP referrer (ENVIRONMENT.md).
 - [ ] Verify deployed rules: `firebase deploy --only firestore:rules` and test with the emulator.
 - [ ] Remaining `npm audit` findings are upstream (`firebase`/gRPC, `react-router`, `zod`, `esbuild` dev server). Update these packages in a separate PR, then make the CI audit step blocking.

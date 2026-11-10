@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 
 interface Level {
@@ -26,6 +26,13 @@ export function NetworkDiagram({
 }: NetworkDiagramProps) {
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
   const [focusedLevel, setFocusedLevel] = useState<string | null>(null);
+  // One-time attention pulse after first paint, skipped for reduced motion.
+  const prefersReducedMotion = useReducedMotion();
+  const [introPulse, setIntroPulse] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setIntroPulse(false), 4500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Ensure levels is a valid array with valid data
   const safeLevels = Array.isArray(levels)
@@ -376,7 +383,9 @@ export function NetworkDiagram({
               />
 
               {/* Ripple effect on hover */}
-              {(isHovered || isSelected) && (
+              {(isHovered ||
+                isSelected ||
+                (introPulse && !prefersReducedMotion && !selectedLevel)) && (
                 <motion.circle
                   cx={pos.x}
                   cy={pos.y}
@@ -416,6 +425,27 @@ export function NetworkDiagram({
           );
         })}
       </svg>
+
+      {/* Text alternative to the diagram for screen readers */}
+      <table className="sr-only">
+        <caption>Relationship levels shown in the diagram</caption>
+        <thead>
+          <tr>
+            <th scope="col">Level</th>
+            <th scope="col">Size</th>
+            <th scope="col">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {safeLevels.map((level) => (
+            <tr key={level.id}>
+              <th scope="row">{level.name}</th>
+              <td>{(level.count || 0).toLocaleString()} people</td>
+              <td>{level.description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {/* Legend with liquid styling */}
       <motion.div

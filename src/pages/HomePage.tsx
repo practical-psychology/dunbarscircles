@@ -46,6 +46,7 @@ export default function HomePage() {
     <PageLayout
       title="Overview"
       description="Interactive network diagram and relationship category overview"
+      subtitle="See who is in your inner circle and who has drifted. Place the people you know into Dunbar's five layers in minutes, free and with no account."
     >
       <motion.div
         variants={containerVariants}
@@ -148,8 +149,8 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                High emotional investment, frequent contact, and deep personal
-                connections.
+                The few people you would call at 2am. Notice who is missing
+                before it matters.
               </p>
               <LiquidButton
                 variant="primary"
@@ -183,7 +184,8 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Meaningful relationships with moderate maintenance requirements.
+                The friends and colleagues worth a message this month. See
+                who you are overdue to reach.
               </p>
               <LiquidButton
                 variant="secondary"
@@ -217,7 +219,8 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Awareness and recognition with minimal active maintenance.
+                Familiar faces and old contacts. Decide who deserves more of
+                your time and who can stay a pleasant hello.
               </p>
               <LiquidButton
                 variant="ghost"
@@ -247,31 +250,26 @@ export default function HomePage() {
           >
             Ready to map your social circles?
           </motion.h2>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             <Link
-              to="/dashboard"
-              onClick={() =>
-                trackEvent("cta_click", { cta: "explore_network" })
-              }
+              to="/contacts"
+              onClick={() => trackEvent("cta_click", { cta: "map_my_circles" })}
             >
               <LiquidButton
                 variant="primary"
                 size="lg"
-                aria-label="Open the dashboard and explore your network"
+                aria-label="Map my circles: open your contacts"
               >
-                Explore Your Network
+                Map My Circles
               </LiquidButton>
             </Link>
-            <Link to="/onboarding" onClick={() => trackEvent("start_tour")}>
-              <LiquidButton
-                variant="ghost"
-                size="lg"
-                className="flex items-center gap-2"
-                aria-label="Start the interactive tour and user guide"
-              >
-                <Book className="w-4 h-4" />
-                Start Interactive Tour
-              </LiquidButton>
+            <Link
+              to="/onboarding"
+              onClick={() => trackEvent("start_tour")}
+              className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-blue-700 underline underline-offset-2 dark:text-blue-300"
+            >
+              <Book className="w-4 h-4" aria-hidden="true" />
+              Not sure where to start? Take the 10 minute tour
             </Link>
           </div>
         </motion.div>
@@ -317,15 +315,15 @@ export default function HomePage() {
             {[
               [
                 "1. List your people",
-                "Enter the people you regularly stay in touch with.",
+                "Type in people yourself, bring them in from a file, or start with sample data.",
               ],
               [
                 "2. See your circles",
-                "Each person lands in one of the five relationship layers.",
+                "Place each person in one of five layers and see your whole network at a glance.",
               ],
               [
                 "3. Explore connections",
-                "Click any circle to see who is in that layer.",
+                "Click any circle to see who is in it, then reach out to whoever has drifted.",
               ],
             ].map(([t, d]) => (
               <li
