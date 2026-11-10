@@ -396,7 +396,8 @@ export const relationshipStrengthCalculator = {
     recommendations: string[];
   } => {
     const daysSinceContact =
-      (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+      (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
+      (1000 * 60 * 60 * 24);
     const currentStrength = relationshipStrengthCalculator.calculateDecay(
       contact.strength,
       daysSinceContact,

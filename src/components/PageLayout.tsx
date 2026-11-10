@@ -58,12 +58,111 @@ const visualizationItems = [
   { path: "/digital", label: "Digital", icon: Smartphone },
 ];
 
+const SITE = "https://dunbarscircles.com";
+const PRIVATE_PATHS = [
+  "/dashboard",
+  "/contacts",
+  "/color-contrast-test",
+  "/firebase-test",
+];
+
+function upsertMeta(
+  selector: string,
+  create: () => HTMLElement,
+  attr: string,
+  value: string,
+) {
+  let el = document.head.querySelector<HTMLElement>(selector);
+  if (!el) {
+    el = create();
+    document.head.appendChild(el);
+  }
+  el.setAttribute(attr, value);
+}
+
+/** Per-route title, description, canonical and robots (WEB-029, WEB-018). */
+function usePageMeta(title: string, description: string, pathname: string) {
+  useEffect(() => {
+    const isHome = pathname === "/";
+    document.title = isHome
+      ? "Dunbar's Circles | Visualize Your Social Relationships & Network"
+      : `${title} | Dunbar's Circles`;
+    const url = SITE + (isHome ? "/" : pathname.replace(/\/$/, ""));
+    const set = (
+      sel: string,
+      make: () => HTMLElement,
+      attr: string,
+      v: string,
+    ) => upsertMeta(sel, make, attr, v);
+    const meta = (key: "name" | "property", name: string) => () => {
+      const m = document.createElement("meta");
+      m.setAttribute(key, name);
+      return m;
+    };
+    if (!isHome) {
+      set(
+        'meta[name="description"]',
+        meta("name", "description"),
+        "content",
+        description,
+      );
+      set(
+        'meta[property="og:title"]',
+        meta("property", "og:title"),
+        "content",
+        `${title} | Dunbar's Circles`,
+      );
+      set(
+        'meta[property="og:description"]',
+        meta("property", "og:description"),
+        "content",
+        description,
+      );
+      set(
+        'meta[name="twitter:title"]',
+        meta("name", "twitter:title"),
+        "content",
+        `${title} | Dunbar's Circles`,
+      );
+      set(
+        'meta[name="twitter:description"]',
+        meta("name", "twitter:description"),
+        "content",
+        description,
+      );
+    }
+    set('meta[property="og:url"]', meta("property", "og:url"), "content", url);
+    set(
+      'link[rel="canonical"]',
+      () => {
+        const l = document.createElement("link");
+        l.rel = "canonical";
+        return l;
+      },
+      "href",
+      url,
+    );
+    // Keep private app screens and preview/local builds out of search indexes.
+    const host = window.location.hostname;
+    const isPreview = host === "localhost" || host.includes("--");
+    const noindex =
+      isPreview || PRIVATE_PATHS.some((p) => pathname.startsWith(p));
+    set(
+      'meta[name="robots"]',
+      meta("name", "robots"),
+      "content",
+      noindex ? "noindex, nofollow" : "index, follow",
+    );
+  }, [title, description, pathname]);
+}
+
 export default function PageLayout({
   children,
   title,
   description,
 }: PageLayoutProps) {
   const location = useLocation();
+  usePageMeta(title, description, location.pathname);
   const [vizOpen, setVizOpen] = useState(false);
   const vizMenuRef = useRef<HTMLDivElement>(null);
 
@@ -506,6 +605,31 @@ export default function PageLayout({
             >
               Tutorial &amp; Guide
             </Link>
+            <Link
+              to="/evidence"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Evidence &amp; limits
+            </Link>
+            <Link
+              to="/about"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              About &amp; contact
+            </Link>
+            <Link
+              to="/privacy"
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Privacy
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("dc:open-consent"))}
+              className="underline hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Privacy choices
+            </button>
             <Link
               to="/sitemap"
               className="underline hover:text-blue-600 dark:hover:text-blue-400"

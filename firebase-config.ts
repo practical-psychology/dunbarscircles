@@ -12,7 +12,7 @@ export const firebaseConfig = {
 
 // Initialize Firebase
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { getAnalytics, type Analytics } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
 
@@ -77,16 +77,7 @@ const initializeFirebase = () => {
       auth = null;
     }
 
-    // Initialize Analytics only in browser environment
-    if (typeof window !== "undefined" && firebaseConfig.measurementId) {
-      try {
-        analytics = getAnalytics(app);
-        console.log("✅ Firebase Analytics initialized");
-      } catch (analyticsError) {
-        console.warn("⚠️ Failed to initialize Analytics:", analyticsError);
-        analytics = null;
-      }
-    }
+    // Analytics is initialised lazily and only after consent (see lib/analytics.ts)
 
     isInitialized = true;
     console.log("🚀 Firebase initialization complete");

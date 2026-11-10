@@ -211,7 +211,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
 
   const getRelationshipHealth = (contact: StoredContact) => {
     const daysSinceContact =
-      (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+      (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
+      (1000 * 60 * 60 * 24);
     const isDecaying = daysSinceContact > contact.contactFrequency * 1.5;
     return { daysSinceContact: Math.floor(daysSinceContact), isDecaying };
   };
@@ -372,7 +373,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     if (contacts.length === 0) return 0;
     const healthyContacts = contacts.filter((contact) => {
       const daysSinceContact =
-        (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+        (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
+        (1000 * 60 * 60 * 24);
       return daysSinceContact <= contact.contactFrequency * 1.5;
     });
     return (healthyContacts.length / contacts.length) * 100;

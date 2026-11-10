@@ -587,7 +587,10 @@ export function ContactList({
                             <div className="flex items-center gap-1 text-sm">
                               <Calendar className="w-3 h-3" />
                               {Math.floor(
-                                (Date.now() - contact.lastContact.getTime()) /
+                                (Date.now() -
+                                  (
+                                    contact.lastContact ?? new Date()
+                                  ).getTime()) /
                                   (1000 * 60 * 60 * 24),
                               )}
                               d ago

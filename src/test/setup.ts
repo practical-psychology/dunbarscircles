@@ -431,6 +431,8 @@ vi.mock("@/lib/auth-utils", () => ({
       firebaseMocks.googleAuthProvider,
     );
   }),
+  signInWithGoogleRedirect: vi.fn(async () => undefined),
+  handleRedirectResult: vi.fn(async () => null),
   signOut: vi.fn(async () => {
     return await firebaseMocks.signOut(firebaseMocks.auth);
   }),

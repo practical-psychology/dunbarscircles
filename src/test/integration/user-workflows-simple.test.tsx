@@ -351,13 +351,6 @@ Jane,Smith,jane.smith@example.com,Tech Inc,Product Manager,15-Feb-2023`;
 
   describe("Authentication Workflow", () => {
     it("should complete authentication workflow: sign-in → dashboard → data persistence → sign-out", async () => {
-      const mockUser = {
-        uid: "test-uid",
-        email: "test@example.com",
-        displayName: "Test User",
-        photoURL: "https://example.com/photo.jpg",
-      };
-
       render(<DashboardPage />);
 
       // Wait for dashboard to load (DashboardPage doesn't render FirebaseStatus, so we check for contact-manager instead)

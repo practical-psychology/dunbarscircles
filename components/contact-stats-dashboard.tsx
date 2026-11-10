@@ -68,7 +68,8 @@ export function ContactStatsDashboard({
       // Calculate health metrics
       const healthyContacts = levelContacts.filter((contact) => {
         const daysSinceContact =
-          (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+          (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
+          (1000 * 60 * 60 * 24);
         return daysSinceContact <= contact.contactFrequency * 1.5;
       }).length;
 
@@ -103,7 +104,8 @@ export function ContactStatsDashboard({
     // Calculate network health (percentage of contacts that are not overdue)
     const healthyContacts = contacts.filter((contact) => {
       const daysSinceContact =
-        (Date.now() - contact.lastContact.getTime()) / (1000 * 60 * 60 * 24);
+        (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
+        (1000 * 60 * 60 * 24);
       return daysSinceContact <= contact.contactFrequency * 1.5;
     }).length;
     const networkHealth =

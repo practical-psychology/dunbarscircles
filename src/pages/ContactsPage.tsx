@@ -454,7 +454,7 @@ export default function ContactsPage() {
             <div className="flex justify-between items-center w-full gap-4">
               <TabsList className="grid grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="contacts">All Contacts</TabsTrigger>
+                <TabsTrigger value="list">All Contacts</TabsTrigger>
               </TabsList>
               <Button
                 onClick={handleSaveToCloud}

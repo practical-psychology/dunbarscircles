@@ -25,7 +25,6 @@ serviceAccount*.json
 *.sln
 *.sw?
 .vite
-package-lock.json
 *.tsbuildinfo
 screenshots
 .env
@@ -38,3 +37,5 @@ screenshots
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.md
 firebase-debug.log
+
+/coverage
