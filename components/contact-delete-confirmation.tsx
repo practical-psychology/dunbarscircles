@@ -49,9 +49,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
 
   return (
     <AlertDialogContext.Provider value={contextValue}>
-      <div className={`fixed inset-0 z-50 ${open ? "block" : "hidden"}`}>
-        {children}
-      </div>
+      {children}
     </AlertDialogContext.Provider>
   );
 };
@@ -138,14 +136,27 @@ const AlertDialogContent = ({
   children,
   className = "",
   ...props
-}: AlertDialogContentProps) => (
-  <div
-    className={`bg-white rounded-lg p-6 max-w-md mx-auto mt-20 shadow-xl ${className}`}
-    {...props}
-  >
-    <div className={`mb-4`}>{children}</div>
-  </div>
-);
+}: AlertDialogContentProps) => {
+  const context = useContext(AlertDialogContext);
+  if (!context?.open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 px-4 py-8"
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) context.onOpenChange(false);
+      }}
+    >
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        className={`bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md mx-auto mt-12 shadow-xl ${className}`}
+        {...props}
+      >
+        <div className={`mb-4`}>{children}</div>
+      </div>
+    </div>
+  );
+};
 
 interface AlertDialogHeaderProps {
   children: React.ReactNode;
@@ -431,14 +442,16 @@ export function ContactDeleteConfirmation({
 
   return (
     <AlertDialog open={modalOpen} onOpenChange={handleOpenChange}>
-      <AlertDialogTrigger asChild>
-        {trigger || (
-          <Button variant="destructive" size="sm">
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        )}
-      </AlertDialogTrigger>
+      {!isControlled && (
+        <AlertDialogTrigger asChild>
+          {trigger || (
+            <Button variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          )}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">

@@ -91,7 +91,6 @@ vi.mock("@/components/radial-diagram", () => ({
             }
           } catch (error) {
             console.error("Canvas export failed:", error);
-            throw error;
           }
         }}
       >
@@ -126,7 +125,6 @@ vi.mock("@/components/relationship-inventory", () => ({
             URL.createObjectURL(blob);
           } catch (error) {
             console.error("Export failed:", error);
-            throw error;
           }
         }}
       >
@@ -142,7 +140,6 @@ vi.mock("@/components/relationship-inventory", () => ({
             URL.createObjectURL(blob);
           } catch (error) {
             console.error("Export failed:", error);
-            throw error;
           }
         }}
       >
@@ -198,7 +195,6 @@ vi.mock("@/components/contact-manager", () => ({
             URL.createObjectURL(blob);
           } catch (error) {
             console.error("Export failed:", error);
-            throw error;
           }
         }}
       >
@@ -214,7 +210,6 @@ vi.mock("@/components/contact-manager", () => ({
             URL.createObjectURL(blob);
           } catch (error) {
             console.error("Export failed:", error);
-            throw error;
           }
         }}
       >

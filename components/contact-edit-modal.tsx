@@ -72,17 +72,17 @@ export function ContactEditModal({
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       {trigger ? (
         <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
-      ) : (
+      ) : isOpen === undefined ? (
         <Dialog.Trigger asChild>
           <Button variant="ghost" size="icon" disabled={isLoading}>
             <Edit className="h-4 w-4" />
           </Button>
         </Dialog.Trigger>
-      )}
+      ) : null}
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-6 shadow-lg">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-lg border bg-white p-6 shadow-xl focus:outline-none dark:bg-gray-900">
           <div className="flex flex-col space-y-1.5 text-center sm:text-left">
             <Dialog.Title className="text-lg font-semibold leading-none tracking-tight">
               {contact ? "Edit Contact" : "Add New Contact"}

@@ -80,6 +80,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     byLevel: {} as Record<string, number>,
   });
   const [, setDataSource] = useState<string>("loading");
+  const [deletingContact, setDeletingContact] = useState<StoredContact | null>(
+    null,
+  );
   const [editingContact, setEditingContact] = useState<StoredContact | null>(
     null,
   );
@@ -287,9 +290,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       }
     } catch (err) {
       console.error("Delete failed:", err);
-      alert(
-        `Failed to delete contact: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
+      throw err;
     }
   };
 
@@ -879,7 +880,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                           {contact.source}
                         </Badge>
 
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
@@ -911,41 +912,18 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                                 Move to {lvl.name}
                               </DropdownMenuItem>
                             ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeletingContact(contact)}
+                              className="text-red-600 focus:text-red-700"
+                              data-testid="delete-contact"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Contact
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <ContactDeleteConfirmation
-                          contact={{
-                            id: contact.firestoreId || contact.id,
-                            name: contact.name,
-                            levelId: contact.levelId,
-                            platform: contact.platform,
-                            lastContact: contact.lastContact,
-                            strength: contact.strength,
-                          }}
-                          onDelete={async (contactId) => {
-                            // Map back to the full contact by id
-                            const full = contacts.find(
-                              (c) =>
-                                c.firestoreId === contactId ||
-                                c.id === contactId,
-                            );
-                            if (full) {
-                              await handleContactDelete(full);
-                            }
-                          }}
-                          trigger={
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              aria-label={`Delete ${contact.name}`}
-                              className="text-red-600 hover:text-red-700"
-                              title={`Delete ${contact.name}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          }
-                        />
                       </div>
                     </div>
                   );
@@ -954,6 +932,26 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {deletingContact && (
+        <ContactDeleteConfirmation
+          contact={{
+            id: deletingContact.firestoreId || deletingContact.id,
+            name: deletingContact.name,
+            levelId: deletingContact.levelId,
+            platform: deletingContact.platform,
+            lastContact: deletingContact.lastContact,
+            strength: deletingContact.strength,
+          }}
+          isOpen={!!deletingContact}
+          onOpenChange={(open) => {
+            if (!open) setDeletingContact(null);
+          }}
+          onDelete={async () => {
+            await handleContactDelete(deletingContact);
+          }}
+        />
       )}
 
       {editingContact && (

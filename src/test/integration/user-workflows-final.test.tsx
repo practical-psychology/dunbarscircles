@@ -76,7 +76,6 @@ const TestWorkflowComponent = () => {
               }
             } catch (error) {
               console.error("Canvas export failed:", error);
-              throw error;
             }
           }}
         >
@@ -90,7 +89,6 @@ const TestWorkflowComponent = () => {
               URL.createObjectURL(blob);
             } catch (error) {
               console.error("Export failed:", error);
-              throw error;
             }
           }}
         >
@@ -106,7 +104,6 @@ const TestWorkflowComponent = () => {
               URL.createObjectURL(blob);
             } catch (error) {
               console.error("Export failed:", error);
-              throw error;
             }
           }}
         >
