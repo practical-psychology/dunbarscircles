@@ -40,8 +40,7 @@ import {
 import { Facebook, Linkedin } from "./brand-icons";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
 import type { StoredContact } from "@/lib/contact-storage";
-import { auth } from "@/firebase-config";
-import { testFirebaseConnection, addTestContact } from "@/lib/firebase-test";
+import { getSyncState, isSignedIn, pushNow } from "@/lib/cloud-sync";
 import {
   exportToJSON,
   exportToCSV,
@@ -75,6 +74,21 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [backup, setBackup] = useState(() => ({
+    signedIn: isSignedIn(),
+    ...getSyncState(),
+  }));
+
+  // Cloud backup status is owned by lib/cloud-sync; poll it cheaply.
+  useEffect(() => {
+    const read = () => setBackup({ signedIn: isSignedIn(), ...getSyncState() });
+    const t = setInterval(read, 2000);
+    window.addEventListener(CONTACTS_CHANGED_EVENT, read);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener(CONTACTS_CHANGED_EVENT, read);
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [stats, setStats] = useState({
@@ -321,12 +335,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       )
     ) {
       try {
-        const userId = auth?.currentUser?.uid;
-        if (userId) {
-          await EnhancedContactStorage.clearAllContacts(
-            `CONFIRM_DELETE_${userId}`,
-          );
-        }
+        // Clears this browser; when signed in, cloud-sync removes the
+        // cloud copy as well.
+        await EnhancedContactStorage.clearAllContacts("CLEAR_ALL_CONTACTS");
         setContacts([]);
         setStats({
           total: 0,
@@ -367,25 +378,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
       });
     } catch (error) {
       console.error("Failed to refresh contacts:", error);
-      setError("Failed to refresh contacts from Firebase");
+      setError("Failed to refresh contacts");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const testFirebase = async () => {
-    try {
-      const isConnected = await testFirebaseConnection();
-      if (isConnected) {
-        await addTestContact();
-        await refreshContacts();
-        alert("Firebase test successful! Added a test contact.");
-      } else {
-        alert("Firebase connection test failed. Check console for details.");
-      }
-    } catch (error) {
-      console.error("Firebase test error:", error);
-      alert("Firebase test failed. Check console for details.");
     }
   };
 
@@ -466,7 +461,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
           <CardContent className="flex items-center justify-center py-8">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span>Loading contacts from Firebase...</span>
+              <span>Loading contacts...</span>
             </div>
           </CardContent>
         </Card>
@@ -507,20 +502,38 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
         </Card>
       )}
 
-      {/* Firebase Status */}
-      {!loading && !error && contacts.length > 0 && (
-        <Card className="border-green-200 bg-green-50">
+      {/* Storage and backup status (truthful, from lib/cloud-sync) */}
+      {!loading && !error && (
+        <Card
+          className={
+            backup.signedIn && backup.state === "error"
+              ? "border-amber-200 bg-amber-50 dark:bg-amber-950"
+              : "border-green-200 bg-green-50 dark:bg-green-950"
+          }
+        >
           <CardContent className="py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-green-700">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Connected to Firebase</span>
+            <div
+              className="flex flex-wrap items-center justify-between gap-2"
+              role="status"
+              data-testid="backup-status"
+            >
+              <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <span className="text-sm">
+                  {!backup.signedIn
+                    ? "Saved in this browser. Sign in for optional cloud backup."
+                    : backup.state === "syncing"
+                      ? "Saved in this browser. Backing up to your account…"
+                      : backup.state === "error"
+                        ? "Saved in this browser. Cloud backup failed; it will retry."
+                        : "Saved in this browser and backed up to your account."}
+                </span>
               </div>
               <Badge
                 variant="secondary"
-                className="text-xs bg-green-100 text-green-700"
+                className="text-xs bg-green-100 text-green-800"
               >
-                Cloud Storage Active
+                {backup.signedIn ? "Cloud backup on" : "Local only"}
               </Badge>
             </div>
           </CardContent>
@@ -668,8 +681,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     variant="outline"
                     onClick={refreshContacts}
                     disabled={loading}
-                    aria-label="Refresh contacts from Firebase"
-                    title="Refresh contacts from Firebase"
+                    aria-label="Reload contacts"
+                    title="Reload contacts"
                   >
                     <RefreshCw
                       className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
@@ -772,35 +785,36 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                     onClick={async () => {
                       try {
                         setLoading(true);
-                        await EnhancedContactStorage.saveContacts(contacts);
-                        setError(null);
-                        alert("Successfully saved all contacts to Firebase!");
-                      } catch (error) {
-                        console.error("Failed to save to Firebase:", error);
-                        alert(
-                          "Failed to save contacts to Firebase. Check console for details.",
-                        );
+                        const r = await pushNow();
+                        notify.success("Backed up to your account", {
+                          description: `${r.upserted} contacts in the cloud copy.`,
+                        });
+                      } catch (err) {
+                        notify.error("Cloud backup failed", {
+                          description:
+                            err instanceof Error
+                              ? err.message
+                              : "Please try again.",
+                        });
                       } finally {
                         setLoading(false);
+                        setBackup({
+                          signedIn: isSignedIn(),
+                          ...getSyncState(),
+                        });
                       }
                     }}
-                    disabled={contacts.length === 0 || loading}
-                    className="text-green-600 hover:text-green-700"
-                    aria-label={`Save ${contacts.length} contacts to Firebase cloud storage`}
-                    title="Save all contacts to Firebase"
+                    disabled={!backup.signedIn || loading}
+                    className="text-green-700 hover:text-green-800"
+                    aria-label="Back up all contacts to your account now"
+                    title={
+                      backup.signedIn
+                        ? "Back up all contacts to your account now"
+                        : "Sign in to use cloud backup"
+                    }
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Save to Firebase
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={testFirebase}
-                    disabled={loading}
-                    className="text-blue-600 hover:text-blue-700"
-                    aria-label="Test Firebase connection and add sample contact"
-                    title="Test Firebase connection"
-                  >
-                    Test Firebase
+                    Back up now
                   </Button>
                   <Button
                     variant="outline"

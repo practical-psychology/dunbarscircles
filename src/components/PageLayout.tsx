@@ -63,12 +63,7 @@ const visualizationItems = [
 ];
 
 const SITE = "https://dunbarscircles.com";
-const PRIVATE_PATHS = [
-  "/dashboard",
-  "/contacts",
-  "/color-contrast-test",
-  "/firebase-test",
-];
+const PRIVATE_PATHS = ["/dashboard", "/contacts", "/color-contrast-test"];
 
 function upsertMeta(
   selector: string,

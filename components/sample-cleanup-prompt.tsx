@@ -23,7 +23,9 @@ const storage = async () =>
     await import("@/lib/contact-storage-service")
   ).ContactStorageService.getInstance();
 
-export const CONTACTS_CHANGED_EVENT = "dc:contacts-changed";
+import { CONTACTS_CHANGED_EVENT } from "@/lib/contact-events";
+
+export { CONTACTS_CHANGED_EVENT };
 
 /**
  * After the first real contact is saved, offer once to remove the sample

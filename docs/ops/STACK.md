@@ -19,15 +19,15 @@ Recorded 2026-11-10 from `package-lock.json`, config files and the live site.
 
 ## Data and services
 
-| Concern         | Choice                                        | Notes                                                            |
-| --------------- | --------------------------------------------- | ---------------------------------------------------------------- |
-| Primary storage | Browser `localStorage` key `yakw_contacts`    | Shared by `ContactStorageService` and `EnhancedContactStorage`   |
-| Optional backup | Cloud Firestore (`user_contacts`, `contacts`) | Only after Google sign-in; owner-only rules in `firestore.rules` |
-| Auth            | Firebase Authentication, Google provider      | Loaded on idle, not on first paint                               |
-| Analytics       | Google Analytics for Firebase                 | Loaded only after consent; DNT/GPC honoured                      |
-| Firebase SDK    | firebase 12.19.0                              | own chunk `firebase-*.js` (~186 kB gzip), lazy                   |
-| Hosting         | Firebase Hosting, project `dunbarscircles`    | DEPLOYMENT_DECISION.md                                           |
-| Domain          | `dunbarscircles.com` at Namecheap             | DOMAIN_AND_DNS.md                                                |
+| Concern         | Choice                                     | Notes                                                                 |
+| --------------- | ------------------------------------------ | --------------------------------------------------------------------- |
+| Primary storage | Browser `localStorage` key `yakw_contacts` | Shared by `ContactStorageService` and `EnhancedContactStorage`        |
+| Optional backup | Cloud Firestore `user_contacts`            | Mirror of the browser store via `lib/cloud-sync.ts`; owner-only rules |
+| Auth            | Firebase Authentication, Google provider   | Loaded on idle, not on first paint                                    |
+| Analytics       | Google Analytics for Firebase              | Loaded only after consent; DNT/GPC honoured                           |
+| Firebase SDK    | firebase 12.19.0                           | own chunk `firebase-*.js` (~186 kB gzip), lazy                        |
+| Hosting         | Firebase Hosting, project `dunbarscircles` | DEPLOYMENT_DECISION.md                                                |
+| Domain          | `dunbarscircles.com` at Namecheap          | DOMAIN_AND_DNS.md                                                     |
 
 ## Tooling and CI
 
@@ -48,6 +48,6 @@ Client-rendered single-page app. Titles, descriptions, Open Graph, canonical and
 
 ## Known structural debt
 
-- Two storage services and two Firestore collections for the same data (see DATA_FLOWS.md "Known gap").
+- Two browser-store services (`ContactStorageService`, `EnhancedContactStorage`) over the same key; Firestore access is now only in `lib/cloud-sync.ts`.
 - `data/dunbarLevels.ts` duplicates `src/data/dunbarLevels.ts`; edit both until one is removed.
 - Several unused components (`contact-form-demo.tsx`, `LiquidShowcase.tsx`, `contact-storage-simple.ts`) are still in the repo.

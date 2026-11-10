@@ -10,7 +10,6 @@ const NetworkPage = lazy(() => import("./pages/NetworkPage"));
 const DigitalPage = lazy(() => import("./pages/DigitalPage"));
 const LifecyclePage = lazy(() => import("./pages/LifecyclePage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const FirebaseTestPage = lazy(() => import("./pages/FirebaseTestPage"));
 const SitemapPage = lazy(() => import("./pages/SitemapPage"));
 const ContactsPage = lazy(() => import("./pages/ContactsPage"));
 const ContactEditPage = lazy(() => import("./pages/ContactEditPage"));
@@ -130,8 +129,6 @@ function AppContent() {
                     path="/color-contrast-test"
                     element={<ColorContrastTestPage />}
                   />
-
-                  <Route path="/firebase-test" element={<FirebaseTestPage />} />
                 </>
               )}
               <Route path="/sitemap" element={<SitemapPage />} />

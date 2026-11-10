@@ -21,11 +21,16 @@ npx firebase-tools@latest login:ci
 
 Copy the printed token, then GitHub repo, Settings, Secrets and variables, Actions: add `FIREBASE_TOKEN`. Also add the `VITE_FIREBASE_*` secrets listed in ENVIRONMENT.md. Create the `production` and `preview` environments (Settings, Environments); add required reviewers to `production` if you want a manual gate. After this, merges to `main` deploy and pull requests get a 7-day preview.
 
-## 3. Deploy Firestore rules to the live project
+## 3. Deploy Firestore rules to the live project (together with the app)
+
+The rules now require the new document ids written by `lib/cloud-sync.ts`. Deploy the rules in the same release as the hosting change that introduced it, so the old app and new rules never meet:
 
 ```bash
-npx firebase-tools@latest deploy --only firestore:rules --project dunbarscircles
+npm run build
+npx firebase-tools@latest deploy --only hosting,firestore:rules --project dunbarscircles
 ```
+
+If only the rules go out first, the old live app's cloud writes are refused (contacts stay safe in the browser). Existing documents in the retired `contacts` collection migrate automatically when each user next signs in.
 
 ## 4. Domain, DNS and registrar
 

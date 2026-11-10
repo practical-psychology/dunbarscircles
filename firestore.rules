@@ -1,9 +1,11 @@
 rules_version = '2';
 
+// Contacts live in ONE collection, `user_contacts`, written only by
+// lib/cloud-sync.ts. Document id = "<uid>_<contactId>". See
+// docs/ops/DATA_FLOWS.md. Tests: tests/firestore/rules.test.mjs.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // A document belongs to the signed-in user who created it.
     function isSignedIn() {
       return request.auth != null;
     }
@@ -16,19 +18,34 @@ service cloud.firestore {
       return isSignedIn() && request.resource.data.userId == request.auth.uid;
     }
 
-    // Contacts synced from the app (only written when the user is signed in).
-    match /user_contacts/{contactId} {
-      allow read, delete: if ownsExisting();
-      allow create: if ownsIncoming();
-      // Owners may edit, but may never reassign a document to someone else.
-      allow update: if ownsExisting() && ownsIncoming();
+    // Deterministic id owned by the caller, so one contact = one document.
+    function ownDocId(docId) {
+      return docId.matches(request.auth.uid + '_.+');
     }
 
-    // Legacy collection, same ownership rules.
-    match /contacts/{contactId} {
+    function validContact() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['id', 'userId', 'name', 'levelId'])
+        && d.id is string && d.id.size() > 0 && d.id.size() <= 200
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.levelId is string && d.levelId.size() <= 64
+        && request.resource.size() < 50000;
+    }
+
+    match /user_contacts/{docId} {
       allow read, delete: if ownsExisting();
-      allow create: if ownsIncoming();
-      allow update: if ownsExisting() && ownsIncoming();
+      allow create: if ownsIncoming() && ownDocId(docId) && validContact();
+      // Owners may edit, but may never reassign a document to someone else.
+      allow update: if ownsExisting() && ownsIncoming() && ownDocId(docId)
+        && validContact();
+    }
+
+    // Retired collection (before 2026-11-10). Owners may read their old
+    // documents so cloud-sync can migrate them, and delete them afterwards.
+    // Nothing new is ever written here.
+    match /contacts/{docId} {
+      allow read, delete: if ownsExisting();
+      allow create, update: if false;
     }
 
     // Everything else is closed.

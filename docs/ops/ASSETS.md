@@ -31,6 +31,6 @@ No web fonts are shipped. The site uses the visitor's system font stack (`system
 
 React, React Router, Radix UI, framer-motion, sonner, date-fns, zod (MIT); Firebase JS SDK (Apache-2.0); lucide-react (ISC). Licences are preserved in `node_modules`; none require attribution in the UI.
 
-## Open point (owner)
+## Project licence
 
-The repository has no `LICENSE` file, while AboutPage says code is published "under the license file found there". Either add a LICENSE (for example MIT) or change the About page wording.
+Code: MIT (`LICENSE`, added 2026-11-10; About page links to it). Copyright holder: "practical-psychology contributors". Change the holder line in `LICENSE` if the code should be owned by a named person or company.
