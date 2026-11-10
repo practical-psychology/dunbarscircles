@@ -25,6 +25,7 @@ import { Facebook, Linkedin } from "../../components/brand-icons";
 
 import type { StoredContact } from "@/lib/contact-storage-service";
 import { ContactStorageService } from "@/lib/contact-storage-service";
+import { trackEvent } from "@/lib/analytics";
 
 interface ImportStats {
   total: number;
@@ -378,6 +379,11 @@ export default function ContactImportPage() {
 
       setImportProgress(100);
       setImportComplete(true);
+      trackEvent("import_contacts", {
+        format: (
+          selectedFile?.name.split(".").pop() ?? "unknown"
+        ).toLowerCase(),
+      });
 
       // Navigate to contacts page after a delay
       setTimeout(() => {

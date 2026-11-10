@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { Person, Level } from "../src/types/relationships";
+import { VALENCES, ATTACHMENTS } from "./relationship-traits";
+import type { Valence, Attachment } from "./relationship-traits";
 
 // Core contact interfaces extending the existing Person type
 export interface Contact extends Person {
@@ -7,6 +9,8 @@ export interface Contact extends Person {
   phone?: string;
   notes?: string;
   tags?: string[];
+  valence?: Valence;
+  attachment?: Attachment;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +25,8 @@ export interface ContactForm {
   tags?: string[];
   contactFrequency: number;
   strength: number;
+  valence?: Valence;
+  attachment?: Attachment;
 }
 
 export interface ContactUpdate {
@@ -34,6 +40,8 @@ export interface ContactUpdate {
   tags?: string[];
   contactFrequency?: number;
   strength?: number;
+  valence?: Valence;
+  attachment?: Attachment;
   lastContact?: Date;
 }
 
@@ -80,6 +88,9 @@ export const contactFormSchema = z.object({
     .number()
     .min(0, "Relationship strength must be between 0 and 1")
     .max(1, "Relationship strength must be between 0 and 1"),
+
+  valence: z.enum(VALENCES).optional(),
+  attachment: z.enum(ATTACHMENTS).optional(),
 });
 
 export const contactUpdateSchema = z.object({
@@ -128,6 +139,9 @@ export const contactUpdateSchema = z.object({
     .min(0, "Relationship strength must be between 0 and 1")
     .max(1, "Relationship strength must be between 0 and 1")
     .optional(),
+
+  valence: z.enum(VALENCES).optional(),
+  attachment: z.enum(ATTACHMENTS).optional(),
 
   lastContact: z.date().optional(),
 });

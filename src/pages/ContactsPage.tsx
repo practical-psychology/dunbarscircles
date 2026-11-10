@@ -41,6 +41,8 @@ import {
   type StoredContact,
 } from "@/lib/contact-storage-service";
 import { exportToJSON } from "@/lib/export-utils";
+import { RelationshipTraitsSummary } from "@/components/relationship-traits-summary";
+import { trackEvent } from "@/lib/analytics";
 import { BackupPanel } from "../../components/backup-panel";
 
 export default function ContactsPage() {
@@ -85,6 +87,17 @@ export default function ContactsPage() {
         const result = await contactStorage.readContacts();
         if (result.success && result.data) {
           setContacts(result.data);
+          if (
+            result.data.length > 0 &&
+            !sessionStorage.getItem("dc.first_map")
+          ) {
+            try {
+              sessionStorage.setItem("dc.first_map", "1");
+            } catch {
+              /* ignore */
+            }
+            trackEvent("first_map");
+          }
         } else {
           console.error("Failed to load contacts:", result.error);
           setContacts([]);
@@ -149,6 +162,8 @@ export default function ContactsPage() {
         platform: data.platform,
         contactFrequency: data.contactFrequency,
         strength: data.strength,
+        valence: data.valence,
+        attachment: data.attachment,
         tags: data.tags,
       };
 
@@ -480,7 +495,7 @@ export default function ContactsPage() {
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    Save to Cloud
+                    Optional cloud backup
                   </>
                 )}
               </Button>
@@ -514,6 +529,7 @@ export default function ContactsPage() {
 
         <motion.div variants={itemVariants}>
           <LiquidCard>
+            <RelationshipTraitsSummary contacts={contacts} />
             <BackupPanel
               contacts={contacts}
               onAddContact={handleBackupAdd}

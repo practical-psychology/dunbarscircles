@@ -31,6 +31,8 @@ export interface StoredContact extends Person {
   syncStatus?: "synced" | "pending" | "error";
   lastSyncAt?: Date;
   tags?: string[];
+  valence?: "positive" | "neutral" | "negative" | "mixed";
+  attachment?: "secure" | "anxious" | "avoidant" | "unsure";
   x?: number;
   y?: number;
   vx?: number;

@@ -15,7 +15,9 @@ export type AnalyticsEvent =
   | "import_contacts"
   | "export_data"
   | "sign_in"
-  | "view_evidence";
+  | "view_evidence"
+  | "first_map"
+  | "share_click";
 
 export type ConsentState = "granted" | "denied" | "unset";
 

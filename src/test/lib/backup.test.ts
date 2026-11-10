@@ -81,7 +81,11 @@ describe("backup", () => {
   it("reports invalid entries without failing the whole import", () => {
     const file = {
       ...buildBackup(stored),
-      contacts: [{ name: "", levelId: "inner-circle" }, { name: "X", levelId: "nope" }, ...buildBackup(stored).contacts],
+      contacts: [
+        { name: "", levelId: "inner-circle" },
+        { name: "X", levelId: "nope" },
+        ...buildBackup(stored).contacts,
+      ],
     };
     const preview = previewImport(file as any, [], LEVELS);
     expect(preview.invalid).toHaveLength(2);
@@ -97,5 +101,25 @@ describe("backup", () => {
     expect(
       parseBackup('{"app":"dunbarscircles","schemaVersion":1}'),
     ).toMatchObject({ ok: false });
+  });
+});
+
+describe("relationship traits (Phase 12)", () => {
+  it("round-trips valence and attachment and drops invalid values", () => {
+    const file = buildBackup([
+      {
+        name: "Ann",
+        levelId: "inner-circle",
+        valence: "positive",
+        attachment: "secure",
+      },
+      { name: "Bob", levelId: "inner-circle", valence: "bogus" },
+    ]);
+    const parsed = parseBackup(JSON.stringify(file));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.file.contacts[0].valence).toBe("positive");
+    expect(parsed.file.contacts[0].attachment).toBe("secure");
+    expect(parsed.file.contacts[1].valence).toBeUndefined();
   });
 });

@@ -40,8 +40,11 @@ import {
 } from "lucide-react";
 
 // Data and Types
+import { TraitSelects } from "../../components/relationship-traits-fields";
+import type { Valence, Attachment } from "../../lib/relationship-traits";
 import { dunbarLevels } from "../../data/dunbarLevels";
 import { EnhancedContactStorage } from "../../lib/contact-storage-enhanced";
+import { trackEvent } from "../../lib/analytics";
 import type { StoredContact } from "../../lib/contact-storage";
 
 interface ContactFormData {
@@ -53,6 +56,8 @@ interface ContactFormData {
   lastContact: string;
   contactFrequency: number;
   strength: number;
+  valence?: Valence;
+  attachment?: Attachment;
   platform: string;
   source: "facebook" | "linkedin" | "manual";
 }
@@ -76,6 +81,8 @@ export default function ContactEditPage() {
     lastContact: new Date().toISOString().split("T")[0],
     contactFrequency: 90, // Default to quarterly contact
     strength: 0.5,
+    valence: undefined,
+    attachment: undefined,
     platform: "",
     source: "manual",
   });
@@ -110,6 +117,8 @@ export default function ContactEditPage() {
             lastContact: contact.lastContact.toISOString().split("T")[0],
             contactFrequency: contact.contactFrequency,
             strength: contact.strength,
+            valence: contact.valence,
+            attachment: contact.attachment,
             platform: contact.platform,
             source: contact.source,
           });
@@ -129,7 +138,7 @@ export default function ContactEditPage() {
 
   const handleInputChange = (
     field: keyof ContactFormData,
-    value: string | number,
+    value: string | number | undefined,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
@@ -173,6 +182,8 @@ export default function ContactEditPage() {
         lastContact: new Date(formData.lastContact),
         contactFrequency: formData.contactFrequency,
         strength: formData.strength,
+        valence: formData.valence,
+        attachment: formData.attachment,
         platform: formData.platform.trim() || "Manual Entry",
         source: formData.source,
         decayRate: 0.1, // Default decay rate
@@ -186,6 +197,7 @@ export default function ContactEditPage() {
         const existingContacts = result.data || [];
         const updatedContacts = [...existingContacts, contactData];
         await EnhancedContactStorage.saveContacts(updatedContacts);
+        trackEvent("add_contact");
       } else {
         // Update existing contact
         const result = await EnhancedContactStorage.loadContacts();
@@ -552,6 +564,14 @@ export default function ContactEditPage() {
                       How strong is your relationship with this person?
                     </p>
                   </div>
+
+                  <TraitSelects
+                    valence={formData.valence}
+                    attachment={formData.attachment}
+                    onValence={(v) => handleInputChange("valence", v)}
+                    onAttachment={(v) => handleInputChange("attachment", v)}
+                    disabled={saving}
+                  />
                 </div>
               </div>
 

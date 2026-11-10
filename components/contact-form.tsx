@@ -1,3 +1,4 @@
+import { TraitSelects } from "@/components/relationship-traits-fields";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ export function ContactForm({
       tags: initialData?.tags || [],
       contactFrequency: initialData?.contactFrequency || 30,
       strength: initialData?.strength || 0.5,
+      valence: initialData?.valence,
+      attachment: initialData?.attachment,
     },
   });
 
@@ -257,6 +260,14 @@ export function ContactForm({
                 0.0 = Weak connection, 1.0 = Very strong connection
               </p>
             </div>
+
+            <TraitSelects
+              valence={watch("valence")}
+              attachment={watch("attachment")}
+              onValence={(v) => setValue("valence", v)}
+              onAttachment={(v) => setValue("attachment", v)}
+              disabled={isLoading || isSubmitting}
+            />
           </fieldset>
 
           {/* Form Actions */}

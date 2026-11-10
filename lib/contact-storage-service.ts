@@ -931,6 +931,10 @@ export class ContactStorageService {
         sanitizedUpdates.contactFrequency = updates.contactFrequency;
       if (updates.strength !== undefined)
         sanitizedUpdates.strength = updates.strength;
+      if (updates.valence !== undefined)
+        sanitizedUpdates.valence = updates.valence;
+      if (updates.attachment !== undefined)
+        sanitizedUpdates.attachment = updates.attachment;
       if (updates.lastContact !== undefined)
         sanitizedUpdates.lastContact = updates.lastContact;
 

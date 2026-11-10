@@ -13,6 +13,8 @@ Analytics is opt-in (`lib/analytics.ts`). Events fire only after consent and nev
 | `export_data`     | An export completes                 | `format`                       |
 | `sign_in`         | Optional cloud sign-in succeeds     | -                              |
 | `view_evidence`   | Evidence page opened                | -                              |
+| `first_map`       | Contacts map shown with >= 1 contact (once per session) | -        |
+| `share_click`     | Reserved: fires when a share control exists (none yet) | -             |
 
 Add a new event name to `AnalyticsEvent` and to this table in the same pull request.
 

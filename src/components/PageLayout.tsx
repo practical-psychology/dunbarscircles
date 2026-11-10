@@ -574,9 +574,9 @@ export default function PageLayout({
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           <div className="flex items-center justify-center gap-4 mb-4">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
               {title}
-            </h2>
+            </h1>
             <HelpSystem />
           </div>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">

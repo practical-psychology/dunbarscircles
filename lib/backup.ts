@@ -5,6 +5,9 @@
  * can be unit tested. See docs/ops/BACKUP_RESTORE.md.
  */
 
+import { parseValence, parseAttachment } from "./relationship-traits";
+import type { Valence, Attachment } from "./relationship-traits";
+
 export const BACKUP_APP = "dunbarscircles";
 export const BACKUP_SCHEMA_VERSION = 1;
 
@@ -18,6 +21,8 @@ export interface BackupContact {
   tags?: string[];
   contactFrequency: number;
   strength: number;
+  valence?: Valence;
+  attachment?: Attachment;
 }
 
 export interface BackupFile {
@@ -80,10 +85,13 @@ export function normalizeContact(
       tags: Array.isArray(r.tags)
         ? r.tags
             .filter((t): t is string => typeof t === "string")
-            .map((t) => t.slice(0, 30)).slice(0, 10)
+            .map((t) => t.slice(0, 30))
+            .slice(0, 10)
         : undefined,
       contactFrequency: num(r.contactFrequency, 90, 1, 3650),
       strength: num(r.strength, 0.3, 0, 1),
+      valence: parseValence(r.valence),
+      attachment: parseAttachment(r.attachment),
     },
   };
 }
@@ -107,6 +115,8 @@ export function buildBackup(
       tags: Array.isArray(c.tags) ? c.tags : undefined,
       contactFrequency: Number(c.contactFrequency ?? 90),
       strength: Number(c.strength ?? 0.3),
+      valence: parseValence(c.valence),
+      attachment: parseAttachment(c.attachment),
     })),
   };
 }

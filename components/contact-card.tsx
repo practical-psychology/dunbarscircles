@@ -1,3 +1,4 @@
+import type { Valence, Attachment } from "@/lib/relationship-traits";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -51,6 +52,8 @@ export interface StoredContact {
   strength: number;
   notes?: string;
   tags?: string[];
+  valence?: Valence;
+  attachment?: Attachment;
   x?: number;
   y?: number;
   vx?: number;
@@ -348,6 +351,19 @@ export default function ContactCard({
               />
             </div>
           </div>
+
+          {(contact.valence || contact.attachment) && (
+            <div className="flex flex-wrap gap-2 text-xs" data-testid="traits">
+              {contact.valence && (
+                <Badge variant="outline">Feels: {contact.valence}</Badge>
+              )}
+              {contact.attachment && (
+                <Badge variant="outline">
+                  Attachment: {contact.attachment}
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Health Score */}
           {(() => {
