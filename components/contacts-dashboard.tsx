@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { toast as notify } from "sonner";
+import { trackEvent } from "@/lib/analytics";
+import { CONTACTS_CHANGED_EVENT } from "./sample-cleanup-prompt";
 import {
   Card,
   CardContent,
@@ -172,6 +175,11 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     };
 
     loadData();
+    const onChanged = (e: Event) => {
+      if ((e as CustomEvent).detail !== "dashboard") void loadData();
+    };
+    window.addEventListener(CONTACTS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(CONTACTS_CHANGED_EVENT, onChanged);
   }, []);
 
   // Apply filters
@@ -261,14 +269,23 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
           recalcStats(next);
           return next;
         });
+        const moved = updates.levelId
+          ? levels.find((l) => l.id === updates.levelId)?.name
+          : undefined;
+        notify.success(
+          moved ? `${contact.name} moved to ${moved}` : "Contact updated",
+        );
+        window.dispatchEvent(
+          new CustomEvent(CONTACTS_CHANGED_EVENT, { detail: "dashboard" }),
+        );
       } else {
         throw new Error(result.error || "Failed to update contact");
       }
     } catch (err) {
       console.error("Update failed:", err);
-      alert(
-        `Failed to update contact: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
+      notify.error("Could not update the contact", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
     }
   };
 
@@ -285,6 +302,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
           recalcStats(next);
           return next;
         });
+        window.dispatchEvent(
+          new CustomEvent(CONTACTS_CHANGED_EVENT, { detail: "dashboard" }),
+        );
       } else {
         throw new Error(result.error || "Failed to delete contact");
       }
@@ -399,6 +419,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     const data = prepareExportData();
     const filename = generateFilename("dunbars-circles-contacts", "json");
     exportToJSON(data, filename);
+    trackEvent("export_data", { format: "json" });
     setShowExportDialog(false);
     toast({ title: "Export complete", description: `Saved ${filename}` });
   };
@@ -406,6 +427,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   const handleExportCSV = () => {
     const data = prepareExportData();
     exportToCSV(data.people, data.levels);
+    trackEvent("export_data", { format: "csv" });
     setShowExportDialog(false);
     toast({
       title: "Export complete",
@@ -462,7 +484,7 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                   contacts to see your real network.
                 </span>
               </div>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="min-h-[44px]">
                 <Link to="/contacts">Enter real contacts</Link>
               </Button>
             </div>
@@ -885,7 +907,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              aria-label="Contact actions menu"
+                              className="h-11 w-11 p-0"
+                              aria-label={`Actions for ${contact.name}`}
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
@@ -923,7 +946,6 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-
                       </div>
                     </div>
                   );

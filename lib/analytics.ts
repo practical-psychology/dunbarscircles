@@ -6,7 +6,6 @@
  * - Event names are a closed set so the event dictionary in docs/ANALYTICS.md
  *   stays the single source of truth.
  */
-import { app, firebaseConfig } from "../firebase-config";
 
 export type AnalyticsEvent =
   | "cta_click"
@@ -54,17 +53,18 @@ export function setConsent(value: "granted" | "denied"): void {
 
 export function initAnalytics(): Promise<void> {
   if (initPromise) return initPromise;
-  if (
-    getConsent() !== "granted" ||
-    browserForbidsTracking() ||
-    !firebaseConfig.measurementId ||
-    !app
-  ) {
+  if (getConsent() !== "granted" || browserForbidsTracking()) {
     return Promise.resolve();
   }
-  initPromise = import("firebase/analytics")
-    .then(({ getAnalytics }) => {
-      analyticsInstance = getAnalytics(app!);
+  // Firebase is imported only after consent, so it never loads on first
+  // paint for visitors who have not opted in (#76).
+  initPromise = Promise.all([
+    import("../firebase-config"),
+    import("firebase/analytics"),
+  ])
+    .then(([{ app, firebaseConfig }, { getAnalytics }]) => {
+      if (!app || !firebaseConfig.measurementId) return;
+      analyticsInstance = getAnalytics(app);
     })
     .catch(() => {
       analyticsInstance = null;

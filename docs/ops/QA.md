@@ -11,16 +11,22 @@
 
 ## 2. Accessibility pass (WCAG 2.2 AA)
 
-- [ ] Keyboard only: skip link, nav, visualizations menu (Escape closes), modals trap focus
-- [ ] Screen reader (VoiceOver + Safari, NVDA + Firefox): headings, landmarks, diagram descriptions, route changes
-- [ ] Contrast: run `/color-contrast-test` in dev, both themes
-- [ ] 200% zoom and 320 px width, no horizontal scroll
-- [ ] Touch targets at least 44 px; reduced motion honoured
-- [ ] Text alternatives exist for every diagram (list or table equivalent)
+- [x] Keyboard only: diagram nodes are focusable buttons with labels; Enter/Space selects and the selection is announced (`aria-live`, 2026-11-10). Skip link present. Dialogs use Radix (focus trap, Escape closes)
+- [ ] Screen reader (VoiceOver + Safari, NVDA + Firefox): headings, landmarks, diagram descriptions, route changes (owner)
+- [x] Contrast: Lighthouse color-contrast audit passes on the live home page (a11y score 100, 2026-11-10). Dark theme not yet audited by tool
+- [x] 360, 390 and 768 px: no horizontal scroll on /, /contacts, /dashboard, /lifecycle, /contacts/edit/new, /evidence, /privacy (2026-11-10). 200% zoom still to check by hand
+- [x] Touch targets at least 44 px on the pages above (nav, sign-in, card buttons, FAQ rows, dashboard row menus, Contacts tabs fixed 2026-11-10). Reduced motion honoured by the diagram intro pulse
+- [x] Text alternatives: home diagram has `<title>`, `<desc>` and a screen-reader table; landing preview image has alt text; layer stats have `role="progressbar"` labels
 
 ## 3. Manual flow
 
 Home -> tour -> add contact -> import -> export -> sign in -> backup -> sign out -> delete.
+
+Automated part: `src/test/integration/main-journey.test.ts` covers add -> import (with de-duplication and invalid rows) -> export -> wipe -> restore -> re-restore, plus sample-data cleanup. Browser-checked 2026-11-10: sample data -> add a real contact -> "Remove the 10 sample people?" -> only samples removed, toast shown. Sign-in and backup still need a manual pass.
+
+## Live smoke test (#75)
+
+`npm run smoke -- https://dunbarscircles.com` checks every route, sitemap URL, static asset, security header, real 404s, removed debug routes, canonical and noindex, HTTP->HTTPS and www->apex, and prints the live build SHA. 2026-11-10: all passed except `/circles-preview.svg` (added in this change, not yet deployed). Live home page has no console errors (Lighthouse "errors-in-console" audit passes). Mobile layout and keyboard were checked on the local build, which has the same routes.
 
 ## 4. Browser/device matrix (WEB-039)
 
@@ -34,7 +40,7 @@ Home -> tour -> add contact -> import -> export -> sign in -> backup -> sign out
 ## 5. Launch sign-off (WEB-041)
 
 - [ ] Scientific review of Evidence page and CLAIMS.md: **\_\_** date **\_\_**
-- [ ] Asset rights confirmed (ASSETS.md): **\_\_**
+- [x] Asset rights confirmed (ASSETS.md): audited 2026-11-10, owner to initial **\_\_**
 - [ ] Accessibility QA complete: **\_\_**
-- [ ] Privacy policy matches DATA_FLOWS.md: **\_\_**
+- [x] Privacy policy matches DATA_FLOWS.md: audited 2026-11-10; legal review **\_\_**
       Approved by: **\_\_** Date: **\_\_**

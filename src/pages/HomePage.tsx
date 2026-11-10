@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { LiquidCard } from "@/components/ui/liquid-card";
 import { LiquidButton } from "@/components/ui/liquid-button";
 import { NetworkDiagram } from "@/components/network-diagram";
-import { Eye, Users, Heart, Book, Share2 } from "lucide-react";
+import { Eye, Users, Heart, Book, Share2, ShieldCheck } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import { dunbarLevels } from "../data/dunbarLevels";
 
@@ -54,6 +54,37 @@ export default function HomePage() {
         animate="visible"
         className="space-y-8"
       >
+        {/* Hero strip: privacy badge (#43) and static preview (#51) */}
+        <motion.section
+          variants={itemVariants}
+          aria-label="At a glance"
+          className="flex flex-col items-center gap-6 md:flex-row md:justify-center md:gap-10"
+        >
+          <img
+            src="/circles-preview.svg"
+            width={240}
+            height={240}
+            alt="Five nested circles around you: about 5 in the inner circle, then about 15, 50, 150 and 500 people in each wider layer."
+            className="h-48 w-48 shrink-0 md:h-60 md:w-60"
+            decoding="async"
+            fetchPriority="high"
+          />
+          <div className="flex max-w-md flex-col items-center gap-4 text-center md:items-start md:text-left">
+            <p className="text-gray-700 dark:text-gray-200">
+              Each ring holds about three times as many people as the one inside
+              it. Place your own people and see where your time goes.
+            </p>
+            <Link
+              to="/privacy"
+              data-testid="privacy-badge"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-green-300 bg-green-50 px-4 py-2 text-sm font-medium text-green-800 hover:bg-green-100 dark:border-green-700 dark:bg-green-950 dark:text-green-200 dark:hover:bg-green-900"
+            >
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              Stored in your browser · cloud backup optional
+            </Link>
+          </div>
+        </motion.section>
+
         <motion.div variants={itemVariants}>
           <LiquidCard glow>
             <div className="space-y-4" id="network-diagram-section">
@@ -179,19 +210,19 @@ export default function HomePage() {
                     Social Levels
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    150-1,500 people
+                    About 150-500 people
                   </p>
                 </div>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                The friends and colleagues worth a message this month. See
-                who you are overdue to reach.
+                The friends and colleagues worth a message this month. See who
+                you are overdue to reach.
               </p>
               <LiquidButton
                 variant="secondary"
                 size="sm"
                 className="w-full"
-                aria-label="Discover social relationship levels (150-1,500 people)"
+                aria-label="Discover social relationship levels (about 150-500 people)"
                 onClick={() => exploreLevel("active-network")}
               >
                 Discover Social Circles
@@ -211,10 +242,10 @@ export default function HomePage() {
                 </motion.div>
                 <div>
                   <h2 className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                    Extended Levels
+                    Outer Layers
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    5,000-50,000 people
+                    500 and beyond (1,500+ is tentative)
                   </p>
                 </div>
               </div>
@@ -226,10 +257,10 @@ export default function HomePage() {
                 variant="ghost"
                 size="sm"
                 className="w-full"
-                aria-label="View extended network levels (5,000-50,000 people)"
+                aria-label="View outer layers (500 and beyond; layers past 500 are tentative)"
                 onClick={() => exploreLevel("recognition-group")}
               >
-                View Extended Network
+                View Outer Layers
               </LiquidButton>
             </div>
           </LiquidCard>
@@ -285,6 +316,15 @@ export default function HomePage() {
           >
             The 5 layers of Dunbar&apos;s number
           </h2>
+          <p className="mx-auto mb-4 max-w-2xl text-center text-sm text-gray-600 dark:text-gray-300">
+            Rough averages from studies of many people, not limits. Each layer
+            includes the ones inside it. The 150 figure is an estimate (about
+            100–250); see{" "}
+            <Link to="/evidence" className="underline underline-offset-2">
+              Evidence &amp; Limitations
+            </Link>
+            .
+          </p>
           <ul className="flex flex-wrap justify-center gap-3 text-sm">
             {[
               ["5", "Inner Circle"],
@@ -365,15 +405,17 @@ export default function HomePage() {
               ],
               [
                 "Is this based on real research?",
-                "Yes. It is based on the anthropological research of Professor Robin Dunbar (University of Oxford), who proposed that people can maintain roughly 150 meaningful relationships.",
+                "Yes. It is based on the research of Professor Robin Dunbar (University of Oxford), who proposed that people maintain roughly 150 meaningful relationships (estimates range about 100–250, and the figure is debated). See Evidence & Limitations for sources.",
               ],
             ].map(([q, a]) => (
               <details
                 key={q}
-                className="rounded-xl bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 p-4"
+                className="rounded-xl bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 px-4 py-1"
               >
-                <summary className="cursor-pointer font-medium">{q}</summary>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                <summary className="cursor-pointer py-3 font-medium">
+                  {q}
+                </summary>
+                <p className="pb-3 text-sm text-gray-600 dark:text-gray-300">
                   {a}
                 </p>
               </details>

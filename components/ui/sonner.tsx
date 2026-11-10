@@ -5,10 +5,19 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  // Resolve "system" here (ThemeProvider sets the `dark` class on <html>),
+  // so Sonner never has to query matchMedia itself.
+  const resolved: ToasterProps["theme"] =
+    theme === "system"
+      ? typeof document !== "undefined" &&
+        document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light"
+      : (theme as ToasterProps["theme"]);
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={resolved}
       className="toaster group"
       toastOptions={{
         classNames: {

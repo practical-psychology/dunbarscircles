@@ -42,3 +42,20 @@ jobs:
           VITE_FIREBASE_APP_ID: ci-placeholder
       - name: Report bundle size
         run: du -sh dist && ls -lS dist/assets | head -8
+
+  firestore-rules:
+    name: firestore rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:rules

@@ -49,7 +49,8 @@ export const dunbarLevels = [
     id: "active-network",
     name: "Active Network",
     count: 150,
-    description: "People you could have a meaningful conversation with.",
+    description:
+      "People you could have a meaningful conversation with. Roughly 150 (estimates range about 100–250).",
     contactFrequency: "Quarterly Contact",
     digitalParallel:
       "Quarterly reports or seasonal check-ins that provide valuable but non-urgent updates.",

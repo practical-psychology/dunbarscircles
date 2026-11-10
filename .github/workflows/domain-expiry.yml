@@ -1,0 +1,42 @@
+name: Domain and certificate expiry
+
+# Weekly reminder (#71). Fails (and GitHub emails watchers) when the domain
+# registration is within 45 days of expiry or the TLS certificate within 14.
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expiry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DOMAIN: dunbarscircles.com
+      DOMAIN_WARN_DAYS: 45
+      CERT_WARN_DAYS: 14
+    steps:
+      - name: Install whois
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq whois
+      - name: Domain registration expiry
+        run: |
+          raw=$(whois "$DOMAIN" | grep -iE 'Registry Expiry Date|Registrar Registration Expiration Date' | head -1 | sed 's/.*: *//')
+          if [ -z "$raw" ]; then echo "::warning::Could not read expiry from WHOIS"; exit 0; fi
+          days=$(( ( $(date -d "$raw" +%s) - $(date +%s) ) / 86400 ))
+          echo "Domain $DOMAIN expires $raw ($days days)"
+          if [ "$days" -lt "$DOMAIN_WARN_DAYS" ]; then
+            echo "::error::Domain expires in $days days. Check auto-renew and payment at the registrar."
+            exit 1
+          fi
+      - name: TLS certificate expiry
+        run: |
+          end=$(echo | openssl s_client -connect "$DOMAIN:443" -servername "$DOMAIN" 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2)
+          days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
+          echo "Certificate expires $end ($days days)"
+          if [ "$days" -lt "$CERT_WARN_DAYS" ]; then
+            echo "::error::Certificate expires in $days days. Firebase should auto-renew; check Hosting > Domains."
+            exit 1
+          fi

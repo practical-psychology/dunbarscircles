@@ -1,6 +1,12 @@
+import { useEffect } from "react";
 import PageLayout from "../components/PageLayout";
+import { trackEvent } from "../../lib/analytics";
 
 export default function EvidencePage() {
+  useEffect(() => {
+    trackEvent("view_evidence");
+  }, []);
+
   return (
     <PageLayout
       title="Evidence & Limitations"
@@ -18,6 +24,14 @@ export default function EvidencePage() {
             widely with age, personality, culture and life circumstances, and
             the layers are best read as a rough scaling pattern, with each ring
             roughly three times the size of the one inside it.
+          </p>
+          <p>
+            We show 150 as &quot;roughly 150 (estimates range about
+            100–250)&quot;. Dunbar&apos;s own 1993 estimate for humans came with
+            a 95% confidence interval of about 100 to 230. Layers beyond 500
+            (around 1,500 and larger) appear in some of Dunbar&apos;s later work
+            but have much weaker evidence, so this site labels them as tentative
+            and does not place contacts in them.
           </p>
         </section>
 
@@ -76,6 +90,11 @@ export default function EvidencePage() {
             <li>
               Dunbar, R. I. M. (1992). Neocortex size as a constraint on group
               size in primates. Journal of Human Evolution, 22(6), 469-493.
+            </li>
+            <li>
+              Dunbar, R. I. M. (1993). Coevolution of neocortical size, group
+              size and language in humans. Behavioral and Brain Sciences, 16(4),
+              681-735.
             </li>
             <li>
               Hill, R. A., &amp; Dunbar, R. I. M. (2003). Social network size in

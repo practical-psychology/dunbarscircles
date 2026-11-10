@@ -43,13 +43,13 @@ export function LevelDetails({
     {
       id: "social",
       name: "Social Levels",
-      range: "150-1,500 people",
+      range: "about 150-500 people",
       color: "text-green-600",
     },
     {
       id: "extended",
-      name: "Extended Levels",
-      range: "5,000-50,000 people",
+      name: "Beyond 500 (tentative)",
+      range: "outside the evidenced layers",
       color: "text-purple-600",
     },
   ];

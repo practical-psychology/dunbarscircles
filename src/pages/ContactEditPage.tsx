@@ -45,6 +45,8 @@ import type { Valence, Attachment } from "../../lib/relationship-traits";
 import { dunbarLevels } from "../../data/dunbarLevels";
 import { EnhancedContactStorage } from "../../lib/contact-storage-enhanced";
 import { trackEvent } from "../../lib/analytics";
+import { toast } from "sonner";
+import { notifyContactSaved } from "../../lib/sample-data";
 import type { StoredContact } from "../../lib/contact-storage";
 
 interface ContactFormData {
@@ -173,6 +175,8 @@ export default function ContactEditPage() {
 
     try {
       const contactData: StoredContact = {
+        // Keep fields this form does not edit (tags, sync state, etc.).
+        ...(originalContact ?? {}),
         id: isNewContact ? `contact_${Date.now()}` : originalContact!.id,
         name: formData.name.trim(),
         email: formData.email.trim(),
@@ -198,6 +202,7 @@ export default function ContactEditPage() {
         const updatedContacts = [...existingContacts, contactData];
         await EnhancedContactStorage.saveContacts(updatedContacts);
         trackEvent("add_contact");
+        notifyContactSaved(contactData);
       } else {
         // Update existing contact
         const result = await EnhancedContactStorage.loadContacts();
@@ -213,6 +218,9 @@ export default function ContactEditPage() {
           ? "Contact created successfully!"
           : "Contact updated successfully!",
       );
+      toast.success(isNewContact ? "Contact added" : "Contact updated", {
+        description: `${contactData.name} is saved in this browser.`,
+      });
 
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
@@ -221,6 +229,7 @@ export default function ContactEditPage() {
     } catch (err) {
       console.error("Failed to save contact:", err);
       setError("Failed to save contact. Please try again.");
+      toast.error("Could not save the contact. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -241,6 +250,9 @@ export default function ContactEditPage() {
       await EnhancedContactStorage.saveContacts(updatedContacts);
 
       setSuccess("Contact deleted successfully!");
+      toast.success("Contact deleted", {
+        description: `${originalContact.name} has been removed.`,
+      });
 
       // Navigate back to contacts page after a short delay
       setTimeout(() => {
@@ -249,6 +261,7 @@ export default function ContactEditPage() {
     } catch (err) {
       console.error("Failed to delete contact:", err);
       setError("Failed to delete contact. Please try again.");
+      toast.error("Could not delete the contact. Please try again.");
     } finally {
       setSaving(false);
     }

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -18,419 +20,157 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, User, MoreVertical, Edit, Move, Trash } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-// Removed Dialog imports; this component now renders inline panels instead of modals
-
-interface Level {
-  id: string;
-  name: string;
-  count: number;
-  color: string;
-  textColor: string;
-  bgColor: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  levelId: string;
-  notes: string;
-  lastContact: string;
-}
+import { Plus } from "lucide-react";
+import type { Level } from "@/types/relationships";
+import { ContactStorageService } from "@/lib/contact-storage-service";
+import { trackEvent } from "@/lib/analytics";
+import { notifyContactSaved } from "@/lib/sample-data";
+import { CONTACTS_CHANGED_EVENT } from "./sample-cleanup-prompt";
 
 interface ContactManagerProps {
   levels: Level[];
 }
 
+/** Typical days between contacts per layer (CLAIMS.md #6: approximate). */
+const DEFAULT_FREQUENCY: Record<string, number> = {
+  "inner-circle": 7,
+  "sympathy-group": 14,
+  "affinity-group": 30,
+  "active-network": 90,
+  "recognition-group": 365,
+};
+
+const EMPTY_FORM = { name: "", levelId: "", notes: "", lastContact: "" };
+
+/**
+ * Dashboard header: per-layer counts and a quick "Add contact" panel.
+ * Reads and writes the same browser store as the rest of the app; the
+ * contact list with edit/move/delete lives in ContactsDashboard below.
+ */
 export function ContactManager({ levels }: ContactManagerProps) {
-  const [contacts, setContacts] = useState<Contact[]>([
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      levelId: "inner-circle",
-      notes: "Best friend since college, daily texts",
-      lastContact: "2024-01-15",
-    },
-    {
-      id: "2",
-      name: "Mike Chen",
-      levelId: "sympathy-group",
-      notes: "Close work colleague, weekly coffee",
-      lastContact: "2024-01-10",
-    },
-    {
-      id: "3",
-      name: "Emma Davis",
-      levelId: "affinity-group",
-      notes: "Friend from book club",
-      lastContact: "2024-01-05",
-    },
-  ]);
-
-  const [newContact, setNewContact] = useState({
-    name: "",
-    levelId: "",
-    notes: "",
-    lastContact: "",
-  });
-
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [newContact, setNewContact] = useState(EMPTY_FORM);
   const [isAddingContact, setIsAddingContact] = useState(false);
-  const [isEditingContact, setIsEditingContact] = useState(false);
-  const [editingContactId, setEditingContactId] = useState<string | null>(null);
-  const [editContact, setEditContact] = useState({
-    name: "",
-    levelId: "",
-    notes: "",
-    lastContact: "",
-  });
+  const [saving, setSaving] = useState(false);
 
-  const addContact = () => {
-    if (newContact.name && newContact.levelId) {
-      const contact: Contact = {
-        id: Date.now().toString(),
-        ...newContact,
-      };
-      setContacts([...contacts, contact]);
-      setNewContact({ name: "", levelId: "", notes: "", lastContact: "" });
-      setIsAddingContact(false);
+  const refresh = useCallback(async () => {
+    const result = await ContactStorageService.getInstance().readContacts();
+    const next: Record<string, number> = {};
+    for (const c of result.success && result.data ? result.data : []) {
+      next[c.levelId] = (next[c.levelId] ?? 0) + 1;
     }
-  };
+    setCounts(next);
+  }, []);
 
-  const removeContact = (id: string) => {
-    setContacts(contacts.filter((c) => c.id !== id));
-  };
+  useEffect(() => {
+    void refresh();
+    const handler = () => void refresh();
+    window.addEventListener(CONTACTS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(CONTACTS_CHANGED_EVENT, handler);
+  }, [refresh]);
 
-  const openEdit = (contact: Contact) => {
-    setEditingContactId(contact.id);
-    setEditContact({
-      name: contact.name,
-      levelId: contact.levelId,
-      notes: contact.notes,
-      lastContact: contact.lastContact || "",
-    });
-    setIsEditingContact(true);
-  };
-
-  const saveEdit = () => {
-    if (!editingContactId) return;
-    setContacts((prev) =>
-      prev.map((c) =>
-        c.id === editingContactId
-          ? {
-              ...c,
-              name: editContact.name,
-              levelId: editContact.levelId,
-              notes: editContact.notes,
-              lastContact: editContact.lastContact,
-            }
-          : c,
-      ),
-    );
-    setIsEditingContact(false);
-    setEditingContactId(null);
-  };
-
-  const getContactStats = () => {
-    const stats = levels.map((level) => ({
-      level,
-      actual: contacts.filter((c) => c.levelId === level.id).length,
-      capacity: level.count,
-    }));
-    return stats;
+  const addContact = async () => {
+    const name = newContact.name.trim();
+    if (!name || !newContact.levelId) {
+      toast.error("Add a name and choose a circle first.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await ContactStorageService.getInstance().createContact({
+        name,
+        levelId: newContact.levelId,
+        notes: newContact.notes.trim() || undefined,
+        platform: "manual",
+        contactFrequency: DEFAULT_FREQUENCY[newContact.levelId] ?? 30,
+        strength: 0.5,
+        ...(newContact.lastContact
+          ? { lastContact: new Date(newContact.lastContact) }
+          : {}),
+      } as Parameters<ContactStorageService["createContact"]>[0]);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to add contact");
+      }
+      trackEvent("add_contact");
+      toast.success("Contact added", {
+        description: `${name} is saved in this browser.`,
+      });
+      setNewContact(EMPTY_FORM);
+      setIsAddingContact(false);
+      window.dispatchEvent(new CustomEvent(CONTACTS_CHANGED_EVENT));
+      notifyContactSaved(result.data);
+    } catch (error) {
+      console.error("Failed to add contact:", error);
+      toast.error("Could not add the contact. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="space-y-6" data-testid="contact-manager">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold">My Social Network</h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Manage and track your relationships according to Dunbar&apos;s
             hierarchy
           </p>
         </div>
 
-        <div>
-          <Button
-            className="flex items-center gap-2"
-            data-testid="add-contact"
-            onClick={() => setIsAddingContact((v) => !v)}
-            aria-expanded={isAddingContact}
-            aria-controls="add-contact-panel"
-          >
-            <Plus className="w-4 h-4" />
-            {isAddingContact ? "Hide Add Contact" : "Add Contact"}
-          </Button>
-        </div>
-        {isAddingContact && (
-          <Card id="add-contact-panel" className="mt-4">
-            <CardHeader>
-              <CardTitle>Add New Contact</CardTitle>
-              <CardDescription>
-                Add someone to your social network and categorize them according
-                to Dunbar&apos;s hierarchy.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={newContact.name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, name: e.target.value })
-                    }
-                    placeholder="Enter contact name"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="level">Relationship Level</Label>
-                  <Select
-                    value={newContact.levelId}
-                    onValueChange={(value) =>
-                      setNewContact({ ...newContact, levelId: value })
-                    }
-                  >
-                    <SelectTrigger aria-label="Select relationship level for new contact">
-                      <SelectValue placeholder="Select relationship level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {levels.map((level) => (
-                        <SelectItem key={level.id} value={level.id}>
-                          {level.name} ({level.count})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={newContact.notes}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, notes: e.target.value })
-                    }
-                    placeholder="Add notes about this relationship"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="lastContact">Last Contact</Label>
-                  <Input
-                    id="lastContact"
-                    type="date"
-                    value={newContact.lastContact}
-                    onChange={(e) =>
-                      setNewContact({
-                        ...newContact,
-                        lastContact: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddingContact(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={addContact}>Add Contact</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <Button
+          className="flex min-h-[44px] items-center gap-2"
+          data-testid="add-contact"
+          onClick={() => setIsAddingContact((v) => !v)}
+          aria-expanded={isAddingContact}
+          aria-controls="add-contact-panel"
+        >
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          {isAddingContact ? "Hide Add Contact" : "Add Contact"}
+        </Button>
       </div>
 
-      {/* Network Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Network Statistics</CardTitle>
-          <CardDescription>
-            Your current network distribution vs. Dunbar&apos;s theoretical
-            limits
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {getContactStats().map(({ level, actual, capacity }) => (
-              <div key={level.id} className={`p-4 rounded-lg ${level.bgColor}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className={`font-medium ${level.textColor}`}>
-                    {level.name}
-                  </h3>
-                  <Badge variant="secondary">
-                    {actual}/{capacity}
-                  </Badge>
-                </div>
-                <div className="w-full bg-white/50 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${level.color}`}
-                    style={{
-                      width: `${Math.min((actual / capacity) * 100, 100)}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contact Lists by Level */}
-      <div className="space-y-6">
-        {levels.map((level) => {
-          const levelContacts = contacts.filter((c) => c.levelId === level.id);
-          if (levelContacts.length === 0) return null;
-
-          return (
-            <div key={level.id}>
-              <Card>
-                <CardHeader className={level.bgColor}>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className={level.textColor}>
-                      {level.name}
-                    </CardTitle>
-                    <Badge variant="secondary">
-                      {levelContacts.length} contacts
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {levelContacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="p-4 flex items-center justify-between hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-gray-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{contact.name}</h3>
-                            <p className="text-sm text-gray-600">
-                              {contact.notes}
-                            </p>
-                            {contact.lastContact && (
-                              <p className="text-xs text-gray-500">
-                                Last contact:{" "}
-                                {new Date(
-                                  contact.lastContact,
-                                ).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Open actions for ${contact.name}`}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              data-testid="edit-contact"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                openEdit(contact);
-                              }}
-                            >
-                              <Edit className="w-4 h-4 mr-2" /> Edit Contact
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Move className="w-4 h-4 mr-2" /> Move to Inner
-                              Circle
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Move className="w-4 h-4 mr-2" /> Move to Sympathy
-                              Group
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Move className="w-4 h-4 mr-2" /> Move to Affinity
-                              Group
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Move className="w-4 h-4 mr-2" /> Move to Active
-                              Network
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Move className="w-4 h-4 mr-2" /> Move to
-                              Recognition Group
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-red-600 focus:text-red-700"
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                removeContact(contact.id);
-                              }}
-                              data-testid="delete-contact"
-                            >
-                              <Trash className="w-4 h-4 mr-2" /> Delete Contact
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Edit Contact Inline Panel */}
-      {isEditingContact && (
-        <Card className="mt-6">
+      {isAddingContact && (
+        <Card id="add-contact-panel">
           <CardHeader>
-            <CardTitle>Edit Contact</CardTitle>
+            <CardTitle>Add New Contact</CardTitle>
             <CardDescription>
-              Update contact details and circle.
+              Add someone to your social network and categorize them according
+              to Dunbar&apos;s hierarchy.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e: FormEvent<HTMLFormElement>) => {
+                e.preventDefault();
+                void addContact();
+              }}
+            >
               <div>
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="cm-name">Name</Label>
                 <Input
-                  id="edit-name"
-                  value={editContact.name}
+                  id="cm-name"
+                  value={newContact.name}
                   onChange={(e) =>
-                    setEditContact({ ...editContact, name: e.target.value })
+                    setNewContact({ ...newContact, name: e.target.value })
                   }
                   placeholder="Enter contact name"
+                  required
                 />
               </div>
+
               <div>
-                <Label htmlFor="edit-level">Relationship Level</Label>
+                <Label htmlFor="cm-level">Relationship Level</Label>
                 <Select
-                  value={editContact.levelId}
+                  value={newContact.levelId}
                   onValueChange={(value) =>
-                    setEditContact({ ...editContact, levelId: value })
+                    setNewContact({ ...newContact, levelId: value })
                   }
                 >
                   <SelectTrigger
-                    id="edit-level"
-                    aria-label="Select relationship level for editing contact"
+                    id="cm-level"
+                    aria-label="Select relationship level for new contact"
                   >
                     <SelectValue placeholder="Select relationship level" />
                   </SelectTrigger>
@@ -443,44 +183,98 @@ export function ContactManager({ levels }: ContactManagerProps) {
                   </SelectContent>
                 </Select>
               </div>
+
               <div>
-                <Label htmlFor="edit-notes">Notes</Label>
+                <Label htmlFor="cm-notes">Notes</Label>
                 <Textarea
-                  id="edit-notes"
-                  value={editContact.notes}
+                  id="cm-notes"
+                  value={newContact.notes}
                   onChange={(e) =>
-                    setEditContact({ ...editContact, notes: e.target.value })
+                    setNewContact({ ...newContact, notes: e.target.value })
                   }
                   placeholder="Add notes about this relationship"
                 />
               </div>
+
               <div>
-                <Label htmlFor="edit-lastContact">Last Contact</Label>
+                <Label htmlFor="cm-lastContact">Last Contact</Label>
                 <Input
-                  id="edit-lastContact"
+                  id="cm-lastContact"
                   type="date"
-                  value={editContact.lastContact}
+                  value={newContact.lastContact}
                   onChange={(e) =>
-                    setEditContact({
-                      ...editContact,
+                    setNewContact({
+                      ...newContact,
                       lastContact: e.target.value,
                     })
                   }
                 />
               </div>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsEditingContact(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={saveEdit}>Save Changes</Button>
-            </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddingContact(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving…" : "Add Contact"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}
+
+      {/* Network Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Network Statistics</CardTitle>
+          <CardDescription>
+            How many people you have placed in each layer, against the typical
+            size of that layer. The sizes are rough averages, not limits.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {levels.map((level) => {
+              const actual = counts[level.id] ?? 0;
+              const capacity = level.count;
+              return (
+                <div
+                  key={level.id}
+                  className={`p-4 rounded-lg ${level.bgColor}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className={`font-medium ${level.textColor}`}>
+                      {level.name}
+                    </h3>
+                    <Badge variant="secondary">
+                      {actual}/{capacity}
+                    </Badge>
+                  </div>
+                  <div
+                    className="w-full bg-white/50 rounded-full h-2"
+                    role="progressbar"
+                    aria-label={`${level.name}: ${actual} of about ${capacity}`}
+                    aria-valuemin={0}
+                    aria-valuemax={capacity}
+                    aria-valuenow={Math.min(actual, capacity)}
+                  >
+                    <div
+                      className={`h-2 rounded-full ${level.color}`}
+                      style={{
+                        width: `${Math.min((actual / capacity) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
