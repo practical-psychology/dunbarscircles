@@ -2,8 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   User as UserIcon,
-  Facebook as FacebookIcon,
-  Linkedin as LinkedinIcon,
   Mail as MailIcon,
   Phone as PhoneIcon,
   Calendar as CalendarIcon,
@@ -11,6 +9,10 @@ import {
   MessageSquare,
   Edit,
 } from "lucide-react";
+import {
+  Facebook as FacebookIcon,
+  Linkedin as LinkedinIcon,
+} from "./brand-icons";
 
 // Import components
 import { Button } from "@/components/ui/button";

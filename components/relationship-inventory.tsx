@@ -40,13 +40,12 @@ import {
   TrendingDown,
   AlertTriangle,
   Zap,
-  Facebook,
-  Linkedin,
   Download,
   FileText,
   Image,
   Share2,
 } from "lucide-react";
+import { Facebook, Linkedin } from "./brand-icons";
 // Removed Dialog imports; using inline panels instead of modals
 
 // Add these interfaces at the top of the file

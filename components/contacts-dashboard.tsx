@@ -23,8 +23,6 @@ import {
   Users,
   Search,
   Filter,
-  Facebook,
-  Linkedin,
   User,
   Calendar,
   TrendingUp,
@@ -36,6 +34,7 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
+import { Facebook, Linkedin } from "./brand-icons";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
 import type { StoredContact } from "@/lib/contact-storage";
 import { auth } from "@/firebase-config";

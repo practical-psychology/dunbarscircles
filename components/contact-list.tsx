@@ -51,9 +51,8 @@ import {
   Calendar,
   AlertTriangle,
   User,
-  Facebook,
-  Linkedin,
 } from "lucide-react";
+import { Facebook, Linkedin } from "./brand-icons";
 import { LiquidCard } from "./ui/liquid-card";
 import { LiquidButton } from "./ui/liquid-button";
 import type { StoredContact } from "@/lib/contact-storage";

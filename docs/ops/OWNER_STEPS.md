@@ -50,7 +50,7 @@ Load the preview URL, open the browser console, and confirm there are no CSP rep
 
 Check the Life Stages labels and tap targets (44 px) on a phone at 360, 390 and 768 px widths. Run Lighthouse mobile on the preview and record scores in SECURITY.md.
 
-## 8. Dependencies held back on purpose
+## 8. Dependencies
 
-- `lucide-react` stays at 0.454.0. v1 removed brand icons (`Facebook`, `Linkedin`) that the app imports; migrate to custom SVGs first.
+- `lucide-react` is on v1; its removed brand icons (Facebook, LinkedIn) now live in `components/brand-icons.tsx`.
 - `npm audit` still reports 15 prod findings (firebase/gRPC, react-router, zod, esbuild). They need breaking upgrades; handle in a separate PR with tests.

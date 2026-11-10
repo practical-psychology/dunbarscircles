@@ -15,14 +15,13 @@ import {
   RefreshCw,
   Upload,
   FileText,
-  Facebook,
-  Linkedin,
   ArrowLeft,
   CheckCircle,
   AlertTriangle,
   Download,
   Eye,
 } from "lucide-react";
+import { Facebook, Linkedin } from "../../components/brand-icons";
 
 import type { StoredContact } from "@/lib/contact-storage-service";
 import { ContactStorageService } from "@/lib/contact-storage-service";
