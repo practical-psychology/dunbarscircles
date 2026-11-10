@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Probe Firebase URL
         run: bash scripts/smoke-test.sh https://dunbarscircles.web.app
       - name: Probe canonical domain (informational until DNS cutover)
