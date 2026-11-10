@@ -67,7 +67,10 @@ const SAMPLE_CONTACTS: StoredContact[] = [
   },
 ];
 
-const CONTACTS_STORAGE_KEY = "yakw_imported_contacts";
+// Single source of truth shared with ContactStorageService (imports, contacts page).
+const CONTACTS_STORAGE_KEY = "yakw_contacts";
+// Older key that earlier versions of this class wrote to; merged in and retired.
+const LEGACY_CONTACTS_KEY = "yakw_imported_contacts";
 const MIN_CONTACTS_FOR_MEANINGFUL_DATA = 3;
 
 export interface ContactOperationResult<T = any> {
@@ -316,7 +319,11 @@ export class EnhancedContactStorage {
       }
 
       // Save new contacts
-      const saveResult = await this.saveContacts(filteredContacts);
+      // saveContacts replaces the stored list, so include what is already stored.
+      const saveResult = await this.saveContacts([
+        ...this.loadFromLocalStorage(),
+        ...filteredContacts,
+      ]);
 
       return {
         success: saveResult.success,
@@ -402,6 +409,8 @@ export class EnhancedContactStorage {
           const updatedSample: StoredContact = {
             ...sample,
             ...updates,
+            // Promote the sample to a real contact so it is persisted.
+            id: `contact_${Date.now()}`,
           } as StoredContact;
           const next = [...localContacts, updatedSample];
           this.saveToLocalStorage(next);
@@ -553,6 +562,7 @@ export class EnhancedContactStorage {
       // Also clear localStorage
       try {
         localStorage.removeItem(CONTACTS_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_CONTACTS_KEY);
       } catch (localError) {
         console.warn("Failed to clear localStorage:", localError);
       }
@@ -638,47 +648,76 @@ export class EnhancedContactStorage {
     }
   }
 
-  // Private localStorage methods
-  private static loadFromLocalStorage(): StoredContact[] {
+  // Private localStorage methods (shared store with ContactStorageService)
+  private static readArray(key: string): any[] {
     try {
-      const stored = localStorage.getItem(CONTACTS_STORAGE_KEY);
+      const stored = localStorage.getItem(key) ?? sessionStorage.getItem(key);
       if (!stored) return [];
-
       const parsed = JSON.parse(stored);
-      return parsed.map((contact: any) => ({
-        ...contact,
-        lastContact: new Date(contact.lastContact),
-        importDate: new Date(contact.importDate),
-      }));
+      return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
-      console.error("Failed to load from localStorage:", error);
+      console.error(`Failed to read ${key}:`, error);
       return [];
     }
   }
 
+  private static toStoredContact(raw: any): StoredContact {
+    const created = raw.createdAt ? new Date(raw.createdAt) : undefined;
+    const platform = String(raw.platform ?? "").toLowerCase();
+    const source: StoredContact["source"] =
+      raw.source === "facebook" ||
+      raw.source === "linkedin" ||
+      raw.source === "manual"
+        ? raw.source
+        : platform.includes("linkedin")
+          ? "linkedin"
+          : platform.includes("facebook")
+            ? "facebook"
+            : "manual";
+    const last = new Date(raw.lastContact);
+    const imp = new Date(raw.importDate ?? raw.createdAt);
+    const importDate = isNaN(imp.getTime()) ? (created ?? new Date()) : imp;
+    return {
+      ...raw,
+      createdAt: raw.createdAt ?? importDate.toISOString(),
+      updatedAt: raw.updatedAt ?? importDate.toISOString(),
+      source,
+      lastContact: isNaN(last.getTime()) ? new Date() : last,
+      importDate,
+    };
+  }
+
+  private static loadFromLocalStorage(): StoredContact[] {
+    const byId = new Map<string, StoredContact>();
+    for (const key of [LEGACY_CONTACTS_KEY, CONTACTS_STORAGE_KEY]) {
+      for (const raw of this.readArray(key)) {
+        if (raw && raw.id && !String(raw.id).startsWith("sample_")) {
+          byId.set(raw.id, this.toStoredContact(raw));
+        }
+      }
+    }
+    return [...byId.values()];
+  }
+
   private static saveToLocalStorage(contacts: StoredContact[]): void {
     try {
-      const serializedContacts = contacts.map((contact) => {
-        const last =
-          contact.lastContact instanceof Date
-            ? contact.lastContact
-            : new Date(contact.lastContact as any);
-        const imp =
-          contact.importDate instanceof Date
-            ? contact.importDate
-            : new Date(contact.importDate as any);
-        const safeLast = isNaN(last.getTime()) ? new Date() : last;
-        const safeImp = isNaN(imp.getTime()) ? new Date() : imp;
-        return {
-          ...contact,
-          lastContact: safeLast.toISOString(),
-          importDate: safeImp.toISOString(),
-        };
-      });
-      localStorage.setItem(
-        CONTACTS_STORAGE_KEY,
-        JSON.stringify(serializedContacts),
-      );
+      const serialized = contacts
+        // Never persist the built-in sample fallbacks as if they were real.
+        .filter((c) => !String(c.id).startsWith("sample_"))
+        .map((contact) => {
+          const last = new Date(contact.lastContact as any);
+          const imp = new Date(contact.importDate as any);
+          return {
+            ...contact,
+            lastContact: (isNaN(last.getTime())
+              ? new Date()
+              : last
+            ).toISOString(),
+            importDate: (isNaN(imp.getTime()) ? new Date() : imp).toISOString(),
+          };
+        });
+      localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(serialized));
+      localStorage.removeItem(LEGACY_CONTACTS_KEY);
     } catch (error) {
       console.error("Failed to save to localStorage:", error);
       throw error;

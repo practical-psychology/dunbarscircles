@@ -166,6 +166,10 @@ export default function PageLayout({
 }: PageLayoutProps) {
   const location = useLocation();
   usePageMeta(title, description, location.pathname);
+  // Exactly one h1 per page: the brand on the home page, the page title elsewhere.
+  const isHome = location.pathname === "/";
+  const BrandTag = isHome ? motion.h1 : motion.div;
+  const TitleTag = isHome ? "h2" : "h1";
   const [vizOpen, setVizOpen] = useState(false);
   const vizMenuRef = useRef<HTMLDivElement>(null);
 
@@ -290,7 +294,7 @@ export default function PageLayout({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
         >
-          <motion.h1
+          <BrandTag
             className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent"
             animate={{
               backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -305,7 +309,7 @@ export default function PageLayout({
             }}
           >
             Dunbar's Circles
-          </motion.h1>
+          </BrandTag>
           <motion.p
             className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
             initial={{ opacity: 0 }}
@@ -574,9 +578,9 @@ export default function PageLayout({
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           <div className="flex items-center justify-center gap-4 mb-4">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+            <TitleTag className="text-3xl font-bold text-gray-900 dark:text-white bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
               {title}
-            </h1>
+            </TitleTag>
             <HelpSystem />
           </div>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
