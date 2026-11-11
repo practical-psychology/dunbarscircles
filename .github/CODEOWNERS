@@ -1,0 +1,15 @@
+# Code owners (WEB-011). Reviews from these accounts are requested
+# automatically on pull requests; with branch protection's "Require review
+# from Code Owners" they are also required. See docs/ops/RELEASE.md.
+
+*                         @practical-psychology
+
+# Security- and data-sensitive paths: always reviewed by the owner.
+/firestore.rules          @practical-psychology
+/firebase.json            @practical-psychology
+/.github/                 @practical-psychology
+/lib/cloud-sync.ts        @practical-psychology
+/lib/cloud-sync-core.ts   @practical-psychology
+/lib/cloud-consent.ts     @practical-psychology
+/lib/analytics.ts         @practical-psychology
+/src/pages/PrivacyPage.tsx @practical-psychology

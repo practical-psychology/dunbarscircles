@@ -319,3 +319,98 @@ describe("privacy: consent and analytics", () => {
     expect(sanitizeParams({ person: "x" })).toBeUndefined();
   });
 });
+
+describe("visual insights (items 101-103)", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("builds the circle x feeling matrix from circle members only", async () => {
+    const { layerFeelingMatrix } = await import(
+      "../../../lib/relationship-model"
+    );
+    const m = layerFeelingMatrix(
+      [
+        { levelId: "inner", stage: "love" },
+        { levelId: "inner" },
+        { levelId: "outer", stage: "hate" },
+        { levelId: "outer", stage: "hate", contactStatus: "excluded" },
+        { levelId: "outer", stage: "hate", overlay: true },
+      ],
+      ["inner", "outer"],
+    );
+    expect(m.inner.love).toBe(1);
+    expect(m.inner.unset).toBe(1);
+    expect(m.outer.hate).toBe(1);
+  });
+
+  it("plots only people with importance and logged interactions", async () => {
+    const { scatterPoints } = await import("../../../lib/relationship-model");
+    const pts = scatterPoints(
+      [
+        { id: "a", attachmentScore: 80, stage: "love" },
+        { id: "b", attachmentScore: 20 },
+        { id: "c" },
+      ],
+      [
+        int("a", "2026-06-01", "voluntary"),
+        int("c", "2026-06-01", "voluntary"),
+      ],
+      NOW,
+    );
+    expect(pts).toEqual([
+      { id: "a", importance: 80, voluntaryPerMonth: 0.3, stage: "love" },
+    ]);
+  });
+
+  it("prompts only on meaningful changes, and dismissal keys are stable", async () => {
+    const { trendPrompts } = await import("../../../lib/relationship-model");
+    const { dismissPrompt, readDismissedPrompts } = await import(
+      "../../../lib/relationship-log"
+    );
+    const h = (
+      person_id: string,
+      ts: string,
+      f: Record<string, [unknown, unknown]>,
+    ) => ({
+      change_id: `${person_id}${ts}`,
+      person_id,
+      timestamp: ts,
+      source: "user-entry" as const,
+      changed_fields: Object.fromEntries(
+        Object.entries(f).map(([k, [from, to]]) => [k, { from, to }]),
+      ),
+    });
+    const people = [
+      { id: "a", name: "Ann" },
+      { id: "b", name: "Bob" },
+      { id: "c", name: "Cy", desiredContactPerMonth: 4 },
+      { id: "d", name: "Di" },
+    ];
+    const history = [
+      // like -> indifferent -> hate: net positive -> negative
+      h("a", "2026-06-01T00:00:00Z", { stage: ["like", "indifferent"] }),
+      h("a", "2026-06-10T00:00:00Z", { stage: ["indifferent", "hate"] }),
+      // small importance wobble: no prompt
+      h("b", "2026-06-05T00:00:00Z", { attachmentScore: [50, 60] }),
+      // big importance change + circle move
+      h("d", "2026-06-05T00:00:00Z", {
+        attachmentScore: [90, 40],
+        levelId: ["inner", "outer"],
+      }),
+      // outside the 90-day window
+      h("b", "2025-01-01T00:00:00Z", { stage: ["love", "hate"] }),
+    ];
+    const interactions = [int("c", "2026-06-01", "obligatory")];
+    const ps = trendPrompts(people, history, interactions, NOW);
+    expect(ps.map((p) => `${p.personId}:${p.kind}`).sort()).toEqual([
+      "a:feeling",
+      "c:below-desired",
+      "d:circle",
+      "d:importance",
+    ]);
+    expect(
+      trendPrompts(people, history, interactions, NOW).map((p) => p.key),
+    ).toEqual(ps.map((p) => p.key));
+    dismissPrompt(ps[0].key);
+    expect(readDismissedPrompts().has(ps[0].key)).toBe(true);
+  });
+});

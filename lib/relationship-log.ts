@@ -257,3 +257,19 @@ export function clearRelationshipLogs(): void {
     /* ignore */
   }
 }
+
+// -------------------------------------------------- dismissed trend prompts
+
+export const DISMISSED_PROMPTS_KEY = "dc.dismissed-prompts";
+
+export function readDismissedPrompts(): Set<string> {
+  return new Set(readArray<string>(DISMISSED_PROMPTS_KEY));
+}
+
+export function dismissPrompt(key: string): void {
+  const all = readDismissedPrompts();
+  all.add(key);
+  // Keep the list bounded; old keys stop matching once their window passes.
+  writeArray(DISMISSED_PROMPTS_KEY, [...all].slice(-500));
+  notify();
+}

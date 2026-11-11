@@ -57,3 +57,9 @@ R_i = (D_i, V_i, A_i, F_i, Q_i, T_i). None of these measurements alone predicts 
 ## Storage and sync scope
 
 Contacts (including the v2 fields) are mirrored to Firestore only after the user turns on cloud backup. Interactions and history stay in the browser and are included in the JSON export.
+
+## Views (Contacts page)
+
+- **Overview tab**: inner circle (people, feeling, importance, voluntary contact vs wish); other circles (counts vs typical size, average importance, feeling mix, voluntary contact); data validity (completeness, unreviewed imports, possible duplicates, sample people); frequency of contact by type; people you love and hate; circles-by-feeling map; circle × feeling matrix.
+- **Insights**: completeness summary first; dismissible trend prompts (`trendPrompts`, dismissals in `dc.dismissed-prompts`); importance vs voluntary-contact scatterplot (needs 3+ people, table alternative); standardized gaps (8+ people, non-zero variance).
+- Feelings use colour and shape together (`components/relationship-visuals.tsx`), so the map and plot work without colour vision.
