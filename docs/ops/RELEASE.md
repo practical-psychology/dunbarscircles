@@ -10,9 +10,10 @@ curl -s https://dunbarscircles.com/ | grep -o 'name="build-sha" content="[^"]*"'
 
 `scripts/smoke-test.sh` prints it as `info live build-sha`.
 
-| Date       | Live SHA                                                                                                                     | How verified                                                 |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| 2026-11-10 | Not recorded. The live build predates the build-sha meta tag; its bundle is `index-DECLyc_s.js`, and `main` was at `393035c` | First deploy after this change records the SHA automatically |
+| Date       | Live SHA                                                                                                                     | How verified                                                                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-10 | Not recorded. The live build predates the build-sha meta tag; its bundle is `index-DECLyc_s.js`, and `main` was at `393035c` | First deploy after this change records the SHA automatically                                                                   |
+| 2026-11-11 | `0dd141d` (main)                                                                                                             | `build-sha` meta on https://dunbarscircles.com/; deploy run 42937437181 released hosting and Firestore rules; smoke test 56/56 |
 
 ## Release-tag procedure
 
