@@ -175,3 +175,62 @@ describe("sample data cleanup (#48)", () => {
     expect(withoutSamples(left)).toHaveLength(1);
   });
 });
+
+describe("change history through the real storage service", () => {
+  beforeEach(async () => {
+    await wipe();
+    localStorage.removeItem("dc_history");
+  });
+
+  it("records creation, edits and deletion additively, with the source", async () => {
+    const { readHistory, withChangeSource } = await import(
+      "../../../lib/relationship-log"
+    );
+    const created = await service().createContact({
+      name: "Hist Person",
+      levelId: "inner-circle",
+      platform: "manual",
+      contactFrequency: 7,
+      strength: 0.5,
+      stage: "like",
+    });
+    const id = created.data!.id;
+    await service().updateContact(id, {
+      id,
+      stage: "hate",
+      attachmentScore: 80,
+    });
+    await withChangeSource("import", () =>
+      service().updateContact(id, { id, trust: 20 }),
+    );
+    await service().deleteContact(id);
+
+    const mine = readHistory().filter((h) => h.person_id === id);
+    expect(mine.map((h) => Object.keys(h.changed_fields))).toEqual([
+      expect.arrayContaining(["_created", "name", "stage"]),
+      expect.arrayContaining(["stage", "attachmentScore"]),
+      ["trust"],
+      ["_deleted"],
+    ]);
+    expect(mine.map((h) => h.source)).toEqual([
+      "user-entry",
+      "user-entry",
+      "import",
+      "user-entry",
+    ]);
+    expect(mine[1].changed_fields.stage).toEqual({ from: "like", to: "hate" });
+
+    // Stored contacts are always written at schema v2
+    await service().createContact({
+      name: "V2",
+      levelId: "inner-circle",
+      platform: "manual",
+      contactFrequency: 7,
+      strength: 0.5,
+    });
+    const stored = JSON.parse(localStorage.getItem("yakw_contacts")!);
+    expect(
+      stored.every((c: { schemaVersion?: number }) => c.schemaVersion === 2),
+    ).toBe(true);
+  });
+});

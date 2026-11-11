@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { Badge } from "../../components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,8 +39,12 @@ import {
 } from "lucide-react";
 
 // Data and Types
-import { TraitSelects } from "../../components/relationship-traits-fields";
-import type { Valence, Attachment } from "../../lib/relationship-traits";
+import {
+  RelationshipFields,
+  profileOf,
+} from "../../components/relationship-traits-fields";
+import { RelationshipActivity } from "../../components/relationship-activity";
+import type { RelationshipProfile } from "../../lib/relationship-model";
 import { dunbarLevels } from "../../data/dunbarLevels";
 import { EnhancedContactStorage } from "../../lib/contact-storage-enhanced";
 import { trackEvent } from "../../lib/analytics";
@@ -58,8 +61,7 @@ interface ContactFormData {
   lastContact: string;
   contactFrequency: number;
   strength: number;
-  valence?: Valence;
-  attachment?: Attachment;
+  profile: RelationshipProfile;
   platform: string;
   source: "facebook" | "linkedin" | "manual";
 }
@@ -83,8 +85,7 @@ export default function ContactEditPage() {
     lastContact: new Date().toISOString().split("T")[0],
     contactFrequency: 90, // Default to quarterly contact
     strength: 0.5,
-    valence: undefined,
-    attachment: undefined,
+    profile: {},
     platform: "",
     source: "manual",
   });
@@ -119,8 +120,7 @@ export default function ContactEditPage() {
             lastContact: contact.lastContact.toISOString().split("T")[0],
             contactFrequency: contact.contactFrequency,
             strength: contact.strength,
-            valence: contact.valence,
-            attachment: contact.attachment,
+            profile: profileOf(contact as unknown as Record<string, unknown>),
             platform: contact.platform,
             source: contact.source,
           });
@@ -136,6 +136,15 @@ export default function ContactEditPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProfileChange = (patch: Partial<RelationshipProfile>) => {
+    setFormData((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, ...patch },
+    }));
+    setError(null);
+    setSuccess(null);
   };
 
   const handleInputChange = (
@@ -184,16 +193,32 @@ export default function ContactEditPage() {
         levelId: formData.levelId,
         notes: formData.notes.trim(),
         lastContact: new Date(formData.lastContact),
-        contactFrequency: formData.contactFrequency,
+        // Legacy day interval follows the user's own wish when given.
+        contactFrequency:
+          formData.profile.desiredContactPerMonth &&
+          formData.profile.desiredContactPerMonth > 0
+            ? Math.min(
+                365,
+                Math.max(
+                  1,
+                  Math.round(30 / formData.profile.desiredContactPerMonth),
+                ),
+              )
+            : formData.contactFrequency,
         strength: formData.strength,
-        valence: formData.valence,
-        attachment: formData.attachment,
+
         platform: formData.platform.trim() || "Manual Entry",
         source: formData.source,
         decayRate: 0.1, // Default decay rate
         importDate: isNewContact ? new Date() : originalContact!.importDate,
         firestoreId: originalContact?.firestoreId,
       };
+      // Relationship fields: set what the user rated, remove what they cleared.
+      for (const [k, v] of Object.entries(formData.profile)) {
+        if (v === undefined)
+          delete (contactData as unknown as Record<string, unknown>)[k];
+        else (contactData as unknown as Record<string, unknown>)[k] = v;
+      }
 
       if (isNewContact) {
         // Add new contact
@@ -528,63 +553,16 @@ export default function ContactEditPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contactFrequency">
-                      Contact Frequency (days)
-                    </Label>
-                    <Input
-                      id="contactFrequency"
-                      type="number"
-                      min="1"
-                      value={formData.contactFrequency}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "contactFrequency",
-                          parseInt(e.target.value) || 1,
-                        )
-                      }
+                  <div className="md:col-span-2">
+                    <RelationshipFields
+                      value={formData.profile}
+                      onChange={handleProfileChange}
                       disabled={saving}
+                      legacyStrength={
+                        originalContact ? originalContact.strength : undefined
+                      }
                     />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      How often you typically contact this person
-                    </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="strength">Relationship Strength</Label>
-                    <div className="flex items-center gap-4">
-                      <Input
-                        id="strength"
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={formData.strength}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "strength",
-                            parseFloat(e.target.value),
-                          )
-                        }
-                        disabled={saving}
-                        className="flex-1"
-                      />
-                      <Badge variant="secondary">
-                        {Math.round(formData.strength * 100)}%
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      How strong is your relationship with this person?
-                    </p>
-                  </div>
-
-                  <TraitSelects
-                    valence={formData.valence}
-                    attachment={formData.attachment}
-                    onValence={(v) => handleInputChange("valence", v)}
-                    onAttachment={(v) => handleInputChange("attachment", v)}
-                    disabled={saving}
-                  />
                 </div>
               </div>
 
@@ -600,6 +578,13 @@ export default function ContactEditPage() {
                   disabled={saving}
                 />
               </div>
+
+              {!isNewContact && originalContact && (
+                <RelationshipActivity
+                  personId={originalContact.id}
+                  desiredPerMonth={formData.profile.desiredContactPerMonth}
+                />
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">

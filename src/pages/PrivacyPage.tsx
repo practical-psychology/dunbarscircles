@@ -8,7 +8,7 @@ export default function PrivacyPage() {
     >
       <div className="mx-auto max-w-3xl space-y-6 text-gray-800 dark:text-gray-100">
         <p className="text-sm text-gray-600 dark:text-gray-300">
-          Last updated: 10 November 2026
+          Last updated: 11 November 2026
         </p>
 
         <section aria-labelledby="p-local" className="space-y-2">
@@ -16,11 +16,12 @@ export default function PrivacyPage() {
             Your contacts stay in your browser
           </h2>
           <p>
-            The contacts, relationship levels and settings you enter are saved
-            in your browser&apos;s local storage on your own device (session
-            storage is used as a fallback if local storage is blocked). We do
-            not receive them. Clearing your browser data for this site, or using
-            the delete options inside the app, removes them.
+            The contacts, relationship levels, feelings and ratings, logged
+            interactions, the history of your changes and settings you enter are
+            saved in your browser&apos;s local storage on your own device
+            (session storage is used as a fallback if local storage is blocked).
+            We do not receive them. Clearing your browser data for this site, or
+            using the delete options inside the app, removes them.
           </p>
         </section>
 
@@ -29,10 +30,12 @@ export default function PrivacyPage() {
             Optional cloud backup
           </h2>
           <p>
-            If you choose to sign in with Google, your contacts are backed up to
-            Google Firebase (Cloud Firestore) under your account ID. Access
-            rules allow only the signed-in owner to read, change or delete their
-            own records. Firebase Authentication keeps your Google account ID,
+            Signing in with Google uploads nothing by itself. Only if you then
+            choose &quot;Turn on cloud backup&quot; (we record that choice and
+            its time in your browser) are your contacts backed up to Google
+            Firebase (Cloud Firestore) under your account ID. Access rules allow
+            only the signed-in owner to read, change or delete their own
+            records. Firebase Authentication keeps your Google account ID,
             display name and email address only to run the sign-in. Signing out
             stops the sync. Deleting contacts in the app while signed in also
             deletes their cloud copies; to have your whole cloud backup and
@@ -64,7 +67,9 @@ export default function PrivacyPage() {
             <li>
               <strong>Local storage (essential):</strong> your contacts, theme,
               welcome and tutorial progress, your analytics choice, and whether
-              you dismissed the offer to remove sample people.
+              you dismissed the offer to remove sample people, your logged
+              interactions and change history (these two never leave your
+              browser), and your cloud-backup choice.
             </li>
             <li>
               <strong>Session storage (essential):</strong> a flag so a

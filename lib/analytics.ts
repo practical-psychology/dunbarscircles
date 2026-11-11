@@ -85,12 +85,35 @@ export function withUtm(
   return u.toString();
 }
 
+/** Only these parameter keys may be sent, never free text. */
+const ALLOWED_PARAMS = ["cta", "format"] as const;
+
+/**
+ * Drop anything that could carry personal or third-party data: unknown keys,
+ * and string values that are not short lowercase tokens (so a contact's name
+ * can never be sent, even by mistake).
+ */
+export function sanitizeParams(
+  params?: Record<string, unknown>,
+): Record<string, string | number | boolean> | undefined {
+  if (!params) return undefined;
+  const out: Record<string, string | number | boolean> = {};
+  for (const key of ALLOWED_PARAMS) {
+    const v = params[key];
+    if (typeof v === "number" || typeof v === "boolean") out[key] = v;
+    else if (typeof v === "string" && /^[a-z0-9_-]{1,40}$/.test(v))
+      out[key] = v;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 export function trackEvent(
   name: AnalyticsEvent,
   params?: Record<string, string | number | boolean>,
 ): void {
   if (!analyticsInstance) return;
+  const safe = sanitizeParams(params);
   void import("firebase/analytics").then(({ logEvent }) => {
-    if (analyticsInstance) logEvent(analyticsInstance, name, params);
+    if (analyticsInstance) logEvent(analyticsInstance, name, safe);
   });
 }

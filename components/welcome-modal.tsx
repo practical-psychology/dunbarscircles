@@ -89,9 +89,12 @@ export function WelcomeModal({
         "@/lib/contact-storage-service"
       );
       const service = ContactStorageService.getInstance();
-      for (const contact of SAMPLE_CONTACTS) {
-        await service.createContact(contact);
-      }
+      const { withChangeSource } = await import("@/lib/relationship-log");
+      await withChangeSource("import", async () => {
+        for (const contact of SAMPLE_CONTACTS) {
+          await service.createContact(contact);
+        }
+      });
       handleClose();
       navigate("/contacts");
     } catch (error) {

@@ -18,7 +18,7 @@ Checked against the code on 2026-11-10 (`grep -rn trackEvent`). Every name below
 | `first_map`       | `src/pages/ContactsPage.tsx`                                             | Contacts shown with >= 1 contact, once per tab session | -                         |
 | `share_click`     | none yet                                                                 | Reserved for a future share control                    | -                         |
 
-No event carries names, notes, emails or any other contact data.
+No event carries names, notes, emails or any other contact data. This is enforced in code: `sanitizeParams` (lib/analytics.ts) drops every parameter except `cta` and `format`, and any value that is not a short lowercase token, so a name cannot be sent even by mistake.
 
 Fixed in this audit: `sign_in` and `view_evidence` were documented but never fired; dashboard exports did not send `export_data`; adding a contact from the Contacts page modal did not send `add_contact`; the `cta_click` example value was out of date.
 

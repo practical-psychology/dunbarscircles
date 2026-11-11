@@ -11,6 +11,10 @@ import { Eye } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import { dunbarLevels } from "../data/dunbarLevels";
 import { CONTACTS_CHANGED_EVENT } from "@/lib/contact-events";
+import {
+  countsInCircles,
+  type RelationshipProfile,
+} from "@/lib/relationship-model";
 
 type Level = {
   id: string;
@@ -37,7 +41,9 @@ export default function RadialPage() {
     // come from the browser contact store, the app's single source of truth.
     const load = () => {
       try {
-        let stored: Array<{ levelId?: string; id?: string }> = [];
+        let stored: Array<
+          { levelId?: string; id?: string } & RelationshipProfile
+        > = [];
         try {
           const raw =
             localStorage.getItem("yakw_contacts") ??
@@ -49,6 +55,7 @@ export default function RadialPage() {
         }
         const counts: Record<string, number> = {};
         for (const c of stored) {
+          if (!countsInCircles(c)) continue; // excluded / no-contact / overlay
           const key = c.levelId || "recognition-group";
           counts[key] = (counts[key] || 0) + 1;
         }

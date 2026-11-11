@@ -5,13 +5,27 @@
  * can be unit tested. See docs/ops/BACKUP_RESTORE.md.
  */
 
-import { parseValence, parseAttachment } from "./relationship-traits";
-import type { Valence, Attachment } from "./relationship-traits";
+import {
+  cleanProfile,
+  parseInitiator,
+  parseInteractionType,
+  type ChangeRecord,
+  type Interaction,
+  type RelationshipProfile,
+} from "./relationship-model";
+import { migrateContactUp } from "./schema-migrations";
 
 export const BACKUP_APP = "dunbarscircles";
-export const BACKUP_SCHEMA_VERSION = 1;
+/**
+ * v1: contacts only (valence + attachment style).
+ * v2: relationship model fields, interactions and change history.
+ * v1 files are still accepted and migrated up on import.
+ */
+export const BACKUP_SCHEMA_VERSION = 2;
 
-export interface BackupContact {
+export interface BackupContact extends RelationshipProfile {
+  /** Source person_id, used to re-link interactions and history on restore. */
+  id?: string;
   name: string;
   levelId: string;
   platform: string;
@@ -21,8 +35,8 @@ export interface BackupContact {
   tags?: string[];
   contactFrequency: number;
   strength: number;
-  valence?: Valence;
-  attachment?: Attachment;
+  /** v1 fields kept so a downgrade stays lossless (schema-migrations). */
+  _v1?: Record<string, unknown>;
 }
 
 export interface BackupFile {
@@ -30,6 +44,8 @@ export interface BackupFile {
   schemaVersion: number;
   exportedAt: string;
   contacts: BackupContact[];
+  interactions?: Interaction[];
+  history?: ChangeRecord[];
 }
 
 export interface ImportPreview {
@@ -67,7 +83,7 @@ export function normalizeContact(
   validLevelIds: readonly string[],
 ): { contact: BackupContact } | { error: string } {
   if (!raw || typeof raw !== "object") return { error: "not an object" };
-  const r = raw as Record<string, unknown>;
+  const r = migrateContactUp(raw as Record<string, unknown>);
   const name = str(r.name);
   if (!name) return { error: "missing name" };
   const levelId = str(r.levelId);
@@ -90,22 +106,75 @@ export function normalizeContact(
         : undefined,
       contactFrequency: num(r.contactFrequency, 90, 1, 3650),
       strength: num(r.strength, 0.3, 0, 1),
-      valence: parseValence(r.valence),
-      attachment: parseAttachment(r.attachment),
+      ...cleanProfile(r),
+      id: str(r.id),
+      _v1:
+        r._v1 && typeof r._v1 === "object"
+          ? (r._v1 as Record<string, unknown>)
+          : undefined,
     },
   };
+}
+
+/** Validate interactions from a backup; drop anything malformed. */
+export function normalizeInteractions(raw: unknown): Interaction[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Interaction[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== "object") continue;
+    const x = r as Record<string, unknown>;
+    const id = str(x.interaction_id);
+    const pid = str(x.person_id);
+    const date = str(x.date);
+    if (!id || !pid || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const item: Interaction = {
+      interaction_id: id,
+      person_id: pid,
+      date,
+      type: parseInteractionType(x.type),
+    };
+    if (typeof x.duration_minutes === "number" && x.duration_minutes >= 0) {
+      item.duration_minutes = Math.round(Math.min(x.duration_minutes, 1440));
+    }
+    const by = parseInitiator(x.initiated_by);
+    if (by) item.initiated_by = by;
+    out.push(item);
+  }
+  return out;
+}
+
+/** Validate history records from a backup; drop anything malformed. */
+export function normalizeHistory(raw: unknown): ChangeRecord[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (h): h is ChangeRecord =>
+      !!h &&
+      typeof h === "object" &&
+      typeof h.change_id === "string" &&
+      typeof h.person_id === "string" &&
+      typeof h.timestamp === "string" &&
+      h.changed_fields !== null &&
+      typeof h.changed_fields === "object" &&
+      (h.source === "user-entry" || h.source === "import"),
+  );
 }
 
 /** Build the backup document from the app's current contacts. */
 export function buildBackup(
   contacts: ReadonlyArray<Record<string, any>>,
   now: Date = new Date(),
+  logs: { interactions?: Interaction[]; history?: ChangeRecord[] } = {},
 ): BackupFile {
+  const ids = new Set(contacts.map((c) => String(c.id ?? "")));
   return {
     app: BACKUP_APP,
     schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt: now.toISOString(),
+    // Only logs for people in this export.
+    interactions: (logs.interactions ?? []).filter((i) => ids.has(i.person_id)),
+    history: (logs.history ?? []).filter((h) => ids.has(h.person_id)),
     contacts: contacts.map((c) => ({
+      id: c.id ? String(c.id) : undefined,
       name: String(c.name ?? ""),
       levelId: String(c.levelId ?? ""),
       platform: String(c.platform ?? "manual"),
@@ -115,8 +184,7 @@ export function buildBackup(
       tags: Array.isArray(c.tags) ? c.tags : undefined,
       contactFrequency: Number(c.contactFrequency ?? 90),
       strength: Number(c.strength ?? 0.3),
-      valence: parseValence(c.valence),
-      attachment: parseAttachment(c.attachment),
+      ...cleanProfile(migrateContactUp(c)),
     })),
   };
 }
@@ -159,6 +227,8 @@ export function parseBackup(text: string): ParseResult {
       schemaVersion: d.schemaVersion,
       exportedAt: typeof d.exportedAt === "string" ? d.exportedAt : "",
       contacts: d.contacts as BackupContact[],
+      interactions: normalizeInteractions(d.interactions),
+      history: normalizeHistory(d.history),
     },
   };
 }

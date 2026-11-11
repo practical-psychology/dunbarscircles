@@ -24,6 +24,10 @@ import {
   pushNow,
   CONTACTS_STORAGE_KEY,
 } from "./cloud-sync";
+import { prepareStoreWrite } from "./contact-store-write";
+import { ensureLocalSchema } from "./schema-migrations";
+import { clearRelationshipLogs } from "./relationship-log";
+import { cleanProfile } from "./relationship-model";
 
 // Storage interfaces
 export interface StoredContact extends Contact {
@@ -86,6 +90,7 @@ export class ContactStorageService {
   }
 
   private initializeService(): void {
+    ensureLocalSchema();
     startCloudSync();
     if (auth) {
       onAuthStateChanged(auth, (user) => {
@@ -125,7 +130,7 @@ export class ContactStorageService {
       }
 
       // Save to localStorage
-      const dataToStore = JSON.stringify(existingContacts);
+      const dataToStore = JSON.stringify(prepareStoreWrite(existingContacts));
 
       try {
         localStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
@@ -166,7 +171,7 @@ export class ContactStorageService {
     contacts: StoredContact[],
   ): Promise<ContactOperationResult<StoredContact[]>> {
     try {
-      const dataToStore = JSON.stringify(contacts);
+      const dataToStore = JSON.stringify(prepareStoreWrite(contacts));
 
       try {
         localStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
@@ -672,16 +677,36 @@ export class ContactStorageService {
         sanitizedUpdates.contactFrequency = updates.contactFrequency;
       if (updates.strength !== undefined)
         sanitizedUpdates.strength = updates.strength;
-      if (updates.valence !== undefined)
-        sanitizedUpdates.valence = updates.valence;
-      if (updates.attachment !== undefined)
-        sanitizedUpdates.attachment = updates.attachment;
+      // Relationship fields: a present key (even undefined) is applied, so a
+      // rating can be cleared. Values are validated, never inferred.
+      const profileKeys = [
+        "stage",
+        "attachmentScore",
+        "trust",
+        "support",
+        "reciprocity",
+        "desiredContactPerMonth",
+        "contactStatus",
+        "overlay",
+      ] as const;
+      const cleaned = cleanProfile(
+        updates as unknown as Record<string, unknown>,
+      );
+      const cleared: string[] = [];
+      for (const k of profileKeys) {
+        if (k in updates) {
+          if (cleaned[k] === undefined) cleared.push(k);
+          else (sanitizedUpdates as Record<string, unknown>)[k] = cleaned[k];
+        }
+      }
       if (updates.lastContact !== undefined)
         sanitizedUpdates.lastContact = updates.lastContact;
 
       // Create updated contact
+      const base: Record<string, unknown> = { ...existingContact };
+      for (const k of cleared) delete base[k];
       const updatedContact: StoredContact = {
-        ...existingContact,
+        ...(base as unknown as StoredContact),
         ...sanitizedUpdates,
         updatedAt: new Date(),
         syncStatus:
@@ -1331,6 +1356,7 @@ export class ContactStorageService {
         console.warn("Failed to clear sessionStorage:", sessionError);
       }
 
+      clearRelationshipLogs();
       // An empty store makes cloud-sync delete the cloud copy too.
       notifyLocalChange();
 

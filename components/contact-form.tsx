@@ -1,4 +1,8 @@
-import { TraitSelects } from "@/components/relationship-traits-fields";
+import {
+  RelationshipFields,
+  profileOf,
+} from "@/components/relationship-traits-fields";
+import type { RelationshipProfile } from "@/lib/relationship-model";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -44,16 +48,33 @@ export function ContactForm({
       platform: initialData?.platform || "manual",
       tags: initialData?.tags || [],
       contactFrequency: initialData?.contactFrequency || 30,
-      strength: initialData?.strength || 0.5,
-      valence: initialData?.valence,
-      attachment: initialData?.attachment,
+      // Legacy field kept for compatibility; no longer edited or shown.
+      strength: initialData?.strength ?? 0.5,
+      ...profileOf((initialData ?? {}) as Record<string, unknown>),
     },
   });
 
   const selectedLevelId = watch("levelId");
 
+  const profile: RelationshipProfile = profileOf(
+    watch() as unknown as Record<string, unknown>,
+  );
+  const patchProfile = (patch: Partial<RelationshipProfile>) => {
+    for (const [k, v] of Object.entries(patch)) {
+      setValue(k as keyof ContactFormData, v as never, { shouldDirty: true });
+    }
+  };
+
   const handleFormSubmit = async (data: ContactFormData) => {
     try {
+      // The legacy day interval follows the user's own wish when given.
+      const desired = data.desiredContactPerMonth;
+      if (desired !== undefined && desired > 0) {
+        data.contactFrequency = Math.min(
+          365,
+          Math.max(1, Math.round(30 / desired)),
+        );
+      }
       await onSubmit(data);
       toast.success("Contact saved successfully!", {
         description: `${data.name} has been added to your ${data.levelId.replace("-", " ")} circle.`,
@@ -211,61 +232,11 @@ export function ContactForm({
                   </p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contactFrequency">
-                  Contact Frequency (days){" "}
-                  <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="contactFrequency"
-                  type="number"
-                  min="1"
-                  max="365"
-                  {...register("contactFrequency", { valueAsNumber: true })}
-                  placeholder="30"
-                  className={errors.contactFrequency ? "border-red-500" : ""}
-                  disabled={isLoading || isSubmitting}
-                />
-                {errors.contactFrequency && (
-                  <p className="text-sm text-red-500">
-                    {errors.contactFrequency.message}
-                  </p>
-                )}
-              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="strength">
-                Relationship Strength (0.0 - 1.0){" "}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="strength"
-                type="number"
-                min="0"
-                max="1"
-                step="0.1"
-                {...register("strength", { valueAsNumber: true })}
-                placeholder="0.5"
-                className={errors.strength ? "border-red-500" : ""}
-                disabled={isLoading || isSubmitting}
-              />
-              {errors.strength && (
-                <p className="text-sm text-red-500">
-                  {errors.strength.message}
-                </p>
-              )}
-              <p className="text-sm text-gray-500">
-                0.0 = Weak connection, 1.0 = Very strong connection
-              </p>
-            </div>
-
-            <TraitSelects
-              valence={watch("valence")}
-              attachment={watch("attachment")}
-              onValence={(v) => setValue("valence", v)}
-              onAttachment={(v) => setValue("attachment", v)}
+            <RelationshipFields
+              value={profile}
+              onChange={patchProfile}
               disabled={isLoading || isSubmitting}
             />
           </fieldset>

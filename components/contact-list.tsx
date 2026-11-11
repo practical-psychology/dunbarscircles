@@ -49,7 +49,6 @@ import {
   Download,
   Edit,
   Calendar,
-  AlertTriangle,
   User,
 } from "lucide-react";
 import { Facebook, Linkedin } from "./brand-icons";
@@ -57,7 +56,7 @@ import { LiquidCard } from "./ui/liquid-card";
 import { LiquidButton } from "./ui/liquid-button";
 import type { StoredContact } from "@/lib/contact-storage";
 import type { Level } from "@/types";
-import { relationshipStrengthCalculator } from "@/lib/contact-models";
+import { STAGE_LABELS, type Stage } from "@/lib/relationship-model";
 
 interface ContactListProps {
   contacts: StoredContact[];
@@ -77,7 +76,7 @@ type SortField =
   | "name"
   | "levelId"
   | "platform"
-  | "strength"
+  | "attachmentScore"
   | "lastContact"
   | "createdAt";
 type SortOrder = "asc" | "desc";
@@ -139,6 +138,11 @@ export function ContactList({
     filtered.sort((a, b) => {
       let aValue: any = a[sortField];
       let bValue: any = b[sortField];
+      if (sortField === "attachmentScore") {
+        // Not-rated people sort last; nothing is inferred for them.
+        aValue = aValue ?? -1;
+        bValue = bValue ?? -1;
+      }
 
       if (sortField === "levelId") {
         // Sort by level order
@@ -264,16 +268,6 @@ export function ContactList({
       default:
         return <User className="w-4 h-4 text-gray-600" />;
     }
-  };
-
-  const getRelationshipHealth = (contact: StoredContact) => {
-    const health = relationshipStrengthCalculator.calculateHealthScore({
-      strength: contact.strength,
-      lastContact: contact.lastContact,
-      contactFrequency: contact.contactFrequency,
-      decayRate: contact.decayRate || 0.1,
-    });
-    return health;
   };
 
   const getLevelInfo = (levelId: string) => {
@@ -485,11 +479,11 @@ export function ContactList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleSort("strength")}
+                        onClick={() => handleSort("attachmentScore")}
                         className="h-auto p-0 font-medium"
-                        aria-label={`Sort by strength ${sortField === "strength" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
+                        aria-label={`Sort by importance ${sortField === "attachmentScore" ? (sortOrder === "asc" ? "descending" : "ascending") : "ascending"}`}
                       >
-                        Strength {getSortIcon("strength")}
+                        Importance {getSortIcon("attachmentScore")}
                       </Button>
                     </TableHead>
                     <TableHead>
@@ -503,7 +497,7 @@ export function ContactList({
                         Last Contact {getSortIcon("lastContact")}
                       </Button>
                     </TableHead>
-                    <TableHead>Health</TableHead>
+                    <TableHead>Feelings</TableHead>
                     <TableHead className="w-12">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -511,7 +505,6 @@ export function ContactList({
                   <AnimatePresence>
                     {filteredAndSortedContacts.map((contact, index) => {
                       const level = getLevelInfo(contact.levelId);
-                      const health = getRelationshipHealth(contact);
                       const isSelected = selectedContacts.has(contact.id);
 
                       return (
@@ -568,19 +561,25 @@ export function ContactList({
                             </span>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-600 h-2 rounded-full"
-                                  style={{
-                                    width: `${contact.strength * 100}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="text-sm">
-                                {Math.round(contact.strength * 100)}%
+                            {contact.attachmentScore === undefined ? (
+                              <span className="text-sm text-gray-500">
+                                Not rated
                               </span>
-                            </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-blue-600 h-2 rounded-full"
+                                    style={{
+                                      width: `${contact.attachmentScore}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-sm">
+                                  {contact.attachmentScore}
+                                </span>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1 text-sm">
@@ -596,24 +595,14 @@ export function ContactList({
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                health.status === "excellent"
-                                  ? "default"
-                                  : health.status === "good"
-                                    ? "secondary"
-                                    : health.status === "fair"
-                                      ? "outline"
-                                      : "destructive"
-                              }
-                              className="flex items-center gap-1"
-                            >
-                              {health.status === "poor" ||
-                              health.status === "critical" ? (
-                                <AlertTriangle className="w-3 h-3" />
-                              ) : null}
-                              {health.score}%
-                            </Badge>
+                            {contact.stage ? (
+                              <Badge variant="outline">
+                                {STAGE_LABELS[contact.stage as Stage] ??
+                                  contact.stage}
+                              </Badge>
+                            ) : (
+                              <span className="text-sm text-gray-500">—</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>

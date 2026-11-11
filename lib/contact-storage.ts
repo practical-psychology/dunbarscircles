@@ -24,8 +24,16 @@ export interface StoredContact extends Person {
   syncStatus?: "synced" | "pending" | "error";
   lastSyncAt?: Date;
   tags?: string[];
-  valence?: "positive" | "neutral" | "negative" | "mixed";
-  attachment?: "secure" | "anxious" | "avoidant" | "unsure";
+  // Relationship model v2 (lib/relationship-model.ts)
+  stage?: import("./relationship-model").Stage;
+  attachmentScore?: number;
+  trust?: number;
+  support?: number;
+  reciprocity?: number;
+  desiredContactPerMonth?: number;
+  contactStatus?: import("./relationship-model").ContactStatus;
+  overlay?: boolean;
+  schemaVersion?: number;
   x?: number;
   y?: number;
   vx?: number;

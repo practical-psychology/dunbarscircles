@@ -19,6 +19,9 @@
 import { auth, db } from "../firebase-config";
 import { onAuthStateChanged } from "firebase/auth";
 import { CONTACTS_CHANGED_EVENT } from "./contact-events";
+import { prepareStoreWrite } from "./contact-store-write";
+import { migrateContactsUp } from "./schema-migrations";
+import { CLOUD_CONSENT_CHANGED_EVENT, hasCloudConsent } from "./cloud-consent";
 import {
   pushUser,
   syncUser,
@@ -59,7 +62,8 @@ export function readLocalContacts(): RawContact[] {
 }
 
 function writeLocalContacts(contacts: RawContact[]): void {
-  const text = JSON.stringify(contacts);
+  // Cloud data merged into this browser counts as an import in history.
+  const text = JSON.stringify(prepareStoreWrite(contacts, "import"));
   try {
     localStorage.setItem(CONTACTS_STORAGE_KEY, text);
   } catch {
@@ -84,7 +88,13 @@ let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushAgain = false;
 let started = false;
 
-export type SyncState = "signed-out" | "syncing" | "synced" | "error";
+export type SyncState =
+  | "signed-out"
+  /** Signed in, but the user has not turned on cloud backup. */
+  | "off"
+  | "syncing"
+  | "synced"
+  | "error";
 let state: SyncState = "signed-out";
 let lastError: string | null = null;
 export function getSyncState(): { state: SyncState; error: string | null } {
@@ -97,10 +107,21 @@ export function getSyncState(): { state: SyncState; error: string | null } {
  */
 export async function syncOnSignIn(uid: string): Promise<void> {
   if (!db) return;
+  // Nothing leaves the browser without the user's recorded choice.
+  if (!hasCloudConsent(uid)) {
+    readyUid = null;
+    state = "off";
+    return;
+  }
   state = "syncing";
   try {
     const local = readLocalContacts();
-    const { merged } = await syncUser(db, uid, local);
+    const { merged } = await syncUser(
+      db,
+      uid,
+      local,
+      (list) => migrateContactsUp(list) as RawContact[],
+    );
     if (JSON.stringify(merged) !== JSON.stringify(local)) {
       writeLocalContacts(merged);
     }
@@ -122,6 +143,9 @@ export async function pushNow(): Promise<{
 }> {
   const uid = currentUid;
   if (!uid || !db) throw new Error("Sign in to back up your contacts.");
+  if (!hasCloudConsent(uid)) {
+    throw new Error("Turn on cloud backup first.");
+  }
   if (readyUid !== uid) {
     await syncOnSignIn(uid);
     if (readyUid !== uid) throw new Error(lastError ?? "Cloud sync failed");
@@ -189,11 +213,24 @@ export function startCloudSync(): void {
       state = "signed-out";
       return;
     }
-    void syncOnSignIn(user.uid);
+    void syncOnSignIn(user.uid); // no-op until the user turns backup on
   });
   if (typeof window !== "undefined") {
     window.addEventListener("online", () => notifyLocalChange());
+    // Turning backup on starts the first sync; turning it off stops pushes.
+    window.addEventListener(CLOUD_CONSENT_CHANGED_EVENT, () => {
+      if (!currentUid) return;
+      if (hasCloudConsent(currentUid)) void syncOnSignIn(currentUid);
+      else {
+        readyUid = null;
+        state = "off";
+      }
+    });
   }
+}
+
+export function currentUserId(): string | null {
+  return currentUid;
 }
 
 export function isSignedIn(): boolean {

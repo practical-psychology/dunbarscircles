@@ -10,6 +10,8 @@ import {
   CardTitle,
 } from "./ui/card";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
+import { contactRhythm } from "@/lib/relationship-model";
+import { readInteractions, withChangeSource } from "@/lib/relationship-log";
 import {
   ContactStorageService,
   type StoredContact,
@@ -327,20 +329,34 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
     };
   }, [people, levels, filterLevel, showDecayWarnings]);
 
+  // Flags only people whose VOLUNTARY contact is below the rate the user
+  // asked for. Without a desired rate nobody is flagged: low frequency is
+  // not treated as a weak or failing relationship.
   const isRelationshipDecaying = (person: Person) => {
-    const daysSinceContact =
-      (Date.now() - person.lastContact.getTime()) / (1000 * 60 * 60 * 24);
-    return daysSinceContact > person.contactFrequency * 1.5;
+    const desired = (person as Person & { desiredContactPerMonth?: number })
+      .desiredContactPerMonth;
+    if (desired === undefined) return false;
+    return (
+      contactRhythm(person.id, readInteractions(), desired).status ===
+      "below-desired"
+    );
   };
 
   const getDecayingRelationships = () => {
     return people.filter(isRelationshipDecaying);
   };
 
+  const withDesired = () =>
+    people.filter(
+      (p) =>
+        (p as Person & { desiredContactPerMonth?: number })
+          .desiredContactPerMonth !== undefined,
+    );
   const getRelationshipHealth = () => {
-    const total = people.length;
-    const healthy = people.filter((p) => !isRelationshipDecaying(p)).length;
-    return (healthy / total) * 100;
+    const target = withDesired();
+    if (target.length === 0) return 0;
+    const met = target.filter((p) => !isRelationshipDecaying(p)).length;
+    return (met / target.length) * 100;
   };
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -363,33 +379,10 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
   };
 
   // Auto-categorization logic based on relationship strength and recency
-  const categorizePerson = (person: Person): string => {
-    const daysSinceContact =
-      (Date.now() - person.lastContact.getTime()) / (1000 * 60 * 60 * 24);
-
-    // Inner circle: Recent contact (< 30 days) and high interaction
-    if (daysSinceContact < 30 && person.strength > 0.8) {
-      return "inner-circle";
-    }
-
-    // Sympathy group: Regular contact (< 90 days) and good relationship
-    if (daysSinceContact < 90 && person.strength > 0.6) {
-      return "sympathy-group";
-    }
-
-    // Affinity group: Occasional contact (< 180 days) or moderate relationship
-    if (daysSinceContact < 180 && person.strength > 0.4) {
-      return "affinity-group";
-    }
-
-    // Active network: Professional connections or distant but meaningful
-    if (person.platform.includes("LinkedIn") || person.strength > 0.3) {
-      return "active-network";
-    }
-
-    // Recognition group: Old connections or low interaction
-    return "recognition-group";
-  };
+  // Imported people are never auto-placed by strength, recency or
+  // feelings. Everyone starts in the outermost layer (people you recognise),
+  // and the user moves them. See docs/RELATIONSHIP_MODEL.md.
+  const categorizePerson = (_person: Person): string => "recognition-group";
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -456,9 +449,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
 
         // Store contacts using enhanced storage
-        const addResult = await EnhancedContactStorage.addContacts(
-          newPeople,
-          "facebook",
+        const addResult = await withChangeSource("import", () =>
+          EnhancedContactStorage.addContacts(newPeople, "facebook"),
         );
         if (addResult.success) {
           setImportStatus(
@@ -525,9 +517,8 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         setPeople((prevPeople) => [...prevPeople, ...newPeople]);
 
         // Store contacts using enhanced storage
-        const addResult = await EnhancedContactStorage.addContacts(
-          newPeople,
-          "linkedin",
+        const addResult = await withChangeSource("import", () =>
+          EnhancedContactStorage.addContacts(newPeople, "linkedin"),
         );
         if (addResult.success) {
           setImportStatus(
@@ -551,14 +542,6 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
     }
   };
 
-  const getNetworkHealth = () => {
-    if (people.length === 0) return 0;
-    const healthyContacts = people.filter(
-      (person) => !isRelationshipDecaying(person),
-    );
-    return (healthyContacts.length / people.length) * 100;
-  };
-
   const prepareExportData = (): ExportData => {
     return {
       people,
@@ -567,7 +550,6 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
         exportDate: new Date().toISOString(),
         version: "1.0.0",
         totalContacts: people.length,
-        networkHealth: getNetworkHealth(),
       },
     };
   };
@@ -664,17 +646,19 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Zap className="w-4 h-4" />
-                Network Health
+                Desired contact met
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {getRelationshipHealth().toFixed(0)}%
+              <div className="text-2xl font-bold text-green-700">
+                {withDesired().length === 0
+                  ? "—"
+                  : `${getRelationshipHealth().toFixed(0)}%`}
               </div>
               <Progress
                 value={getRelationshipHealth()}
                 className="mt-2"
-                aria-label={`Network health: ${getRelationshipHealth().toFixed(0)} percent of relationships are healthy`}
+                aria-label={`Desired contact met for ${getRelationshipHealth().toFixed(0)} percent of people with a desired contact rate`}
               />
             </CardContent>
           </Card>
@@ -683,7 +667,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingDown className="w-4 h-4" />
-                Decaying
+                Below desired contact
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -760,7 +744,7 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             className={showDecayWarnings ? "bg-red-50 text-red-700" : ""}
           >
             <AlertTriangle className="w-4 h-4 mr-2" />
-            Decay Warnings
+            Desired-contact markers
           </Button>
 
           <Button
@@ -1050,11 +1034,12 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
             <CardHeader>
               <CardTitle className="text-red-700 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
-                Relationships Needing Attention
+                Below the contact you want
               </CardTitle>
-              <CardDescription className="text-red-600">
-                These relationships haven&apos;t been maintained according to
-                their expected frequency.
+              <CardDescription className="text-red-700">
+                Voluntary contact in the last 90 days is below the rate you set.
+                This is about your own wish, not the strength of the
+                relationship.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1077,12 +1062,19 @@ export function RelationshipInventory({ levels }: RelationshipInventoryProps) {
                         <div>
                           <h4 className="font-medium">{person.name}</h4>
                           <p className="text-sm text-gray-600">
-                            Last contact: {daysSinceContact} days ago •
-                            Expected: every {person.contactFrequency} days
+                            Last contact: {daysSinceContact} days ago • You want{" "}
+                            {
+                              (
+                                person as Person & {
+                                  desiredContactPerMonth?: number;
+                                }
+                              ).desiredContactPerMonth
+                            }{" "}
+                            per month
                           </p>
                         </div>
                       </div>
-                      <Badge variant="destructive">Overdue</Badge>
+                      <Badge variant="outline">Below desired</Badge>
                     </div>
                   );
                 })}

@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { notifyContactSaved } from "@/lib/sample-data";
+import { cleanProfile } from "@/lib/relationship-model";
+import { hasCloudConsent, requestCloudConsent } from "@/lib/cloud-consent";
 import { CONTACTS_CHANGED_EVENT } from "../../components/sample-cleanup-prompt";
 import { MobileAddContactFab } from "../../components/mobile-add-contact-fab";
 import { SavedLocallyIndicator } from "../../components/saved-locally-indicator";
@@ -61,6 +63,17 @@ export default function ContactsPage() {
   const handleSaveToCloud = useCallback(async () => {
     if (!contacts.length) {
       toast.info("No contacts to save");
+      return;
+    }
+    // Cloud backup needs sign-in AND an explicit, recorded choice.
+    const { currentUserId } = await import("@/lib/cloud-sync");
+    const uid = currentUserId();
+    if (!uid) {
+      toast.info("Sign in first to use optional cloud backup.");
+      return;
+    }
+    if (!hasCloudConsent(uid)) {
+      requestCloudConsent(uid);
       return;
     }
 
@@ -177,8 +190,7 @@ export default function ContactsPage() {
         platform: data.platform,
         contactFrequency: data.contactFrequency,
         strength: data.strength,
-        valence: data.valence,
-        attachment: data.attachment,
+        ...cleanProfile(data as unknown as Record<string, unknown>),
         tags: data.tags,
       };
 
@@ -315,9 +327,11 @@ export default function ContactsPage() {
     }
   };
 
-  const handleBackupAdd = async (contact: ContactForm): Promise<boolean> => {
+  const handleBackupAdd = async (
+    contact: ContactForm,
+  ): Promise<string | null> => {
     const result = await contactStorage.createContact(contact);
-    return result.success;
+    return result.success && result.data ? result.data.id : null;
   };
 
   const reloadContacts = async () => {

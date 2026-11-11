@@ -27,6 +27,7 @@ import { ConsentBanner } from "@/components/consent-banner";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { SampleCleanupPrompt } from "@/components/sample-cleanup-prompt";
+import { CloudConsentPrompt } from "@/components/cloud-consent-prompt";
 
 const liquidPageVariants = {
   initial: {
@@ -85,6 +86,7 @@ function AppContent() {
       <Toaster />
       <SonnerToaster position="top-center" richColors closeButton />
       <SampleCleanupPrompt />
+      <CloudConsentPrompt />
 
       {/* Welcome Modal for first-time users */}
       <WelcomeModal />

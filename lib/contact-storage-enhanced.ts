@@ -1,6 +1,10 @@
 // Enhanced contact storage with database integration, authorization, and fallback
 import type { Person } from "../src/types/relationships";
 import { notifyLocalChange, startCloudSync } from "./cloud-sync";
+import { prepareStoreWrite } from "./contact-store-write";
+import { ensureLocalSchema } from "./schema-migrations";
+import { clearRelationshipLogs } from "./relationship-log";
+import { countsInCircles } from "./relationship-model";
 import type { StoredContact } from "./contact-storage";
 
 // Sample data for fallback when user data is incomplete
@@ -96,6 +100,7 @@ export class EnhancedContactStorage {
     ContactOperationResult<StoredContact[]>
   > {
     startCloudSync();
+    ensureLocalSchema();
     try {
       const localContacts = this.loadFromLocalStorage();
       if (localContacts.length >= MIN_CONTACTS_FOR_MEANINGFUL_DATA) {
@@ -345,6 +350,7 @@ export class EnhancedContactStorage {
       const deleted = this.loadFromLocalStorage().length;
       localStorage.removeItem(CONTACTS_STORAGE_KEY);
       localStorage.removeItem(LEGACY_CONTACTS_KEY);
+      clearRelationshipLogs();
       try {
         sessionStorage.removeItem(CONTACTS_STORAGE_KEY);
       } catch {
@@ -376,7 +382,9 @@ export class EnhancedContactStorage {
     let lastUpdated = new Date(0);
     contacts.forEach((contact) => {
       bySource[contact.source] = (bySource[contact.source] || 0) + 1;
-      byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
+      if (countsInCircles(contact)) {
+        byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
+      }
       if (contact.importDate > lastUpdated) lastUpdated = contact.importDate;
     });
     return {
@@ -455,7 +463,10 @@ export class EnhancedContactStorage {
             importDate: (isNaN(imp.getTime()) ? new Date() : imp).toISOString(),
           };
         });
-      localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(serialized));
+      localStorage.setItem(
+        CONTACTS_STORAGE_KEY,
+        JSON.stringify(prepareStoreWrite(serialized)),
+      );
       localStorage.removeItem(LEGACY_CONTACTS_KEY);
       notifyLocalChange();
     } catch (error) {

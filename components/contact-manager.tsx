@@ -25,6 +25,7 @@ import type { Level } from "@/types/relationships";
 import { ContactStorageService } from "@/lib/contact-storage-service";
 import { trackEvent } from "@/lib/analytics";
 import { notifyContactSaved } from "@/lib/sample-data";
+import { countsInCircles } from "@/lib/relationship-model";
 import { CONTACTS_CHANGED_EVENT } from "./sample-cleanup-prompt";
 
 interface ContactManagerProps {
@@ -57,6 +58,8 @@ export function ContactManager({ levels }: ContactManagerProps) {
     const result = await ContactStorageService.getInstance().readContacts();
     const next: Record<string, number> = {};
     for (const c of result.success && result.data ? result.data : []) {
+      // Excluded, no-contact and overlay people are not counted in circles.
+      if (!countsInCircles(c)) continue;
       next[c.levelId] = (next[c.levelId] ?? 0) + 1;
     }
     setCounts(next);

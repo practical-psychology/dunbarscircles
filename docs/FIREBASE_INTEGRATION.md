@@ -24,7 +24,8 @@ No other module may import `firebase/firestore` for contact data.
 
 ## Sync behaviour
 
-1. **Sign-in** (`syncUser`): read the user's `user_contacts` documents and any documents in the retired `contacts` collection; merge with the browser store by contact id (newer `updatedAt` wins, local wins ties, duplicates collapse); write the merged list to the browser; make `user_contacts` equal to it; delete the retired documents.
+0. **Consent**: signing in uploads nothing. The first sync waits for an explicit "Turn on cloud backup" choice, recorded per account (`lib/cloud-consent.ts`). Turning it off stops all pushes.
+1. **Sign-in with consent** (`syncUser`): read the user's `user_contacts` documents and any documents in the retired `contacts` collection; merge with the browser store by contact id (newer `updatedAt` wins, local wins ties, duplicates collapse); write the merged list to the browser; make `user_contacts` equal to it; delete the retired documents.
 2. **After any local change** (`notifyLocalChange`, debounced 0.8 s): upsert every contact and delete cloud documents whose contact no longer exists (`pushUser`). Clearing all contacts therefore also clears the cloud copy.
 3. **Offline or failure**: contacts stay in the browser; the next change or reconnect retries. The dashboard shows the real state ("Local only", "Backing up…", "backed up", "failed; it will retry").
 4. **Sign-out**: syncing stops; the browser copy stays.

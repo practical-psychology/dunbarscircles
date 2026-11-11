@@ -26,6 +26,7 @@ import { Facebook, Linkedin } from "../../components/brand-icons";
 import type { StoredContact } from "@/lib/contact-storage-service";
 import { ContactStorageService } from "@/lib/contact-storage-service";
 import { trackEvent } from "@/lib/analytics";
+import { withChangeSource } from "@/lib/relationship-log";
 
 interface ImportStats {
   total: number;
@@ -99,7 +100,9 @@ export default function ContactImportPage() {
       const contact: ImportedContact = {
         id: `import_${Date.now()}_${i}`,
         name: "",
-        levelId: "active-network", // Default level
+        // Fixed default, never inferred: everyone starts in the outermost
+        // layer and the user places them (docs/RELATIONSHIP_MODEL.md).
+        levelId: "recognition-group",
         lastContact: now,
         contactFrequency: 90, // Default quarterly
         strength: 0.3, // Default strength for imported contacts
@@ -182,7 +185,7 @@ export default function ContactImportPage() {
     const createBaseContact = (): ImportedContact => ({
       id: `import_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
       name: "",
-      levelId: "active-network",
+      levelId: "recognition-group",
       lastContact: now,
       contactFrequency: 90,
       strength: 0.3,
@@ -352,17 +355,19 @@ export default function ContactImportPage() {
       let created = 0;
       for (const c of preview.contacts) {
         // Map to ContactForm fields expected by the service
-        const result = await contactStorage.createContact({
-          name: c.name,
-          email: c.email || "",
-          phone: c.phone || "",
-          notes: c.notes || "",
-          levelId: c.levelId,
-          platform: c.platform || "manual",
-          tags: c.tags || [],
-          contactFrequency: c.contactFrequency || 90,
-          strength: c.strength || 0.3,
-        });
+        const result = await withChangeSource("import", () =>
+          contactStorage.createContact({
+            name: c.name,
+            email: c.email || "",
+            phone: c.phone || "",
+            notes: c.notes || "",
+            levelId: c.levelId,
+            platform: c.platform || "manual",
+            tags: c.tags || [],
+            contactFrequency: c.contactFrequency || 90,
+            strength: c.strength || 0.3,
+          }),
+        );
         if (result.success) {
           created++;
         } else {

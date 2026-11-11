@@ -29,8 +29,16 @@ describe("ContactForm", () => {
     expect(screen.getByLabelText(/notes/i)).toBeInTheDocument();
     expect(screen.getByText(/circle assignment/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/platform/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/contact frequency/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/relationship strength/i)).toBeInTheDocument();
+    // Relationship model fields (separate, optional, never inferred)
+    expect(screen.getByLabelText(/feelings towards them/i)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/how often you would like contact/i),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/^status$/i)).toBeInTheDocument();
+    // Ratings start unrated: a "Rate" button, not a pre-filled slider
+    expect(screen.getAllByRole("button", { name: /^rate$/i })).toHaveLength(4);
+    // Old frequency-as-strength inputs are gone
+    expect(screen.queryByLabelText(/relationship strength/i)).toBeNull();
   });
 
   it("shows validation errors for required fields", async () => {
@@ -59,10 +67,14 @@ describe("ContactForm", () => {
     await user.clear(platformInput);
     await user.type(platformInput, "work");
 
-    await user.clear(screen.getByLabelText(/contact frequency/i));
-    await user.type(screen.getByLabelText(/contact frequency/i), "30");
-    await user.clear(screen.getByLabelText(/relationship strength/i));
-    await user.type(screen.getByLabelText(/relationship strength/i), "0.7");
+    await user.selectOptions(
+      screen.getByLabelText(/feelings towards them/i),
+      "dislike",
+    );
+    await user.type(
+      screen.getByLabelText(/how often you would like contact/i),
+      "2",
+    );
 
     const submitButton = screen.getByRole("button", { name: /save contact/i });
     await user.click(submitButton);
@@ -75,8 +87,9 @@ describe("ContactForm", () => {
           phone: "",
           notes: "",
           platform: "work",
-          contactFrequency: 30,
-          strength: 0.7,
+          stage: "dislike",
+          desiredContactPerMonth: 2,
+          contactFrequency: 15, // follows the wish: about every 15 days
           levelId: "recognition-group", // default value
           tags: [],
         }),
@@ -136,6 +149,9 @@ describe("ContactForm", () => {
       platform: "family",
       contactFrequency: 7,
       strength: 0.9,
+      stage: "love",
+      attachmentScore: 85,
+      desiredContactPerMonth: 4,
     };
 
     render(<ContactForm onSubmit={mockOnSubmit} initialData={initialData} />);
@@ -145,8 +161,9 @@ describe("ContactForm", () => {
     expect(screen.getByDisplayValue("+1234567890")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Test notes")).toBeInTheDocument();
     expect(screen.getByDisplayValue("family")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("7")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("0.9")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Love")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("85")).toBeInTheDocument(); // slider
+    expect(screen.getByDisplayValue("4")).toBeInTheDocument();
   });
 
   it("shows loading state when submitting", async () => {

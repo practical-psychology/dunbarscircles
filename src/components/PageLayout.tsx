@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type { User } from "firebase/auth";
 import { trackEvent } from "../../lib/analytics";
+import { getCloudConsent, requestCloudConsent } from "../../lib/cloud-consent";
 
 // Firebase Auth is loaded on demand (#76): it is ~140 KB and pulls in the
 // Google sign-in iframe, so it must not block the first paint.
@@ -207,6 +208,8 @@ export default function PageLayout({
       if (cancelled || !auth) return;
       unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
+        // Signing in uploads nothing; ask once for an explicit choice.
+        if (user && !getCloudConsent(user.uid)) requestCloudConsent(user.uid);
       });
       await checkRedirectResult();
     };

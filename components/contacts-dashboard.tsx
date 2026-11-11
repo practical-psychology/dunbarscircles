@@ -40,7 +40,23 @@ import {
 import { Facebook, Linkedin } from "./brand-icons";
 import { EnhancedContactStorage } from "@/lib/contact-storage-enhanced";
 import type { StoredContact } from "@/lib/contact-storage";
-import { getSyncState, isSignedIn, pushNow } from "@/lib/cloud-sync";
+import {
+  currentUserId,
+  getSyncState,
+  isSignedIn,
+  pushNow,
+} from "@/lib/cloud-sync";
+import {
+  CLOUD_CONSENT_CHANGED_EVENT,
+  requestCloudConsent,
+  setCloudConsent,
+} from "@/lib/cloud-consent";
+import {
+  contactRhythm,
+  countsInCircles,
+  type Interaction,
+} from "@/lib/relationship-model";
+import { readInteractions } from "@/lib/relationship-log";
 import {
   exportToJSON,
   exportToCSV,
@@ -74,6 +90,14 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [interactions, setInteractions] = useState<Interaction[]>(() =>
+    readInteractions(),
+  );
+  useEffect(() => {
+    const load = () => setInteractions(readInteractions());
+    window.addEventListener(CONTACTS_CHANGED_EVENT, load);
+    return () => window.removeEventListener(CONTACTS_CHANGED_EVENT, load);
+  }, []);
   const [backup, setBackup] = useState(() => ({
     signedIn: isSignedIn(),
     ...getSyncState(),
@@ -84,9 +108,11 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     const read = () => setBackup({ signedIn: isSignedIn(), ...getSyncState() });
     const t = setInterval(read, 2000);
     window.addEventListener(CONTACTS_CHANGED_EVENT, read);
+    window.addEventListener(CLOUD_CONSENT_CHANGED_EVENT, read);
     return () => {
       clearInterval(t);
       window.removeEventListener(CONTACTS_CHANGED_EVENT, read);
+      window.removeEventListener(CLOUD_CONSENT_CHANGED_EVENT, read);
     };
   }, []);
   const [error, setError] = useState<string | null>(null);
@@ -152,7 +178,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
               else if (contact.source === "linkedin") bySource.linkedin++;
               else if (contact.source === "manual") bySource.manual++;
 
-              byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
+              if (countsInCircles(contact))
+                byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
             });
 
             setStats({ total, bySource, byLevel });
@@ -233,12 +260,21 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     }
   };
 
+  // Only the user's own target is compared, and only voluntary contact
+  // counts. Low contact never implies a weak relationship.
   const getRelationshipHealth = (contact: StoredContact) => {
     const daysSinceContact =
       (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
       (1000 * 60 * 60 * 24);
-    const isDecaying = daysSinceContact > contact.contactFrequency * 1.5;
-    return { daysSinceContact: Math.floor(daysSinceContact), isDecaying };
+    const rhythm = contactRhythm(
+      contact.id,
+      interactions,
+      contact.desiredContactPerMonth,
+    );
+    return {
+      daysSinceContact: Math.floor(daysSinceContact),
+      belowDesired: rhythm.status === "below-desired",
+    };
   };
 
   const recalcStats = (list: StoredContact[]) => {
@@ -250,7 +286,8 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     const byLevel: Record<string, number> = {};
     list.forEach((c) => {
       bySource[c.source] = (bySource[c.source] || 0) + 1;
-      byLevel[c.levelId] = (byLevel[c.levelId] || 0) + 1;
+      if (countsInCircles(c))
+        byLevel[c.levelId] = (byLevel[c.levelId] || 0) + 1;
     });
     setStats({
       total,
@@ -384,17 +421,6 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
     }
   };
 
-  const getNetworkHealth = () => {
-    if (contacts.length === 0) return 0;
-    const healthyContacts = contacts.filter((contact) => {
-      const daysSinceContact =
-        (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
-        (1000 * 60 * 60 * 24);
-      return daysSinceContact <= contact.contactFrequency * 1.5;
-    });
-    return (healthyContacts.length / contacts.length) * 100;
-  };
-
   const prepareExportData = (): ExportData => {
     return {
       people: contacts,
@@ -403,7 +429,6 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
         exportDate: new Date().toISOString(),
         version: "1.0.0",
         totalContacts: contacts.length,
-        networkHealth: getNetworkHealth(),
       },
     };
   };
@@ -522,19 +547,42 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                 <span className="text-sm">
                   {!backup.signedIn
                     ? "Saved in this browser. Sign in for optional cloud backup."
-                    : backup.state === "syncing"
-                      ? "Saved in this browser. Backing up to your account…"
-                      : backup.state === "error"
-                        ? "Saved in this browser. Cloud backup failed; it will retry."
-                        : "Saved in this browser and backed up to your account."}
+                    : backup.state === "off"
+                      ? "Saved in this browser. Cloud backup is off for your account."
+                      : backup.state === "syncing"
+                        ? "Saved in this browser. Backing up to your account…"
+                        : backup.state === "error"
+                          ? "Saved in this browser. Cloud backup failed; it will retry."
+                          : "Saved in this browser and backed up to your account."}
                 </span>
               </div>
-              <Badge
-                variant="secondary"
-                className="text-xs bg-green-100 text-green-800"
-              >
-                {backup.signedIn ? "Cloud backup on" : "Local only"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {backup.signedIn && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px]"
+                    onClick={() => {
+                      const uid = currentUserId();
+                      if (!uid) return;
+                      if (backup.state === "off") requestCloudConsent(uid);
+                      else setCloudConsent(uid, "declined");
+                    }}
+                  >
+                    {backup.state === "off"
+                      ? "Turn on cloud backup"
+                      : "Turn off cloud backup"}
+                  </Button>
+                )}
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-green-100 text-green-800"
+                >
+                  {backup.signedIn && backup.state !== "off"
+                    ? "Cloud backup on"
+                    : "Local only"}
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -592,22 +640,19 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Avg. Strength
+                Importance rated
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {contacts.length > 0
-                  ? Math.round(
-                      (contacts.reduce((sum, c) => sum + c.strength, 0) /
-                        contacts.length) *
-                        100,
-                    )
-                  : 0}
-                %
+              <div className="text-2xl font-bold text-green-700">
+                {contacts.filter((c) => c.attachmentScore !== undefined).length}
+                <span className="text-base font-normal text-gray-500">
+                  {" "}
+                  / {contacts.length}
+                </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Relationship strength
+                People you rated for importance
               </p>
             </CardContent>
           </Card>
@@ -804,7 +849,9 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                         });
                       }
                     }}
-                    disabled={!backup.signedIn || loading}
+                    disabled={
+                      !backup.signedIn || backup.state === "off" || loading
+                    }
                     className="text-green-700 hover:text-green-800"
                     aria-label="Back up all contacts to your account now"
                     title={
@@ -897,18 +944,20 @@ export function ContactsDashboard({ levels }: ContactsDashboardProps) {
                       <div className="flex items-center gap-2">
                         <div className="text-right pr-2">
                           <div className="text-sm font-medium">
-                            {Math.round(contact.strength * 100)}%
+                            {contact.attachmentScore ?? "—"}
                           </div>
-                          <div className="text-xs text-gray-500">strength</div>
+                          <div className="text-xs text-gray-500">
+                            importance
+                          </div>
                         </div>
 
-                        {health.isDecaying && (
+                        {health.belowDesired && (
                           <Badge
-                            variant="destructive"
+                            variant="outline"
                             className="flex items-center gap-1"
+                            title="Voluntary contact in the last 90 days is below the rate you said you want"
                           >
-                            <AlertTriangle className="w-3 h-3" />
-                            Decaying
+                            Below your desired contact
                           </Badge>
                         )}
 

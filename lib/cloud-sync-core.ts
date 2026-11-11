@@ -215,6 +215,8 @@ export async function syncUser(
   firestore: Firestore,
   uid: string,
   local: RawContact[],
+  /** Upgrade cloud records to the app schema before merging. */
+  normalize: (list: RawContact[]) => RawContact[] = (l) => l,
 ): Promise<SyncResult> {
   const current = await fetchCollection(firestore, CONTACTS_COLLECTION, uid);
   let legacy: { id: string; data: DocumentData }[] = [];
@@ -223,10 +225,10 @@ export async function syncUser(
   } catch {
     legacy = []; // retired collection unreadable: nothing to migrate
   }
-  const cloud = [
+  const cloud = normalize([
     ...legacy.map((d) => fromCloud(d.id, d.data)),
     ...current.map((d) => fromCloud(d.id, d.data)),
-  ];
+  ]);
   const merged = mergeContacts(local, cloud);
   const { upserted, deleted } = await mirror(
     firestore,

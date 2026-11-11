@@ -104,22 +104,99 @@ describe("backup", () => {
   });
 });
 
-describe("relationship traits (Phase 12)", () => {
-  it("round-trips valence and attachment and drops invalid values", () => {
-    const file = buildBackup([
+describe("relationship model (schema v2)", () => {
+  it("migrates a v1 file: valence becomes stage, attachment style is kept in _v1", () => {
+    const v1 = JSON.stringify({
+      app: "dunbarscircles",
+      schemaVersion: 1,
+      exportedAt: "",
+      contacts: [
+        {
+          name: "Ann",
+          levelId: "inner-circle",
+          valence: "negative",
+          attachment: "anxious",
+        },
+        { name: "Bob", levelId: "inner-circle", valence: "bogus" },
+      ],
+    });
+    const parsed = parseBackup(v1);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const preview = previewImport(parsed.file, [], LEVELS);
+    expect(preview.toAdd[0].stage).toBe("dislike");
+    expect(preview.toAdd[0].attachmentScore).toBeUndefined(); // never inferred
+    expect(preview.toAdd[0]._v1).toEqual({
+      valence: "negative",
+      attachment: "anxious",
+    });
+    expect(preview.toAdd[1].stage).toBeUndefined();
+  });
+
+  it("round-trips v2 fields, interactions and history, dropping invalid values", () => {
+    const file = buildBackup(
+      [
+        {
+          id: "p1",
+          name: "Ann",
+          levelId: "inner-circle",
+          stage: "hate",
+          attachmentScore: 90,
+          trust: 10,
+          support: 140, // clamped
+          desiredContactPerMonth: 2,
+          contactStatus: "no-contact",
+          overlay: true,
+        },
+        { id: "p2", name: "Bob", levelId: "inner-circle", stage: "bogus" },
+      ],
+      new Date("2026-01-01T00:00:00Z"),
       {
-        name: "Ann",
-        levelId: "inner-circle",
-        valence: "positive",
-        attachment: "secure",
+        interactions: [
+          {
+            interaction_id: "i1",
+            person_id: "p1",
+            date: "2026-01-01",
+            type: "conflict",
+          },
+          {
+            interaction_id: "i2",
+            person_id: "gone",
+            date: "2026-01-01",
+            type: "voluntary",
+          },
+        ],
+        history: [
+          {
+            change_id: "c1",
+            person_id: "p1",
+            timestamp: "2026-01-01T00:00:00Z",
+            changed_fields: { stage: { from: "like", to: "hate" } },
+            source: "user-entry",
+          },
+        ],
       },
-      { name: "Bob", levelId: "inner-circle", valence: "bogus" },
-    ]);
+    );
+    expect(file.schemaVersion).toBe(2);
     const parsed = parseBackup(JSON.stringify(file));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.file.contacts[0].valence).toBe("positive");
-    expect(parsed.file.contacts[0].attachment).toBe("secure");
-    expect(parsed.file.contacts[1].valence).toBeUndefined();
+    const [ann, bob] = previewImport(parsed.file, [], LEVELS).toAdd;
+    expect(ann).toMatchObject({
+      id: "p1",
+      stage: "hate",
+      attachmentScore: 90,
+      trust: 10,
+      support: 100,
+      desiredContactPerMonth: 2,
+      contactStatus: "no-contact",
+      overlay: true,
+    });
+    expect(bob.stage).toBeUndefined();
+    // Only logs for exported people
+    expect(parsed.file.interactions?.map((i) => i.interaction_id)).toEqual([
+      "i1",
+    ]);
+    expect(parsed.file.history?.map((h) => h.change_id)).toEqual(["c1"]);
   });
 });

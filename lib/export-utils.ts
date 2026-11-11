@@ -1,3 +1,4 @@
+import { countsInCircles } from "./relationship-model";
 import { Person, Level } from "../types/relationships";
 
 // Export formats
@@ -11,7 +12,8 @@ export interface ExportData {
     exportDate: string;
     version: string;
     totalContacts: number;
-    networkHealth: number;
+    /** @deprecated frequency-based score, no longer produced */
+    networkHealth?: number;
   };
 }
 
@@ -118,6 +120,27 @@ export const exportToJSON = (
   }
 };
 
+/** Relationship-model fields (lib/relationship-model.ts) used in exports. */
+type RelationshipCsvFields = {
+  stage?: string;
+  attachmentScore?: number;
+  trust?: number;
+  support?: number;
+  reciprocity?: number;
+  desiredContactPerMonth?: number;
+  contactStatus?: string;
+  overlay?: boolean;
+};
+
+const esc = (v: unknown) =>
+  String(v ?? "").replace(
+    /[&<>"']/g,
+    (ch) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        ch
+      ]!,
+  );
+
 // Export relationship data as CSV with error handling
 export const exportToCSV = (
   people: Person[],
@@ -131,11 +154,16 @@ export const exportToCSV = (
       "Level Name",
       "Last Contact",
       "Contact Frequency (days)",
-      "Relationship Strength",
-      "Decay Rate",
       "Platform",
       "Days Since Contact",
+      "Feelings",
+      "Importance (0-100)",
+      "Trust (0-100)",
+      "Support (0-100)",
+      "Reciprocity (0-100)",
+      "Desired Contact Per Month",
       "Status",
+      "Overlay",
     ];
 
     const rows = people.map((person) => {
@@ -143,7 +171,9 @@ export const exportToCSV = (
       const daysSinceContact = Math.floor(
         (Date.now() - person.lastContact.getTime()) / (1000 * 60 * 60 * 24),
       );
-      const isDecaying = daysSinceContact > person.contactFrequency * 1.5;
+      const r = person as Person & RelationshipCsvFields;
+      const opt = (v: unknown) =>
+        v === undefined || v === null ? "" : String(v);
 
       return [
         person.name,
@@ -151,11 +181,16 @@ export const exportToCSV = (
         level?.name || "Unknown",
         person.lastContact.toISOString().split("T")[0],
         person.contactFrequency.toString(),
-        (person.strength * 100).toFixed(1) + "%",
-        person.decayRate.toString(),
         person.platform,
         daysSinceContact.toString(),
-        isDecaying ? "Needs Attention" : "Healthy",
+        opt(r.stage),
+        opt(r.attachmentScore),
+        opt(r.trust),
+        opt(r.support),
+        opt(r.reciprocity),
+        opt(r.desiredContactPerMonth),
+        r.contactStatus ?? "active",
+        r.overlay ? "yes" : "",
       ];
     });
 
@@ -183,16 +218,13 @@ export const generatePrintHTML = (data: ExportData): string => {
   const { people, levels, metadata } = data;
 
   const levelStats = levels.map((level) => {
-    const levelPeople = people.filter((p) => p.levelId === level.id);
-    return {
-      ...level,
-      actualCount: levelPeople.length,
-      avgStrength:
-        levelPeople.length > 0
-          ? levelPeople.reduce((sum, p) => sum + p.strength, 0) /
-            levelPeople.length
-          : 0,
-    };
+    // Excluded, no-contact and overlay people are not counted in circles.
+    const levelPeople = people.filter(
+      (p) =>
+        p.levelId === level.id &&
+        countsInCircles(p as unknown as RelationshipCsvFields as never),
+    );
+    return { ...level, actualCount: levelPeople.length };
   });
 
   return `
@@ -231,8 +263,8 @@ export const generatePrintHTML = (data: ExportData): string => {
           <p style="font-size: 24px; font-weight: bold;">${metadata.totalContacts}</p>
         </div>
         <div class="stat-card">
-          <h3>Network Health</h3>
-          <p style="font-size: 24px; font-weight: bold; color: #22c55e;">${metadata.networkHealth.toFixed(0)}%</p>
+          <h3>Importance rated</h3>
+          <p style="font-size: 24px; font-weight: bold;">${people.filter((p) => (p as RelationshipCsvFields).attachmentScore !== undefined).length}</p>
         </div>
         <div class="stat-card">
           <h3>Active Levels</h3>
@@ -243,13 +275,16 @@ export const generatePrintHTML = (data: ExportData): string => {
       ${levelStats
         .filter((level) => level.actualCount > 0)
         .map((level) => {
-          const levelPeople = people.filter((p) => p.levelId === level.id);
+          const levelPeople = people.filter(
+            (p) =>
+              p.levelId === level.id &&
+              countsInCircles(p as unknown as RelationshipCsvFields as never),
+          );
           return `
           <div class="level-section page-break">
             <div class="level-header">
               <h2>${level.name} (${level.actualCount} contacts)</h2>
               <p>${level.description}</p>
-              <p><strong>Average Strength:</strong> ${(level.avgStrength * 100).toFixed(1)}%</p>
             </div>
             <div class="person-list">
               ${levelPeople
@@ -258,17 +293,21 @@ export const generatePrintHTML = (data: ExportData): string => {
                     (Date.now() - person.lastContact.getTime()) /
                       (1000 * 60 * 60 * 24),
                   );
-                  const isDecaying =
-                    daysSinceContact > person.contactFrequency * 1.5;
+                  const r = person as Person & RelationshipCsvFields;
                   return `
-                  <div class="person-item ${isDecaying ? "decaying" : ""}">
-                    <strong>${person.name}</strong>
-                    <div>Platform: ${person.platform}</div>
+                  <div class="person-item">
+                    <strong>${esc(person.name)}</strong>
+                    <div>Platform: ${esc(person.platform)}</div>
+                    ${r.stage ? `<div>Feelings: ${esc(r.stage)}</div>` : ""}
                     <div>Last Contact: ${person.lastContact.toLocaleDateString()} (${daysSinceContact} days ago)</div>
+                    ${
+                      r.attachmentScore !== undefined
+                        ? `<div>Importance: ${r.attachmentScore}/100</div>
                     <div class="strength-bar">
-                      <div class="strength-fill" style="width: ${person.strength * 100}%"></div>
-                    </div>
-                    ${isDecaying ? '<div style="color: #ef4444; font-size: 12px;">⚠️ Needs Attention</div>' : ""}
+                      <div class="strength-fill" style="width: ${r.attachmentScore}%"></div>
+                    </div>`
+                        : ""
+                    }
                   </div>
                 `;
                 })
@@ -284,7 +323,6 @@ export const generatePrintHTML = (data: ExportData): string => {
         <p><strong>Export Date:</strong> ${new Date(metadata.exportDate).toLocaleString()}</p>
         <p><strong>Version:</strong> ${metadata.version}</p>
         <p><strong>Total Relationships:</strong> ${metadata.totalContacts}</p>
-        <p><strong>Network Health Score:</strong> ${metadata.networkHealth.toFixed(1)}%</p>
       </div>
     </body>
     </html>
@@ -309,7 +347,8 @@ export const shareData = async (
 ): Promise<void> => {
   const shareData = {
     title,
-    text: `I have ${data.metadata.totalContacts} contacts in my network with ${data.metadata.networkHealth.toFixed(0)}% health score.`,
+    // Counts only: never names or other third-party details.
+    text: `I mapped ${data.metadata.totalContacts} relationships with Dunbar's Circles.`,
     url: window.location.href,
   };
 

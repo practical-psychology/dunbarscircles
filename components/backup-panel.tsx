@@ -5,18 +5,27 @@ import { Button } from "@/components/ui/button";
 import { dunbarLevels } from "@/data/dunbarLevels";
 import {
   buildBackup,
+  contactKey,
   parseBackup,
   previewImport,
+  type BackupFile,
   type ImportPreview,
 } from "@/lib/backup";
+import {
+  importHistory,
+  importInteractions,
+  readHistory,
+  readInteractions,
+  withChangeSource,
+} from "@/lib/relationship-log";
 import { generateFilename } from "@/lib/export-utils";
 import { trackEvent } from "@/lib/analytics";
 import type { ContactForm } from "@/lib/contact-models";
 
 interface BackupPanelProps {
   contacts: ReadonlyArray<Record<string, any>>;
-  /** Adds one contact; resolves true on success. */
-  onAddContact: (contact: ContactForm) => Promise<boolean>;
+  /** Adds one contact; resolves to its new id, or null on failure. */
+  onAddContact: (contact: ContactForm) => Promise<string | null>;
   /** Called after an import finishes so the page can reload its list. */
   onImported: () => void;
 }
@@ -30,10 +39,18 @@ export function BackupPanel({
 }: BackupPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [file, setFile] = useState<BackupFile | null>(null);
   const [busy, setBusy] = useState(false);
 
   const handleExport = () => {
-    const json = JSON.stringify(buildBackup(contacts), null, 2);
+    const json = JSON.stringify(
+      buildBackup(contacts, new Date(), {
+        interactions: readInteractions(),
+        history: readHistory(),
+      }),
+      null,
+      2,
+    );
     const url = URL.createObjectURL(
       new Blob([json], { type: "application/json" }),
     );
@@ -53,6 +70,7 @@ export function BackupPanel({
       setPreview(null);
       toast.error(parsed.error);
     } else {
+      setFile(parsed.file);
       setPreview(previewImport(parsed.file, contacts as any[], LEVEL_IDS));
     }
     if (fileRef.current) fileRef.current.value = "";
@@ -62,13 +80,44 @@ export function BackupPanel({
     if (!preview) return;
     setBusy(true);
     let added = 0;
-    for (const c of preview.toAdd) {
-      if (await onAddContact(c)) added += 1;
-    }
+    let logs = 0;
+    await withChangeSource("import", async () => {
+      // Map ids in the file to ids in this browser: new people get new ids,
+      // people already here (duplicates) keep theirs.
+      const idMap = new Map<string, string>();
+      const existingByKey = new Map(
+        contacts.map((c) => [
+          contactKey(c as { name: string; levelId?: string }),
+          String(c.id),
+        ]),
+      );
+      for (const d of preview.duplicates) {
+        const here = existingByKey.get(contactKey(d));
+        if (d.id && here) idMap.set(d.id, here);
+      }
+      for (const c of preview.toAdd) {
+        const { id: sourceId, _v1, ...rest } = c;
+        void _v1;
+        const newId = await onAddContact(rest as ContactForm);
+        if (newId) {
+          added += 1;
+          if (sourceId) idMap.set(sourceId, newId);
+        }
+      }
+      const remap = <T extends { person_id: string }>(xs: T[] = []) =>
+        xs
+          .filter((x) => idMap.has(x.person_id))
+          .map((x) => ({ ...x, person_id: idMap.get(x.person_id)! }));
+      logs += importInteractions(remap(file?.interactions));
+      logs += importHistory(remap(file?.history));
+    });
     setBusy(false);
     setPreview(null);
+    setFile(null);
     trackEvent("import_contacts", { format: "json" });
-    toast.success(`Imported ${added} contacts`);
+    toast.success(
+      `Imported ${added} contacts${logs ? ` and ${logs} interaction or history records` : ""}`,
+    );
     onImported();
   };
 
@@ -78,8 +127,9 @@ export function BackupPanel({
         Backup and restore
       </h2>
       <p className="text-sm text-gray-600 dark:text-gray-300">
-        Download all your contacts as a file, or restore from one. Restoring
-        never overwrites: people already in your list are skipped.
+        Download all your contacts, interactions and change history as a file
+        (schema version 2), or restore from one. You see a preview first, and
+        restoring never overwrites: people already in your list are skipped.
       </p>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -103,7 +153,9 @@ export function BackupPanel({
           accept="application/json,.json"
           className="sr-only"
           aria-label="Choose a backup file to restore"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => void handleFile(e.target.files?.[0])}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            void handleFile(e.target.files?.[0])
+          }
         />
       </div>
 
@@ -119,6 +171,13 @@ export function BackupPanel({
             <li>
               {preview.duplicates.length} already in your list will be skipped
             </li>
+            {file?.interactions?.length || file?.history?.length ? (
+              <li>
+                {file?.interactions?.length ?? 0} interactions and{" "}
+                {file?.history?.length ?? 0} history records will be linked to
+                the people they belong to
+              </li>
+            ) : null}
             {preview.invalid.length > 0 && (
               <li>
                 {preview.invalid.length} entries cannot be read (for example

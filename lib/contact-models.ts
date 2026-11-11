@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Person, Level } from "../src/types/relationships";
-import { VALENCES, ATTACHMENTS } from "./relationship-traits";
-import type { Valence, Attachment } from "./relationship-traits";
+import { STAGES, CONTACT_STATUSES } from "./relationship-model";
+import type { Stage, ContactStatus } from "./relationship-model";
 
 // Core contact interfaces extending the existing Person type
 export interface Contact extends Person {
@@ -9,8 +9,16 @@ export interface Contact extends Person {
   phone?: string;
   notes?: string;
   tags?: string[];
-  valence?: Valence;
-  attachment?: Attachment;
+  // Relationship model v2 (lib/relationship-model.ts). All optional.
+  stage?: Stage;
+  attachmentScore?: number;
+  trust?: number;
+  support?: number;
+  reciprocity?: number;
+  desiredContactPerMonth?: number;
+  contactStatus?: ContactStatus;
+  overlay?: boolean;
+  schemaVersion?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,8 +33,16 @@ export interface ContactForm {
   tags?: string[];
   contactFrequency: number;
   strength: number;
-  valence?: Valence;
-  attachment?: Attachment;
+  // Relationship model v2 (lib/relationship-model.ts). All optional.
+  stage?: Stage;
+  attachmentScore?: number;
+  trust?: number;
+  support?: number;
+  reciprocity?: number;
+  desiredContactPerMonth?: number;
+  contactStatus?: ContactStatus;
+  overlay?: boolean;
+  schemaVersion?: number;
 }
 
 export interface ContactUpdate {
@@ -40,8 +56,16 @@ export interface ContactUpdate {
   tags?: string[];
   contactFrequency?: number;
   strength?: number;
-  valence?: Valence;
-  attachment?: Attachment;
+  // Relationship model v2 (lib/relationship-model.ts). All optional.
+  stage?: Stage;
+  attachmentScore?: number;
+  trust?: number;
+  support?: number;
+  reciprocity?: number;
+  desiredContactPerMonth?: number;
+  contactStatus?: ContactStatus;
+  overlay?: boolean;
+  schemaVersion?: number;
   lastContact?: Date;
 }
 
@@ -89,8 +113,14 @@ export const contactFormSchema = z.object({
     .min(0, "Relationship strength must be between 0 and 1")
     .max(1, "Relationship strength must be between 0 and 1"),
 
-  valence: z.enum(VALENCES).optional(),
-  attachment: z.enum(ATTACHMENTS).optional(),
+  stage: z.enum(STAGES).optional(),
+  attachmentScore: z.number().int().min(0).max(100).optional(),
+  trust: z.number().int().min(0).max(100).optional(),
+  support: z.number().int().min(0).max(100).optional(),
+  reciprocity: z.number().int().min(0).max(100).optional(),
+  desiredContactPerMonth: z.number().min(0).max(1000).optional(),
+  contactStatus: z.enum(CONTACT_STATUSES).optional(),
+  overlay: z.boolean().optional(),
 });
 
 export const contactUpdateSchema = z.object({
@@ -140,8 +170,14 @@ export const contactUpdateSchema = z.object({
     .max(1, "Relationship strength must be between 0 and 1")
     .optional(),
 
-  valence: z.enum(VALENCES).optional(),
-  attachment: z.enum(ATTACHMENTS).optional(),
+  stage: z.enum(STAGES).optional(),
+  attachmentScore: z.number().int().min(0).max(100).optional(),
+  trust: z.number().int().min(0).max(100).optional(),
+  support: z.number().int().min(0).max(100).optional(),
+  reciprocity: z.number().int().min(0).max(100).optional(),
+  desiredContactPerMonth: z.number().min(0).max(1000).optional(),
+  contactStatus: z.enum(CONTACT_STATUSES).optional(),
+  overlay: z.boolean().optional(),
 
   lastContact: z.date().optional(),
 });
@@ -249,17 +285,7 @@ export const validateContactData = {
       };
     }
 
-    // Get suggested level based on relationship strength
-    const suggestedLevel = getSuggestedLevel(contact.strength, levels);
-
-    if (suggestedLevel.id !== contact.levelId) {
-      return {
-        isValid: false,
-        suggestedLevelId: suggestedLevel.id,
-        reason: `Based on relationship strength (${Math.round(contact.strength * 100)}%), this contact might fit better in ${suggestedLevel.name}`,
-      };
-    }
-
+    // The circle is the user's own choice; it is only checked to exist.
     return { isValid: true };
   },
 
@@ -309,203 +335,12 @@ export const validateContactData = {
   },
 };
 
-// Relationship strength calculation algorithms
-export const relationshipStrengthCalculator = {
-  /**
-   * Calculates relationship strength based on multiple factors
-   */
-  calculateStrength: (factors: {
-    contactFrequency: number; // days between contacts
-    lastContactDays: number; // days since last contact
-    interactionQuality: number; // 0-1 scale (optional, defaults to 0.5)
-    relationshipAge: number; // days since relationship started
-    platform: string; // where you know them from
-  }): number => {
-    const {
-      contactFrequency,
-      lastContactDays,
-      interactionQuality = 0.5,
-      relationshipAge,
-      platform,
-    } = factors;
-
-    // Base strength from contact frequency (more frequent = stronger)
-    const frequencyScore = Math.max(0, 1 - contactFrequency / 365); // Normalize to 0-1
-
-    // Recency factor (recent contact = stronger)
-    const recencyScore = Math.max(
-      0,
-      1 - lastContactDays / (contactFrequency * 2),
-    );
-
-    // Relationship maturity (older relationships can be stronger)
-    const maturityScore = Math.min(1, relationshipAge / (365 * 2)); // 2 years to full maturity
-
-    // Platform factor (some platforms indicate stronger relationships)
-    const platformMultiplier = getPlatformStrengthMultiplier(platform);
-
-    // Weighted combination
-    const baseStrength =
-      (frequencyScore * 0.4 +
-        recencyScore * 0.3 +
-        interactionQuality * 0.2 +
-        maturityScore * 0.1) *
-      platformMultiplier;
-
-    return Math.max(0, Math.min(1, baseStrength));
-  },
-
-  /**
-   * Calculates relationship decay over time
-   */
-  calculateDecay: (
-    initialStrength: number,
-    daysSinceLastContact: number,
-    expectedContactFrequency: number,
-    decayRate: number = 0.1,
-  ): number => {
-    if (daysSinceLastContact <= expectedContactFrequency) {
-      return initialStrength; // No decay if within expected frequency
-    }
-
-    const excessDays = daysSinceLastContact - expectedContactFrequency;
-    const decayFactor = Math.exp(
-      -decayRate * (excessDays / expectedContactFrequency),
-    );
-
-    return Math.max(0.1, initialStrength * decayFactor); // Minimum 10% strength
-  },
-
-  /**
-   * Suggests optimal contact frequency based on relationship strength and level
-   */
-  suggestContactFrequency: (strength: number, levelId: string): number => {
-    const baseFrequencies: Record<string, number> = {
-      "inner-circle": 3, // Every 3 days
-      "sympathy-group": 7, // Weekly
-      "affinity-group": 21, // Every 3 weeks
-      "active-network": 60, // Every 2 months
-      "recognition-group": 180, // Every 6 months
-    };
-
-    const baseFreq = baseFrequencies[levelId] || 30;
-
-    // Adjust based on strength (stronger relationships need more frequent contact)
-    const strengthMultiplier = 2 - strength; // 1.0 to 2.0 range
-
-    return Math.round(baseFreq * strengthMultiplier);
-  },
-
-  /**
-   * Calculates relationship health score (0-100)
-   */
-  calculateHealthScore: (contact: {
-    strength: number;
-    lastContact: Date;
-    contactFrequency: number;
-    decayRate: number;
-  }): {
-    score: number;
-    status: "excellent" | "good" | "fair" | "poor" | "critical";
-    recommendations: string[];
-  } => {
-    const daysSinceContact =
-      (Date.now() - (contact.lastContact ?? new Date()).getTime()) /
-      (1000 * 60 * 60 * 24);
-    const currentStrength = relationshipStrengthCalculator.calculateDecay(
-      contact.strength,
-      daysSinceContact,
-      contact.contactFrequency,
-      contact.decayRate,
-    );
-
-    const score = Math.round(currentStrength * 100);
-
-    let status: "excellent" | "good" | "fair" | "poor" | "critical";
-    const recommendations: string[] = [];
-
-    if (score >= 80) {
-      status = "excellent";
-      recommendations.push("Relationship is strong and well-maintained");
-    } else if (score >= 60) {
-      status = "good";
-      recommendations.push("Consider reaching out soon to maintain strength");
-    } else if (score >= 40) {
-      status = "fair";
-      recommendations.push(
-        "Relationship needs attention - schedule contact soon",
-      );
-      if (daysSinceContact > contact.contactFrequency * 1.5) {
-        recommendations.push(
-          "Overdue for contact based on your usual frequency",
-        );
-      }
-    } else if (score >= 20) {
-      status = "poor";
-      recommendations.push(
-        "Relationship is weakening - immediate contact recommended",
-      );
-      recommendations.push(
-        "Consider adjusting contact frequency or relationship level",
-      );
-    } else {
-      status = "critical";
-      recommendations.push("Relationship at risk of being lost");
-      recommendations.push(
-        "Urgent contact needed or consider moving to outer circle",
-      );
-    }
-
-    return { score, status, recommendations };
-  },
-};
-
-// Helper functions
-function getPlatformStrengthMultiplier(platform: string): number {
-  const multipliers: Record<string, number> = {
-    family: 1.2,
-    work: 1.0,
-    school: 1.1,
-    facebook: 0.8,
-    linkedin: 0.9,
-    instagram: 0.7,
-    twitter: 0.6,
-    dating: 1.3,
-    hobby: 1.1,
-    neighbor: 1.0,
-    manual: 1.0, // User-added contacts
-  };
-
-  return multipliers[platform.toLowerCase()] || 0.8;
-}
-
-function getSuggestedLevel(strength: number, levels: Level[]): Level {
-  // Sort levels by typical strength thresholds
-  const strengthThresholds = [
-    { levelId: "inner-circle", minStrength: 0.8 },
-    { levelId: "sympathy-group", minStrength: 0.6 },
-    { levelId: "affinity-group", minStrength: 0.4 },
-    { levelId: "active-network", minStrength: 0.2 },
-    { levelId: "recognition-group", minStrength: 0.0 },
-  ];
-
-  for (const threshold of strengthThresholds) {
-    if (strength >= threshold.minStrength) {
-      const level = levels.find((l) => l.id === threshold.levelId);
-      if (level) return level;
-    }
-  }
-
-  // Fallback to recognition group
-  return (
-    levels.find((l) => l.id === "recognition-group") ||
-    levels[levels.length - 1]
-  );
-}
+// No strength, decay or "health" scores: under the relationship model
+// (lib/relationship-model.ts) contact frequency never implies attachment,
+// and no function suggests or assigns a circle.
 
 // Export utility functions for easy access
 export const contactUtils = {
   sanitize: sanitizeContactData,
   validate: validateContactData,
-  strength: relationshipStrengthCalculator,
 };
