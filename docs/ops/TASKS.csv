@@ -1,0 +1,106 @@
+No,Phase,Task,Status,Can be automated,Notes,Ref
+1,0 Ownership & access,Register dunbarscircles.com,Done,No,,WEB-007
+2,0 Ownership & access,"Turn on registrar MFA, recovery codes, registrar lock, auto-renew and contact privacy",Partly done,No,"Transfer lock verified on (WHOIS clientTransferProhibited); expiry 2027-11-07. MFA, recovery codes, auto-renew and contact privacy need your Namecheap account check",WEB-008
+3,0 Ownership & access,Firebase project and Hosting site dunbarscircles,Done,No,,
+4,0 Ownership & access,Create the CI deploy credential (FIREBASE_TOKEN secret),Done,No,FIREBASE_TOKEN works: deploy run 42941536589 released hosting + rules (2026-11-11),
+5,0 Ownership & access,Sign in to Search Console,Not started,No,,
+6,0 Ownership & access,"Ownership checklist with screenshots: repo, Firebase, registrar (gate G0)",Not started,No,Screenshots stay outside the repo,G0
+7,1 Discovery,"Repo and stack inventory: Vite + React + TypeScript, Tailwind, Firebase Auth/Firestore/Analytics, output dist, Node 20 in CI, no engines field",Done,Yes,docs/ops/STACK.md,"WEB-001, WEB-014"
+8,1 Discovery,"One-page product brief: audience, primary call to action, conversion goal",Partly done,Yes,Draft in docs/ops/PRODUCT.md; awaits your approval,WEB-002
+9,1 Discovery,Hosting decision record: Firebase Hosting,Done,Yes,docs/ops/DEPLOYMENT_DECISION.md,WEB-004
+10,1 Discovery,"Data-flow inventory: localStorage, Firestore backup, Auth, Analytics",Done,Yes,"docs/ops/DATA_FLOWS.md (single user_contacts collection, consent record, local logs)",WEB-005
+11,1 Discovery,"Baseline install, lint, tests and build, plus a defect backlog",Done,Yes,"CI runs type-check, lint, 258 tests, Firestore rules tests, build",WEB-003
+12,1 Discovery,"npm audit, scan git history for secrets, rotate any leaked key (old yakw-aab4f admin key was referenced)",Partly done,Partial,"History scanned (only old yakw-aab4f web key). Old key deletion + GitHub alert #1 are yours; npm audit: 6 high, 9 moderate (need breaking upgrades)",WEB-013
+13,1 Discovery,Check client rendering and which routes need crawlable content,Done,Yes,,
+14,2 Domain & DNS,Domain shortlist with prices,Done,Yes,,WEB-006
+15,2 Domain & DNS,Canonical hostname decision record,Done,Yes,Decision record in docs/ops/DOMAIN_AND_DNS.md,WEB-009
+16,2 Domain & DNS,DNS transition sheet that keeps MX/SPF/DKIM/DMARC records if email is used,Done,Yes,DNS sheet in DOMAIN_AND_DNS.md; MX/SPF kept; DMARC p=reject added 2026-11-10,WEB-010
+17,2 Domain & DNS,"Add custom domain in Firebase console, copy TXT and A records, set www to apex redirect",Done,No,Apex returns 200 (verified 2026-11-11),WEB-019
+18,2 Domain & DNS,Enter the DNS records at the registrar,Done,No,"A, TXT, www CNAME, MX, SPF, DMARC live",WEB-020
+19,2 Domain & DNS,"Certificate, forced HTTPS and www redirect",Done,No,Google Trust Services cert to 2027-02-05; http->https and www->apex 301,WEB-021
+20,2 Domain & DNS,"Check DNS, HTTPS, redirects and headers once the domain is live",Done,Yes,Smoke test 56/56 on https://dunbarscircles.com,G2
+21,"3 Site build: SEO, performance, accessibility","Title, description, Open Graph and Twitter tags, canonical, JSON-LD",Done,Yes,,"WEB-029, WEB-048"
+22,"3 Site build: SEO, performance, accessibility","favicon.ico, favicon.svg, apple-touch icon, manifest, 192/512 px icons",Done,Yes,,
+23,"3 Site build: SEO, performance, accessibility",1200 x 630 share image,Done,Yes,og-image.png returns 200 on the apex,
+24,"3 Site build: SEO, performance, accessibility",robots.txt and sitemap.xml,Done,Yes,Both return 200 on the apex,WEB-030
+25,"3 Site build: SEO, performance, accessibility","Inline loader, skip link, aria-busy, noscript message",Done,Yes,,
+26,"3 Site build: SEO, performance, accessibility",Lazy-loaded routes and split vendor bundles,Done,Yes,,
+27,"3 Site build: SEO, performance, accessibility",Preconnect to Firebase in index.html,Done,Yes,Preconnect to Firestore and apis.google.com; dns-prefetch identitytoolkit,
+28,"3 Site build: SEO, performance, accessibility","Security headers: CSP, Permissions-Policy, frame protection, HSTS after HTTPS",Done,Yes,"CSP (enforcing), Permissions-Policy, X-Frame-Options, HSTS live",WEB-022
+29,"3 Site build: SEO, performance, accessibility",Real 404: the ** rewrite returns HTTP 200 for unknown paths,Done,Yes,Unknown paths return HTTP 404,WEB-023
+30,"3 Site build: SEO, performance, accessibility",Remove /firebase-test and /color-contrast-test from production,Done,Yes,/firebase-test page deleted; /color-contrast-test dev-only; both 404 live,
+31,"3 Site build: SEO, performance, accessibility",One h1 on the home page and clean heading levels,Done,Yes,One h1 verified,WEB-028
+32,"3 Site build: SEO, performance, accessibility","Focus-visible styles, reduced-motion rule, main landmark",Done,Yes,,
+33,"3 Site build: SEO, performance, accessibility","Full accessibility pass: alt text, contrast, aria-label on diagram, keyboard access to nodes, text alternative to chart",Partly done,Partial,"Diagram keyboard + aria-live, alt text, text table, Lighthouse a11y 100. Screen-reader test is yours",WEB-028
+34,"3 Site build: SEO, performance, accessibility",Prerender or static HTML for the landing content,Not started,Yes,Optional; landing content still needs JavaScript,
+35,"3 Site build: SEO, performance, accessibility",Offline support through a service worker (optional),Not started,Yes,Optional,
+36,"3 Site build: SEO, performance, accessibility","Mobile check at 360, 390 and 768 px, tap targets >= 44 px",Done,Yes,No overflow at 360/390/768; 44 px targets fixed,
+37,4 UX & copy,"Fix run-together ""No level selectedYOU5..."" text and give the empty state a prompt",Done,Yes,,
+38,4 UX & copy,"Click-any-circle hint on the diagram, styled category buttons; first-load pulse animation",Done,Yes,First-load pulse present (respects reduced motion),
+39,4 UX & copy,"Grouped navigation, Sitemap moved to footer, consistent Dunbar's Circles name",Done,Yes,,
+40,4 UX & copy,"Visible 5/15/50/150/500 layers, How it works, FAQ",Done,Yes,,
+41,4 UX & copy,"Sample-data banner with a call to action, friendlier empty dashboard",Done,Yes,,
+42,4 UX & copy,Offline-aware error boundary; toasts for export and share,Done,Yes,,
+43,4 UX & copy,One primary call to action (Map My Circles),Done,Yes,Map My Circles primary; tour is a secondary link,
+44,4 UX & copy,Benefit-led hero subhead and outcome-based feature copy,Done,Yes,Benefit-led subhead and outcome copy,WEB-027
+45,4 UX & copy,"Accurate privacy badge near the hero (Stored in your browser, cloud backup optional)",Done,Yes,Badge links to /privacy,
+46,4 UX & copy,"Rename Save to Cloud to Optional cloud backup, or hide until sign-in",Done,Yes,Now 'Optional cloud backup'; requires explicit consent,
+47,4 UX & copy,"Fix deploy workflow: commit package-lock.json, npm ci, pin Node, add lint and tests, blocking type-check, firebase deploy --token",Done,Yes,"npm ci, Node pinned, lint/tests/type-check blocking, Firebase CLI deploy of hosting + rules",WEB-012
+48,4 UX & copy,"Welcome modal: max 2 screens, final button Add my first contact / Start with sample data, Next arrow, Skip/Next spacing",Done,Yes,2 screens; Add my first contact / Start with sample data,
+49,4 UX & copy,Persistent Add Contact button within thumb reach on mobile,Done,Yes,56 px floating button on Contacts and Dashboard (mobile),
+50,4 UX & copy,"On first real contact, offer to clear sample data (with confirmation)",Done,Yes,Prompt removes only tagged sample people; browser-verified,
+51,4 UX & copy,"All changes saved locally indicator; toasts for add, edit and delete",Done,Yes,Saved-in-browser label; toasts for add/edit/move/delete,
+52,4 UX & copy,"Export/re-import JSON with schema version, import preview and de-duplication, tested wipe-and-restore round trip",Done,Yes,"Backup schema v2 with preview, de-dup, interactions + history; round trip tested",
+53,4 UX & copy,Screenshot or animated preview of the diagram on the landing page,Done,Yes,Static circles preview SVG with alt text,
+54,4 UX & copy,Check Life Stages labels on a real phone,Partly done,Yes,360 px emulation shows no clipping; real-phone check is yours,
+55,5 Science & editorial,"Fact-check every number; flagged: Extended (5K-50K) exceeds evidenced layers, 150 should be an estimate with a range",Partly done,Partial,Numbers fixed (no 5K-50K; 150 shown with 100-250 range); reviewer sign-off is yours,WEB-024
+56,5 Science & editorial,"Evidence and limitations section with reference list, covering the 2021 critique of 150",Done,Yes,/evidence covers the 2021 critique; references incl. Dunbar 1993,WEB-025
+57,5 Science & editorial,"Rights register for images, icons and fonts",Done,Yes,docs/ops/ASSETS.md,WEB-026
+58,6 Privacy & legal,Privacy and cookie policy matching real data flows (Analytics is live),Partly done,Partial,"Policy matches data flows (consent, local logs, Hosting IPs); legal review is yours",WEB-036
+59,6 Privacy & legal,Consent banner or Consent Mode for EU visitors,Done,Yes,Opt-in banner; DNT/GPC honoured; Analytics loads only after consent,
+60,6 Privacy & legal,"Contact page, corrections policy, privacy link in footer",Partly done,Yes,Corrections policy and footer privacy link done; contact is GitHub Issues until you give an address,WEB-035
+61,6 Privacy & legal,Deploy owner-only Firestore rules to the live project,Done,Yes,Rules released by deploy 2026-11-11; 14 emulator tests,
+62,6 Privacy & legal,Forms safety review; record not-applicable rationale if sign-in is the only form,Done,Yes,docs/ops/FORMS.md,WEB-037
+63,7 CI/CD & release,"Deploy workflow: live on merge to main, preview channel on pull requests",Done,Yes,Live on main; preview channel on PRs,WEB-012
+64,7 CI/CD & release,Keep previews away from production data and out of search (noindex),Done,Yes,Preview hosts noindex; no analytics on previews,WEB-018
+65,7 CI/CD & release,"Branch protection, required checks, CODEOWNERS",Not started,Partial,No CODEOWNERS file yet; applying branch protection is yours,WEB-011
+66,7 CI/CD & release,Release-tag procedure and record of the live git SHA,Partly done,Yes,Procedure in docs/ops/RELEASE.md; live SHA recorded (2fcc61f); no tag pushed yet,WEB-011
+67,7 CI/CD & release,Rollback runbook plus a dry run,Partly done,Yes,Runbook + dry-run steps in RUNBOOK.md; dry run not executed,WEB-023
+68,7 CI/CD & release,Release checklist for gates G0-G6,Done,Yes,docs/ops/RELEASE.md,G0-G6
+69,8 Analytics & monitoring,Choose analytics: GA4 (already initialised via Firebase) or Plausible/Umami,Owner action,No,GA4 wired behind consent; record your choice in ANALYTICS.md,WEB-032
+70,8 Analytics & monitoring,Event and UTM dictionary,Done,Yes,docs/ops/ANALYTICS.md matches code,WEB-033
+71,8 Analytics & monitoring,"Add events without personal data: tour_start, add_contact, first_map, export, share_click",Done,Yes,"cta_click, start_tour, add_contact, first_map, import, export, sign_in, view_evidence; params allow-listed (no names)",WEB-033
+72,8 Analytics & monitoring,Verify Search Console domain property and submit sitemap,Owner action,No,,WEB-031
+73,8 Analytics & monitoring,"Uptime and error monitoring, domain-expiry reminder",Partly done,Yes,"30-min uptime + weekly domain/cert expiry workflows; error monitoring options documented, not implemented",WEB-034
+74,8 Analytics & monitoring,Cloud budget alert,Owner action,No,,
+75,9 QA & go-live,"Re-check canonical, sitemap and Open Graph URLs on the new hostname",Done,Yes,,
+76,9 QA & go-live,Functional regression test,Done,Yes,main-journey test + history test,WEB-038
+77,9 QA & go-live,"Live smoke test: links, calls to action, console errors, mobile, 404, keyboard",Done,Yes,"scripts/smoke-test.sh, 56 checks",WEB-042
+78,9 QA & go-live,Lighthouse performance and accessibility audits,Done,Yes,"Mobile: Perf 72 -> 78 (local after fixes), A11y/BP/SEO 100; re-run on live pending",WEB-040
+79,9 QA & go-live,Browser and device matrix including real Safari and iOS,Owner action,No,,WEB-039
+80,9 QA & go-live,Pilot with first-time users (first map in <= 5 minutes),Owner action,No,,
+81,9 QA & go-live,Signed go-live record (gate G6),Owner action,No,,"WEB-041, WEB-042"
+82,9 QA & go-live,Watch errors and metrics for 24-72 hours after launch,Not started,Yes,Not scheduled yet; checklist in RUNBOOK.md,WEB-043
+83,10 Promotion,Connect Instagram @practicalpsychadvice and X @psy_tips_advice to a scheduler (e.g. Postiz),Owner action,No,You authorise the accounts,
+84,10 Promotion,"Brand kit, templates, screenshots, app demo recordings",Not started,Yes,,
+85,10 Promotion,"Carousels, source cards, quote cards, banners",Not started,Yes,,ASSET-001 to 024
+86,10 Promotion,"Six short videos (15-45 s), 60-90 s demo, FAQ videos: scripts, captions, Remotion renders",Not started,Yes,,
+87,10 Promotion,Instagram and X posts with channel-specific UTM links,Not started,Yes,UTM convention ready (withUtm),
+88,10 Promotion,"Launch article (800-1,200 words), newsletter, press one-pager, outreach kit, community prompts",Not started,Yes,,
+89,10 Promotion,8-week editorial calendar,Done,Yes,docs/ops/EDITORIAL.md,WEB-044
+90,10 Promotion,Outreach target list and drafted messages,Partly done,Partial,Draft message in EDITORIAL.md; target list empty; sending is yours,WEB-047
+91,10 Promotion,Schedule the 2-week launch cycle (after G6),Not started,Yes,After G6,
+92,10 Promotion,"A/B test backlog: call-to-action wording, static vs motion hero, carousel vs demo",Not started,Yes,,
+93,11 Operations,"Scheduled tasks: weekly uptime/smoke check, monthly dependency and citation review, renewal reminder",Partly done,Yes,"Uptime 30 min, domain/cert weekly, Dependabot; monthly citation review is a doc checklist only",WEB-045
+94,11 Operations,30-day report from GA4 and Search Console exports,Owner action,Yes,Needs your exports,WEB-046
+95,11 Operations,Fix task register: WEB-039 to WEB-043 each list themselves as a dependency,Not started,Yes,Task register with WEB-039..043 is not in the repo,
+96,12 Release 1+ relationship features,Versioned data schema and migration for profiles and time-stamped observations,Done,Yes,"Schema v2, reversible per-contact migration, v1 backup copy",
+97,12 Release 1+ relationship features,Five-stage valence plus mixed/unknown; attachment 0-100,Done,Yes,love/like/indifferent/dislike/hate + mixed/unknown; importance 0-100,
+98,12 Release 1+ relationship features,"Voluntary/obligatory/conflict interactions; desired vs actual contact; trust, reciprocity, support",Done,Yes,Interactions by type; desired vs voluntary contact; trust/support/reciprocity 0-100,
+99,12 Release 1+ relationship features,Circle stays user-assigned; overlay for negative relationships,Done,Yes,"Circle user-assigned; overlay + excluded/no-contact status, never automatic",
+100,12 Release 1+ relationship features,History timeline and export of ratings,Done,Yes,Append-only history on edit page; included in export v2,
+101,12 Release 1+ relationship features,Map coloured by valence with accessible legend,Not started,Yes,Feelings shown as counts/badges; map not coloured by feeling yet,
+102,12 Release 1+ relationship features,Attachment-vs-contact scatterplot and layer x valence matrix,Not started,Yes,Not built; mismatch list exists instead,
+103,12 Release 1+ relationship features,Dismissible trend prompts; mismatch metric skipped when data is too small,Partly done,Yes,Mismatch skipped under 8 people or zero variance; dismissible trend prompts not built,
+104,12 Release 1+ relationship features,Russian localisation (optional),Not started,Partial,,
+105,12 Release 1+ relationship features,Opt-in research mode,Owner action,No,Consent and ethics are your decision,
