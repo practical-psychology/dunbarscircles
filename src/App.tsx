@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -9,7 +10,6 @@ const NetworkPage = lazy(() => import("./pages/NetworkPage"));
 const DigitalPage = lazy(() => import("./pages/DigitalPage"));
 const LifecyclePage = lazy(() => import("./pages/LifecyclePage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const FirebaseTestPage = lazy(() => import("./pages/FirebaseTestPage"));
 const SitemapPage = lazy(() => import("./pages/SitemapPage"));
 const ContactsPage = lazy(() => import("./pages/ContactsPage"));
 const ContactEditPage = lazy(() => import("./pages/ContactEditPage"));
@@ -21,12 +21,12 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const EvidencePage = lazy(() => import("./pages/EvidencePage"));
-import LiquidLoadingScreen from "./components/LiquidLoadingScreen";
 import { LiquidThemeToggle } from "@/components/ui/liquid-theme-toggle";
 import { WelcomeModal } from "@/components/welcome-modal";
 import { ConsentBanner } from "@/components/consent-banner";
 import { Toaster } from "@/components/ui/toaster";
-import { lazy, Suspense, useState, useEffect } from "react";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { SampleCleanupPrompt } from "@/components/sample-cleanup-prompt";
 
 const liquidPageVariants = {
   initial: {
@@ -55,29 +55,8 @@ const liquidPageTransition = {
 function AppContent() {
   const location = useLocation();
 
-  // Check if we're in a test environment
-  const isTestEnvironment =
-    typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
-  // In test environment, skip loading screen entirely
-  const [isLoading, setIsLoading] = useState(!isTestEnvironment);
-
-  useEffect(() => {
-    if (isTestEnvironment) {
-      // Skip loading in tests
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [isTestEnvironment]);
-
-  if (isLoading) {
-    return <LiquidLoadingScreen skipDelay={isTestEnvironment} />;
-  }
+  // No artificial splash delay (#76): index.html already shows an inline
+  // loader until React mounts, and an extra 600 ms only delayed LCP.
 
   return (
     <div className="min-h-screen font-sans relative overflow-hidden">
@@ -104,12 +83,15 @@ function AppContent() {
       </div>
 
       <Toaster />
+      <SonnerToaster position="top-center" richColors closeButton />
+      <SampleCleanupPrompt />
 
       {/* Welcome Modal for first-time users */}
       <WelcomeModal />
       <ConsentBanner />
 
-      <AnimatePresence mode="wait">
+      {/* initial={false}: the first page renders without a fade-in (LCP). */}
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={location.pathname}
           initial="initial"
@@ -147,8 +129,6 @@ function AppContent() {
                     path="/color-contrast-test"
                     element={<ColorContrastTestPage />}
                   />
-
-                  <Route path="/firebase-test" element={<FirebaseTestPage />} />
                 </>
               )}
               <Route path="/sitemap" element={<SitemapPage />} />

@@ -4,7 +4,7 @@
  * Provides comprehensive contact storage and persistence with:
  * - CRUD operations (create, read, update, delete)
  * - localStorage persistence with sessionStorage fallback
- * - Firebase Firestore integration for authenticated users with offline support
+ * - Optional cloud backup through lib/cloud-sync.ts (the only Firestore access)
  * - Data migration utilities for existing relationship data
  * - Contact search and filtering functionality
  *
@@ -14,30 +14,16 @@
 import type { Person } from "../src/types/relationships";
 import type { Contact, ContactForm, ContactUpdate } from "./contact-models";
 import { sanitizeContactData, validateContactData } from "./contact-models";
-import { auth, db } from "../firebase-config";
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  writeBatch,
-  Timestamp,
-  type Unsubscribe,
-} from "firebase/firestore";
+import { auth } from "../firebase-config";
 import { onAuthStateChanged, type User } from "firebase/auth";
-
-// Storage keys
-const CONTACTS_STORAGE_KEY = "yakw_contacts";
-
-// Firestore collection name
-const CONTACTS_COLLECTION = "user_contacts";
+// All Firestore access for contacts lives in cloud-sync (one collection,
+// deterministic ids). This service only touches the browser store.
+import {
+  startCloudSync,
+  notifyLocalChange,
+  pushNow,
+  CONTACTS_STORAGE_KEY,
+} from "./cloud-sync";
 
 // Storage interfaces
 export interface StoredContact extends Contact {
@@ -87,9 +73,6 @@ export class ContactStorageService {
   private static instance: ContactStorageService;
   private currentUser: User | null = null;
   private isOnline: boolean = navigator.onLine;
-  private syncQueue: StoredContact[] = [];
-  private authUnsubscribe: Unsubscribe | null = null;
-  private contactsUnsubscribe: Unsubscribe | null = null;
 
   private constructor() {
     this.initializeService();
@@ -103,124 +86,18 @@ export class ContactStorageService {
   }
 
   private initializeService(): void {
-    // Monitor authentication state
+    startCloudSync();
     if (auth) {
-      this.authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, (user) => {
         this.currentUser = user;
-        if (user) {
-          this.enableFirestoreSync();
-        } else {
-          this.disableFirestoreSync();
-        }
       });
     }
-
-    // Monitor online/offline status
     window.addEventListener("online", () => {
       this.isOnline = true;
-      this.processSyncQueue();
     });
-
     window.addEventListener("offline", () => {
       this.isOnline = false;
     });
-  }
-
-  private enableFirestoreSync(): void {
-    // Enable Firestore sync when user is authenticated
-    console.log("Firestore sync enabled");
-  }
-
-  private disableFirestoreSync(): void {
-    // Disable Firestore sync when user is not authenticated
-    console.log("Firestore sync disabled");
-    if (this.contactsUnsubscribe) {
-      this.contactsUnsubscribe();
-      this.contactsUnsubscribe = null;
-    }
-  }
-
-  private async processSyncQueue(): Promise<void> {
-    if (
-      !this.currentUser ||
-      !this.isOnline ||
-      !db ||
-      this.syncQueue.length === 0
-    ) {
-      return;
-    }
-
-    const batch = writeBatch(db);
-    const processedContacts: StoredContact[] = [];
-
-    for (const contact of this.syncQueue) {
-      try {
-        const docRef = contact.firestoreId
-          ? doc(db, CONTACTS_COLLECTION, contact.firestoreId)
-          : doc(collection(db, CONTACTS_COLLECTION));
-
-        const firestoreData = this.prepareForFirestore(contact);
-        batch.set(docRef, firestoreData);
-
-        contact.firestoreId = docRef.id;
-        contact.syncStatus = "synced";
-        contact.lastSyncAt = new Date();
-        processedContacts.push(contact);
-      } catch (error) {
-        console.error("Failed to prepare contact for sync:", error);
-        contact.syncStatus = "error";
-      }
-    }
-
-    try {
-      await batch.commit();
-      this.syncQueue = this.syncQueue.filter(
-        (c) => !processedContacts.includes(c),
-      );
-
-      // Update local storage with sync status
-      for (const contact of processedContacts) {
-        await this.updateLocalContact(contact.id, {
-          firestoreId: contact.firestoreId,
-          syncStatus: contact.syncStatus,
-          lastSyncAt: contact.lastSyncAt,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to sync contacts to Firestore:", error);
-    }
-  }
-
-  private addToSyncQueue(contact: StoredContact): void {
-    const existingIndex = this.syncQueue.findIndex((c) => c.id === contact.id);
-    if (existingIndex >= 0) {
-      this.syncQueue[existingIndex] = contact;
-    } else {
-      this.syncQueue.push(contact);
-    }
-  }
-
-  private prepareForFirestore(contact: StoredContact): any {
-    const { firestoreId, syncStatus, lastSyncAt, ...firestoreData } = contact;
-    return {
-      ...firestoreData,
-      createdAt: Timestamp.fromDate(contact.createdAt),
-      updatedAt: Timestamp.fromDate(contact.updatedAt),
-      lastContact: Timestamp.fromDate(contact.lastContact),
-      userId: this.currentUser?.uid,
-    };
-  }
-
-  private parseFromFirestore(data: any, docId: string): StoredContact {
-    return {
-      ...data,
-      firestoreId: docId,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-      lastContact: data.lastContact?.toDate() || new Date(),
-      syncStatus: "synced" as const,
-      lastSyncAt: new Date(),
-    };
   }
 
   private async saveToLocalStorage(
@@ -252,6 +129,7 @@ export class ContactStorageService {
 
       try {
         localStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
+        notifyLocalChange();
         return {
           success: true,
           data: contacts,
@@ -261,6 +139,7 @@ export class ContactStorageService {
         // Fallback to sessionStorage
         try {
           sessionStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
+          notifyLocalChange();
           return {
             success: true,
             data: contacts,
@@ -291,6 +170,7 @@ export class ContactStorageService {
 
       try {
         localStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
+        notifyLocalChange();
         return {
           success: true,
           data: contacts,
@@ -300,6 +180,7 @@ export class ContactStorageService {
         // Fallback to sessionStorage
         try {
           sessionStorage.setItem(CONTACTS_STORAGE_KEY, dataToStore);
+          notifyLocalChange();
           return {
             success: true,
             data: contacts,
@@ -378,54 +259,6 @@ export class ContactStorageService {
         error: `Failed to load contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
         source: "localStorage",
       };
-    }
-  }
-
-  private async loadFromFirestore(
-    options: ContactSearchOptions = {},
-  ): Promise<StoredContact[]> {
-    if (!this.currentUser || !db) {
-      return [];
-    }
-
-    try {
-      let q = query(
-        collection(db, CONTACTS_COLLECTION),
-        where("userId", "==", this.currentUser.uid),
-      );
-
-      // Apply filters
-      if (options.levelIds && options.levelIds.length > 0) {
-        q = query(q, where("levelId", "in", options.levelIds));
-      }
-
-      if (options.platforms && options.platforms.length > 0) {
-        q = query(q, where("platform", "in", options.platforms));
-      }
-
-      // Apply sorting
-      if (options.sortBy) {
-        const direction = options.sortOrder === "desc" ? "desc" : "asc";
-        q = query(q, orderBy(options.sortBy, direction));
-      }
-
-      // Apply limit
-      if (options.limit) {
-        q = query(q, limit(options.limit));
-      }
-
-      const querySnapshot = await getDocs(q);
-      const contacts: StoredContact[] = [];
-
-      querySnapshot.forEach((doc) => {
-        const contact = this.parseFromFirestore(doc.data(), doc.id);
-        contacts.push(contact);
-      });
-
-      return contacts;
-    } catch (error) {
-      console.error("Failed to load from Firestore:", error);
-      return [];
     }
   }
 
@@ -623,12 +456,7 @@ export class ContactStorageService {
   }
 
   public destroy(): void {
-    if (this.authUnsubscribe) {
-      this.authUnsubscribe();
-    }
-    if (this.contactsUnsubscribe) {
-      this.contactsUnsubscribe();
-    }
+    // Nothing to release: auth listeners live for the page lifetime.
   }
 
   // CRUD Operations
@@ -690,32 +518,6 @@ export class ContactStorageService {
         };
       }
 
-      // Try to sync to Firestore if user is authenticated and online
-      if (this.currentUser && this.isOnline && db) {
-        try {
-          const docRef = doc(collection(db, CONTACTS_COLLECTION));
-          const firestoreData = this.prepareForFirestore(contact);
-          await setDoc(docRef, firestoreData);
-
-          contact.firestoreId = docRef.id;
-          contact.syncStatus = "synced";
-          contact.lastSyncAt = new Date();
-
-          // Update local storage with sync info
-          await this.updateLocalContact(contact.id, {
-            firestoreId: contact.firestoreId,
-            syncStatus: contact.syncStatus,
-            lastSyncAt: contact.lastSyncAt,
-          });
-        } catch (firestoreError) {
-          console.warn(
-            "Failed to sync to Firestore, will retry later:",
-            firestoreError,
-          );
-          this.addToSyncQueue(contact);
-        }
-      }
-
       return {
         success: true,
         data: contact,
@@ -745,27 +547,8 @@ export class ContactStorageService {
       let source: "firestore" | "localStorage" | "sessionStorage" =
         "localStorage";
 
-      // Try to load from Firestore first if user is authenticated and online
-      if (this.currentUser && this.isOnline && db) {
-        try {
-          const firestoreContacts = await this.loadFromFirestore(options);
-          if (firestoreContacts.length > 0) {
-            contacts = firestoreContacts;
-            source = "firestore";
-
-            // Update local storage with latest data
-            await this.saveToLocalStorage(contacts);
-          }
-        } catch (firestoreError) {
-          console.warn(
-            "Failed to load from Firestore, using local storage:",
-            firestoreError,
-          );
-        }
-      }
-
-      // Fallback to local storage if Firestore failed or user not authenticated
-      if (contacts.length === 0) {
+      // The browser store is the source of truth (cloud-sync mirrors it).
+      {
         const localResult = await this.loadFromLocalStorage();
         contacts = localResult.data || [];
         source = localResult.source;
@@ -796,48 +579,6 @@ export class ContactStorageService {
     contactId: string,
   ): Promise<ContactOperationResult<StoredContact>> {
     try {
-      // Try Firestore first if user is authenticated and online
-      if (this.currentUser && this.isOnline && db) {
-        try {
-          // First try to find by document ID
-          const docRef = doc(db, CONTACTS_COLLECTION, contactId);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const contact = this.parseFromFirestore(docSnap.data(), docSnap.id);
-            return {
-              success: true,
-              data: contact,
-              source: "firestore",
-            };
-          }
-
-          // If not found by document ID, search by contact ID field
-          const q = query(
-            collection(db, CONTACTS_COLLECTION),
-            where("userId", "==", this.currentUser.uid),
-            where("id", "==", contactId),
-            limit(1),
-          );
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const doc = querySnapshot.docs[0];
-            const contact = this.parseFromFirestore(doc.data(), doc.id);
-            return {
-              success: true,
-              data: contact,
-              source: "firestore",
-            };
-          }
-        } catch (firestoreError) {
-          console.warn(
-            "Failed to load from Firestore, trying local storage:",
-            firestoreError,
-          );
-        }
-      }
-
       // Fallback to local storage
       const localResult = await this.loadFromLocalStorage();
       const contacts = localResult.data || [];
@@ -962,39 +703,6 @@ export class ContactStorageService {
         };
       }
 
-      // Try to sync to Firestore if user is authenticated and online
-      if (
-        this.currentUser &&
-        this.isOnline &&
-        db &&
-        existingContact.firestoreId
-      ) {
-        try {
-          const docRef = doc(
-            db,
-            CONTACTS_COLLECTION,
-            existingContact.firestoreId,
-          );
-          const firestoreData = this.prepareForFirestore(updatedContact);
-          await updateDoc(docRef, firestoreData);
-
-          updatedContact.syncStatus = "synced";
-          updatedContact.lastSyncAt = new Date();
-
-          // Update local storage with sync info
-          await this.updateLocalContact(contactId, {
-            syncStatus: updatedContact.syncStatus,
-            lastSyncAt: updatedContact.lastSyncAt,
-          });
-        } catch (firestoreError) {
-          console.warn(
-            "Failed to sync update to Firestore, will retry later:",
-            firestoreError,
-          );
-          this.addToSyncQueue(updatedContact);
-        }
-      }
-
       return {
         success: true,
         data: updatedContact,
@@ -1020,7 +728,7 @@ export class ContactStorageService {
     contactId: string,
   ): Promise<ContactOperationResult<{ deleted: boolean }>> {
     try {
-      // Get existing contact to check if it exists in Firestore
+      // Make sure the contact exists before deleting
       const existingResult = await this.readContact(contactId);
       if (!existingResult.success || !existingResult.data) {
         return {
@@ -1031,26 +739,6 @@ export class ContactStorageService {
       }
 
       const existingContact = existingResult.data;
-
-      // Delete from Firestore if it exists there
-      if (
-        this.currentUser &&
-        this.isOnline &&
-        db &&
-        existingContact.firestoreId
-      ) {
-        try {
-          const docRef = doc(
-            db,
-            CONTACTS_COLLECTION,
-            existingContact.firestoreId,
-          );
-          await deleteDoc(docRef);
-        } catch (firestoreError) {
-          console.warn("Failed to delete from Firestore:", firestoreError);
-          // Continue with local deletion even if Firestore fails
-        }
-      }
 
       // Delete from local storage
       const localResult = await this.deleteFromLocalStorage(contactId);
@@ -1629,26 +1317,6 @@ export class ContactStorageService {
       const allContactsResult = await this.readContacts();
       const contactCount = allContactsResult.data?.length || 0;
 
-      // Clear from Firestore if user is authenticated
-      if (this.currentUser && db) {
-        try {
-          const q = query(
-            collection(db, CONTACTS_COLLECTION),
-            where("userId", "==", this.currentUser.uid),
-          );
-          const querySnapshot = await getDocs(q);
-
-          const batch = writeBatch(db);
-          querySnapshot.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-
-          await batch.commit();
-        } catch (firestoreError) {
-          console.warn("Failed to clear Firestore contacts:", firestoreError);
-        }
-      }
-
       // Clear from local storage
       try {
         localStorage.removeItem(CONTACTS_STORAGE_KEY);
@@ -1663,8 +1331,8 @@ export class ContactStorageService {
         console.warn("Failed to clear sessionStorage:", sessionError);
       }
 
-      // Clear sync queue
-      this.syncQueue = [];
+      // An empty store makes cloud-sync delete the cloud copy too.
+      notifyLocalChange();
 
       return {
         success: true,
@@ -1948,108 +1616,43 @@ export class ContactStorageService {
     return {
       isOnline: this.isOnline,
       isAuthenticated: !!this.currentUser,
-      queueLength: this.syncQueue.length,
-      lastSyncAttempt: this.syncQueue.length > 0 ? new Date() : undefined,
+      queueLength: 0,
+      lastSyncAttempt: undefined,
     };
   }
 
   /**
-   * Force sync of pending contacts
+   * Push the browser store to the cloud backup now (cloud-sync).
    */
   public async forcSync(): Promise<
     ContactOperationResult<{ synced: number; failed: number }>
   > {
-    if (!this.currentUser || !this.isOnline) {
-      return {
-        success: false,
-        error: "Cannot sync: user not authenticated or offline",
-        source: "localStorage",
-      };
-    }
-
-    try {
-      const initialQueueLength = this.syncQueue.length;
-      await this.processSyncQueue();
-      const remainingQueueLength = this.syncQueue.length;
-      const synced = initialQueueLength - remainingQueueLength;
-
-      return {
-        success: true,
-        data: {
-          synced,
-          failed: remainingQueueLength,
-        },
-        source: "firestore",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to sync: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "localStorage",
-      };
-    }
+    return this.syncContacts();
   }
 
   /**
-   * Sync all contacts to Firestore
+   * Back up every contact in the browser store to Firestore. The argument is
+   * accepted for compatibility; the browser store is always what is synced.
    */
   public async syncContacts(
-    contacts: StoredContact[],
+    _contacts?: StoredContact[],
   ): Promise<ContactOperationResult<{ synced: number; failed: number }>> {
-    if (!this.currentUser || !this.isOnline) {
+    if (!this.currentUser) {
       return {
         success: false,
-        error: "User not authenticated or offline",
-        source: "localStorage",
-        offline: true,
-      };
-    }
-
-    if (!db) {
-      return {
-        success: false,
-        error: "Firestore not initialized",
+        error: "Sign in to back up your contacts.",
         source: "localStorage",
       };
     }
-
     try {
-      const batch = writeBatch(db);
-      let synced = 0;
-      let failed = 0;
-
-      // Process each contact
-      for (const contact of contacts) {
-        try {
-          const contactData = this.prepareForFirestore(contact);
-
-          if (contact.firestoreId) {
-            // Update existing document
-            const docRef = doc(db, CONTACTS_COLLECTION, contact.firestoreId);
-            batch.update(docRef, contactData);
-          } else {
-            // Create new document
-            const docRef = doc(collection(db, CONTACTS_COLLECTION));
-            batch.set(docRef, contactData);
-          }
-          synced++;
-        } catch (error) {
-          console.error(`Failed to sync contact ${contact.id}:`, error);
-          failed++;
-        }
-      }
-
-      // Commit the batch
-      await batch.commit();
-
+      const { upserted } = await pushNow();
       return {
         success: true,
-        data: { synced, failed },
+        data: { synced: upserted, failed: 0 },
         source: "firestore",
         offline: false,
       };
     } catch (error) {
-      console.error("Failed to sync contacts:", error);
       return {
         success: false,
         error: `Failed to sync contacts: ${error instanceof Error ? error.message : "Unknown error"}`,

@@ -2,6 +2,7 @@
   "name": "dunbarscircles",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -11,10 +12,12 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "screenshots": "node take-screenshots.js",
     "type-check": "tsc --noEmit",
-    "check-firebase": "node scripts/check-firebase.js",
+    "check-firebase": "node lib/check-firebase.js",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:rules": "npx -y firebase-tools@13.35.1 emulators:exec --only firestore --project demo-dunbarscircles \"node --test tests/firestore/\"",
+    "smoke": "bash scripts/smoke-test.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -83,6 +86,7 @@
   },
   "devDependencies": {
     "@axe-core/react": "^4.10.2",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

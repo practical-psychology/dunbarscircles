@@ -28,15 +28,17 @@ import {
   UserCheck,
   ChevronDown,
 } from "lucide-react";
-import {
-  signInWithGoogle,
-  signInWithGoogleRedirect,
-  handleRedirectResult,
-  signOut,
-  getUserDisplayName,
-} from "../../lib/auth-utils";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth } from "../../firebase-config";
+import type { User } from "firebase/auth";
+import { trackEvent } from "../../lib/analytics";
+
+// Firebase Auth is loaded on demand (#76): it is ~140 KB and pulls in the
+// Google sign-in iframe, so it must not block the first paint.
+const loadAuthUtils = () => import("../../lib/auth-utils");
+
+function getUserDisplayName(user: User | null): string {
+  if (!user) return "";
+  return user.displayName || user.email?.split("@")[0] || "User";
+}
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -61,12 +63,7 @@ const visualizationItems = [
 ];
 
 const SITE = "https://dunbarscircles.com";
-const PRIVATE_PATHS = [
-  "/dashboard",
-  "/contacts",
-  "/color-contrast-test",
-  "/firebase-test",
-];
+const PRIVATE_PATHS = ["/dashboard", "/contacts", "/color-contrast-test"];
 
 function upsertMeta(
   selector: string,
@@ -199,17 +196,28 @@ export default function PageLayout({
   const [showRedirectOption, setShowRedirectOption] = useState(false);
 
   useEffect(() => {
-    if (!auth) return;
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-    });
+    const start = async () => {
+      const [{ auth }, { onAuthStateChanged }] = await Promise.all([
+        import("../../firebase-config"),
+        import("firebase/auth"),
+      ]);
+      if (cancelled || !auth) return;
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+      });
+      await checkRedirectResult();
+    };
 
     const checkRedirectResult = async () => {
       try {
+        const { handleRedirectResult } = await loadAuthUtils();
         const result = await handleRedirectResult();
         if (result) {
           setUser(result.user);
+          trackEvent("sign_in");
         }
       } catch (error) {
         console.error("Error handling redirect result:", error);
@@ -219,9 +227,21 @@ export default function PageLayout({
       }
     };
 
-    checkRedirectResult();
+    // Wait until the page is idle, so auth never competes with first paint.
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    };
+    const kick = () => void start();
+    if (typeof w.requestIdleCallback === "function") {
+      w.requestIdleCallback(kick, { timeout: 3000 });
+    } else {
+      setTimeout(kick, 1500);
+    }
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, []);
 
   const handleGoogleSignIn = async () => {
@@ -230,8 +250,10 @@ export default function PageLayout({
     setShowRedirectOption(false);
 
     try {
+      const { signInWithGoogle } = await loadAuthUtils();
       const result = await signInWithGoogle();
       setUser(result.user);
+      trackEvent("sign_in");
     } catch (error: unknown) {
       console.error("Error signing in with Google:", error);
       const errorMessage =
@@ -253,6 +275,7 @@ export default function PageLayout({
     setAuthError(null);
 
     try {
+      const { signInWithGoogleRedirect } = await loadAuthUtils();
       await signInWithGoogleRedirect();
     } catch (error: unknown) {
       console.error("Error initiating Google redirect sign-in:", error);
@@ -269,6 +292,7 @@ export default function PageLayout({
     setAuthLoading(true);
     setAuthError(null);
     try {
+      const { signOut } = await loadAuthUtils();
       await signOut();
       setUser(null);
     } catch (error: unknown) {
@@ -350,7 +374,7 @@ export default function PageLayout({
                 >
                   <Link
                     to={item.path}
-                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 overflow-hidden group ${
+                    className={`min-h-[44px] relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 overflow-hidden group ${
                       isActive
                         ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
                         : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
@@ -402,7 +426,7 @@ export default function PageLayout({
                 aria-expanded={vizOpen}
                 aria-controls="visualizations-menu"
                 onClick={() => setVizOpen((o) => !o)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                className={`min-h-[44px] flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 font-medium ${
                   isVisualizationActive
                     ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
                     : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
@@ -430,7 +454,7 @@ export default function PageLayout({
                             location.pathname === item.path ? "page" : undefined
                           }
                           onClick={() => setVizOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-800 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-gray-800"
+                          className="min-h-[44px] flex items-center gap-2 px-3 py-2 rounded-lg text-gray-800 dark:text-gray-100 hover:bg-blue-50 dark:hover:bg-gray-800"
                         >
                           <Icon className="w-4 h-4" aria-hidden="true" />
                           {item.label}
@@ -485,7 +509,7 @@ export default function PageLayout({
                     onClick={handleGoogleSignIn}
                     disabled={authLoading}
                     title="Optional: sign in to back up your contacts to the cloud"
-                    className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs mx-auto"
+                    className="min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs mx-auto"
                   >
                     {authLoading ? (
                       <>
@@ -540,7 +564,7 @@ export default function PageLayout({
                     <button
                       onClick={handleGoogleSignInRedirect}
                       disabled={authLoading}
-                      className="px-3 py-2 bg-white/60 dark:bg-gray-900/60 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-400 font-medium rounded-xl shadow-sm hover:bg-blue-50/60 dark:hover:bg-blue-900/60 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs mx-auto text-sm"
+                      className="min-h-[44px] px-3 py-2 bg-white/60 dark:bg-gray-900/60 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-400 font-medium rounded-xl shadow-sm hover:bg-blue-50/60 dark:hover:bg-blue-900/60 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed w-full max-w-xs mx-auto text-sm"
                     >
                       <svg
                         className="w-3 h-3"

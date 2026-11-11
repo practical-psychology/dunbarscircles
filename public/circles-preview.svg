@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480" role="img" aria-labelledby="t d">
+  <title id="t">Dunbar's five nested circles</title>
+  <desc id="d">Five nested rings around "You": Inner Circle about 5, Sympathy Group about 15, Affinity Group about 50, Active Network about 150, Recognition Group about 500.</desc>
+  <style>
+    text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-anchor: middle; }
+    .n { font-size: 17px; font-weight: 700; fill: #111827; }
+    .l { font-size: 11px; font-weight: 500; fill: #374151; }
+    .you { font-size: 15px; font-weight: 700; fill: #fff; }
+  </style>
+  <circle cx="240" cy="240" r="232" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <circle cx="240" cy="240" r="186" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+  <circle cx="240" cy="240" r="140" fill="#fef9c3" stroke="#eab308" stroke-width="2"/>
+  <circle cx="240" cy="240" r="96" fill="#ffedd5" stroke="#f97316" stroke-width="2"/>
+  <circle cx="240" cy="240" r="54" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+  <circle cx="240" cy="240" r="24" fill="#6366f1"/>
+  <text class="you" x="240" y="245">You</text>
+  <text class="n" x="240" y="204">5</text>
+  <text class="n" x="240" y="164">15</text><text class="l" x="240" y="177">Sympathy</text>
+  <text class="n" x="240" y="122">50</text><text class="l" x="240" y="135">Affinity</text>
+  <text class="n" x="240" y="76">150</text><text class="l" x="240" y="89">Active network</text>
+  <text class="n" x="240" y="30">500</text><text class="l" x="240" y="43">Recognition</text>
+</svg>

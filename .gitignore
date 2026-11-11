@@ -39,3 +39,6 @@ screenshots
 firebase-debug.log
 
 /coverage
+
+# Firebase emulator logs
+*-debug.log

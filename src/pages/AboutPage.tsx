@@ -69,13 +69,16 @@ export default function AboutPage() {
             License and credits
           </h2>
           <p>
-            Site code is published in the repository under the license file
-            found there. Research is credited to Robin Dunbar and colleagues;
-            see{" "}
+            The site code is open source under the{" "}
+            <a className="underline" href={`${REPO}/blob/main/LICENSE`}>
+              MIT License
+            </a>
+            . The research belongs to Robin Dunbar and colleagues; see{" "}
             <a className="underline" href="/evidence">
               Evidence &amp; Limitations
             </a>{" "}
-            for references.
+            for references. Facebook and LinkedIn are trademarks of their owners
+            and are named only to describe import formats.
           </p>
         </section>
       </div>

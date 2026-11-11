@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { ContactStorageService } from "@/lib/contact-storage-service";
 import { SAMPLE_CONTACTS } from "@/lib/sample-contacts";
 import {
   Dialog,
@@ -86,6 +85,9 @@ export function WelcomeModal({
   const handleSampleData = async () => {
     setLoadingSample(true);
     try {
+      const { ContactStorageService } = await import(
+        "@/lib/contact-storage-service"
+      );
       const service = ContactStorageService.getInstance();
       for (const contact of SAMPLE_CONTACTS) {
         await service.createContact(contact);

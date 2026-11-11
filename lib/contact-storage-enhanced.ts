@@ -1,6 +1,6 @@
 // Enhanced contact storage with database integration, authorization, and fallback
 import type { Person } from "../src/types/relationships";
-import { DatabaseService } from "./database-service";
+import { notifyLocalChange, startCloudSync } from "./cloud-sync";
 import type { StoredContact } from "./contact-storage";
 
 // Sample data for fallback when user data is incomplete
@@ -82,74 +82,39 @@ export interface ContactOperationResult<T = any> {
 }
 
 export class EnhancedContactStorage {
-  // Load contacts with fallback mechanism
+  /*
+   * The browser store is the source of truth; the optional cloud backup is
+   * a mirror kept by lib/cloud-sync.ts. No method here talks to Firestore.
+   */
+
+  private static matches(c: StoredContact, contactId: string): boolean {
+    return c.id === contactId || c.firestoreId === contactId;
+  }
+
+  // Load contacts, padding with built-in demo people when there are very few
   static async loadContacts(): Promise<
     ContactOperationResult<StoredContact[]>
   > {
+    startCloudSync();
     try {
-      // Try database first
-      const dbResponse = await DatabaseService.getUserContacts();
-
-      if (dbResponse.success && dbResponse.data) {
-        const contacts = dbResponse.data;
-
-        // Check if we have meaningful data
-        if (contacts.length >= MIN_CONTACTS_FOR_MEANINGFUL_DATA) {
-          return {
-            success: true,
-            data: contacts,
-            source: "database",
-          };
-        }
-
-        // If we have some data but not enough, supplement with sample data
-        if (contacts.length > 0) {
-          const supplementedContacts = [
-            ...contacts,
-            ...SAMPLE_CONTACTS.slice(
-              0,
-              MIN_CONTACTS_FOR_MEANINGFUL_DATA - contacts.length,
-            ),
-          ];
-
-          return {
-            success: true,
-            data: supplementedContacts,
-            fallbackUsed: true,
-            source: "database",
-          };
-        }
-      }
-
-      // Database failed or empty, try localStorage
       const localContacts = this.loadFromLocalStorage();
       if (localContacts.length >= MIN_CONTACTS_FOR_MEANINGFUL_DATA) {
-        return {
-          success: true,
-          data: localContacts,
-          source: "localStorage",
-        };
+        return { success: true, data: localContacts, source: "localStorage" };
       }
-
-      // Supplement localStorage data if insufficient
       if (localContacts.length > 0) {
-        const supplementedContacts = [
-          ...localContacts,
-          ...SAMPLE_CONTACTS.slice(
-            0,
-            MIN_CONTACTS_FOR_MEANINGFUL_DATA - localContacts.length,
-          ),
-        ];
-
         return {
           success: true,
-          data: supplementedContacts,
+          data: [
+            ...localContacts,
+            ...SAMPLE_CONTACTS.slice(
+              0,
+              MIN_CONTACTS_FOR_MEANINGFUL_DATA - localContacts.length,
+            ),
+          ],
           fallbackUsed: true,
           source: "localStorage",
         };
       }
-
-      // Fall back to sample data
       return {
         success: true,
         data: SAMPLE_CONTACTS,
@@ -158,438 +123,244 @@ export class EnhancedContactStorage {
       };
     } catch (error) {
       console.error("Failed to load contacts:", error);
-
-      // Try localStorage as final fallback
-      try {
-        const localContacts = this.loadFromLocalStorage();
-        if (localContacts.length > 0) {
-          return {
-            success: true,
-            data: localContacts,
-            error: `Database error: ${error instanceof Error ? error.message : "Unknown error"}`,
-            fallbackUsed: true,
-            source: "localStorage",
-          };
-        }
-      } catch (localError) {
-        console.error("localStorage fallback also failed:", localError);
-      }
-
-      // Ultimate fallback to sample data
       return {
         success: true,
         data: SAMPLE_CONTACTS,
-        error: `All storage methods failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        error: `Storage error: ${error instanceof Error ? error.message : "Unknown error"}`,
         fallbackUsed: true,
         source: "sample",
       };
     }
   }
 
-  // Get specific contact by ID with proper error handling
   static async getContactById(
     contactId: string,
   ): Promise<ContactOperationResult<StoredContact>> {
-    try {
-      const dbResponse = await DatabaseService.getContactById(contactId);
-
-      if (dbResponse.success && dbResponse.data) {
-        return {
-          success: true,
-          data: dbResponse.data,
-          source: "database",
-        };
-      }
-
-      // If database fails, try localStorage
-      const localContacts = this.loadFromLocalStorage();
-      const contact = localContacts.find(
-        (c) => c.id === contactId || c.firestoreId === contactId,
-      );
-
-      if (contact) {
-        return {
-          success: true,
-          data: contact,
-          source: "localStorage",
-        };
-      }
-
-      // Check sample data
-      const sampleContact = SAMPLE_CONTACTS.find((c) => c.id === contactId);
-      if (sampleContact) {
-        return {
-          success: true,
-          data: sampleContact,
-          fallbackUsed: true,
-          source: "sample",
-        };
-      }
-
-      return {
-        success: false,
-        error: `Contact with ID '${contactId}' not found`,
-        source: "database",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to retrieve contact: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
-      };
-    }
-  }
-
-  // Save contacts with dual storage
-  static async saveContacts(
-    contacts: StoredContact[],
-  ): Promise<ContactOperationResult<{ saved: number; skipped: number }>> {
-    let dbResult: { saved: number; skipped: number } = { saved: 0, skipped: 0 };
-    let dbError: string | undefined;
-
-    try {
-      // Try database first
-      const dbResponse = await DatabaseService.saveUserContacts(contacts);
-
-      if (dbResponse.success && dbResponse.data) {
-        dbResult = dbResponse.data;
-      } else {
-        dbError = dbResponse.error?.message || "Database save failed";
-      }
-    } catch (error) {
-      dbError = `Database error: ${error instanceof Error ? error.message : "Unknown error"}`;
-    }
-
-    // Always save to localStorage as backup
-    try {
-      this.saveToLocalStorage(contacts);
-    } catch (localError) {
-      console.error("Failed to save to localStorage:", localError);
-    }
-
-    if (dbResult.saved > 0) {
+    const contact = this.loadFromLocalStorage().find((c) =>
+      this.matches(c, contactId),
+    );
+    if (contact)
+      return { success: true, data: contact, source: "localStorage" };
+    const sample = SAMPLE_CONTACTS.find((c) => c.id === contactId);
+    if (sample) {
       return {
         success: true,
-        data: dbResult,
-        source: "database",
+        data: sample,
+        fallbackUsed: true,
+        source: "sample",
       };
     }
-
     return {
       success: false,
-      error: dbError || "Failed to save contacts",
-      data: { saved: 0, skipped: contacts.length },
-      source: "database",
+      error: `Contact with ID '${contactId}' not found`,
+      source: "localStorage",
     };
   }
 
-  // Add new contacts with deduplication
+  /** Replace the stored list. Cloud backup follows automatically. */
+  static async saveContacts(
+    contacts: StoredContact[],
+  ): Promise<ContactOperationResult<{ saved: number; skipped: number }>> {
+    try {
+      const now = new Date().toISOString();
+      const previous = new Map(
+        this.loadFromLocalStorage().map((c) => [c.id, c]),
+      );
+      const stamped = contacts.map((c) => {
+        const before = previous.get(c.id);
+        const changed = !before || JSON.stringify(before) !== JSON.stringify(c);
+        return changed ? ({ ...c, updatedAt: now } as StoredContact) : c;
+      });
+      this.saveToLocalStorage(stamped);
+      const saved = stamped.filter(
+        (c) => !String(c.id).startsWith("sample_"),
+      ).length;
+      return {
+        success: true,
+        data: { saved, skipped: contacts.length - saved },
+        source: "localStorage",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to save contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
+        data: { saved: 0, skipped: contacts.length },
+        source: "localStorage",
+      };
+    }
+  }
+
+  // Add new contacts with deduplication (name + platform)
   static async addContacts(
     newContacts: Person[],
     source: "facebook" | "linkedin" | "manual",
   ): Promise<ContactOperationResult<{ added: number; skipped: number }>> {
     try {
-      // Load existing contacts
-      const existingResult = await this.loadContacts();
-      const existingContacts = existingResult.data || [];
-
-      // Convert to StoredContact format
+      const existing = this.loadFromLocalStorage();
       const contactsToAdd: StoredContact[] = newContacts.map((contact) => ({
         ...contact,
         importDate: new Date(),
         source,
       }));
-
-      // Deduplicate based on name and platform
-      const filteredContacts = contactsToAdd.filter(
-        (newContact) =>
-          !existingContacts.some(
-            (existing) =>
-              existing.name.toLowerCase() === newContact.name.toLowerCase() &&
-              existing.platform === newContact.platform,
+      const filtered = contactsToAdd.filter(
+        (n) =>
+          !existing.some(
+            (e) =>
+              e.name.toLowerCase() === n.name.toLowerCase() &&
+              e.platform === n.platform,
           ),
       );
-
-      if (filteredContacts.length === 0) {
-        return {
-          success: true,
-          data: { added: 0, skipped: contactsToAdd.length },
-          source: "database",
-        };
+      if (filtered.length > 0) {
+        await this.saveContacts([...existing, ...filtered]);
       }
-
-      // Save new contacts
-      // saveContacts replaces the stored list, so include what is already stored.
-      const saveResult = await this.saveContacts([
-        ...this.loadFromLocalStorage(),
-        ...filteredContacts,
-      ]);
-
       return {
-        success: saveResult.success,
+        success: true,
         data: {
-          added: saveResult.data?.saved || 0,
-          skipped:
-            contactsToAdd.length -
-            filteredContacts.length +
-            (saveResult.data?.skipped || 0),
+          added: filtered.length,
+          skipped: contactsToAdd.length - filtered.length,
         },
-        error: saveResult.error,
-        source: saveResult.source,
+        source: "localStorage",
       };
     } catch (error) {
       return {
         success: false,
         error: `Failed to add contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
         data: { added: 0, skipped: newContacts.length },
-        source: "database",
+        source: "localStorage",
       };
     }
   }
 
-  // Update specific contact
   static async updateContact(
     contactId: string,
     updates: Partial<StoredContact>,
   ): Promise<ContactOperationResult<StoredContact>> {
     try {
-      const dbResponse = await DatabaseService.updateContact(
-        contactId,
-        updates,
-      );
-
-      if (dbResponse.success && dbResponse.data) {
-        // Also update localStorage
-        try {
-          const localContacts = this.loadFromLocalStorage();
-          const updatedContacts = localContacts.map((contact) =>
-            contact.id === contactId || contact.firestoreId === contactId
-              ? { ...contact, ...updates }
-              : contact,
-          );
-          this.saveToLocalStorage(updatedContacts);
-        } catch (localError) {
-          console.warn("Failed to update localStorage:", localError);
-        }
-
-        return {
-          success: true,
-          data: dbResponse.data,
-          source: "database",
-        };
-      }
-
-      // If update failed (e.g., when working with sample/local contacts or offline), try updating localStorage directly
-      try {
-        const localContacts = this.loadFromLocalStorage();
-        const existsLocally = localContacts.some(
-          (c) => c.id === contactId || c.firestoreId === contactId,
+      const local = this.loadFromLocalStorage();
+      if (local.some((c) => this.matches(c, contactId))) {
+        const next = local.map((c) =>
+          this.matches(c, contactId)
+            ? ({ ...c, ...updates } as StoredContact)
+            : c,
         );
-        if (existsLocally) {
-          const updatedContacts = localContacts.map((contact) =>
-            contact.id === contactId || contact.firestoreId === contactId
-              ? { ...contact, ...updates }
-              : contact,
-          );
-          this.saveToLocalStorage(updatedContacts);
-          const updated = updatedContacts.find(
-            (c) => c.id === contactId || c.firestoreId === contactId,
-          )!;
-          return {
-            success: true,
-            data: updated,
-            fallbackUsed: true,
-            source: "localStorage",
-          };
-        }
-
-        // If not in local storage, see if this is one of our sample contacts and persist it locally with the updates applied
-        const sample = SAMPLE_CONTACTS.find((c) => c.id === contactId);
-        if (sample) {
-          const updatedSample: StoredContact = {
-            ...sample,
-            ...updates,
-            // Promote the sample to a real contact so it is persisted.
-            id: `contact_${Date.now()}`,
-          } as StoredContact;
-          const next = [...localContacts, updatedSample];
-          this.saveToLocalStorage(next);
-          return {
-            success: true,
-            data: updatedSample,
-            fallbackUsed: true,
-            source: "localStorage",
-          };
-        }
-      } catch (localError) {
-        console.warn("Local fallback update failed:", localError);
+        await this.saveContacts(next);
+        const updated = this.loadFromLocalStorage().find((c) =>
+          this.matches(c, contactId),
+        )!;
+        return { success: true, data: updated, source: "localStorage" };
       }
-
-      return {
-        success: false,
-        error: dbResponse.error?.message || "Failed to update contact",
-        source: "database",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to update contact: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
-      };
-    }
-  }
-
-  // Delete contact
-  static async deleteContact(
-    contactId: string,
-  ): Promise<ContactOperationResult<{ deleted: boolean }>> {
-    try {
-      const dbResponse = await DatabaseService.deleteContact(contactId);
-
-      if (dbResponse.success) {
-        // Also remove from localStorage
-        try {
-          const localContacts = this.loadFromLocalStorage();
-          const filteredContacts = localContacts.filter(
-            (contact) =>
-              contact.id !== contactId && contact.firestoreId !== contactId,
-          );
-          this.saveToLocalStorage(filteredContacts);
-        } catch (localError) {
-          console.warn("Failed to update localStorage:", localError);
-        }
-
+      // Editing a built-in demo person promotes it to a real stored contact.
+      const sample = SAMPLE_CONTACTS.find((c) => c.id === contactId);
+      if (sample) {
+        const promoted = {
+          ...sample,
+          ...updates,
+          id: `contact_${Date.now()}`,
+        } as StoredContact;
+        await this.saveContacts([...local, promoted]);
         return {
           success: true,
-          data: { deleted: true },
-          source: "database",
+          data: promoted,
+          fallbackUsed: true,
+          source: "localStorage",
         };
       }
-
-      // If delete failed (e.g., sample or local-only contact), try deleting from localStorage
-      try {
-        const localContacts = this.loadFromLocalStorage();
-        const existsLocally = localContacts.some(
-          (c) => c.id === contactId || c.firestoreId === contactId,
-        );
-        if (existsLocally) {
-          const filteredContacts = localContacts.filter(
-            (contact) =>
-              contact.id !== contactId && contact.firestoreId !== contactId,
-          );
-          this.saveToLocalStorage(filteredContacts);
-          return {
-            success: true,
-            data: { deleted: true },
-            fallbackUsed: true,
-            source: "localStorage",
-          };
-        }
-
-        // If this is one of our sample contacts, treat as deleted to avoid blocking the UI
-        if (SAMPLE_CONTACTS.find((c) => c.id === contactId)) {
-          return {
-            success: true,
-            data: { deleted: true },
-            fallbackUsed: true,
-            source: "sample",
-          };
-        }
-      } catch (localError) {
-        console.warn("Local fallback delete failed:", localError);
-      }
-
       return {
         success: false,
-        error: dbResponse.error?.message || "Failed to delete contact",
-        source: "database",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to delete contact: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
-      };
-    }
-  }
-
-  // Get contacts by source
-  static async getContactsBySource(
-    source: "facebook" | "linkedin" | "manual",
-  ): Promise<ContactOperationResult<StoredContact[]>> {
-    try {
-      const dbResponse = await DatabaseService.getContactsBySource(source);
-
-      if (dbResponse.success && dbResponse.data) {
-        return {
-          success: true,
-          data: dbResponse.data,
-          source: "database",
-        };
-      }
-
-      // Fallback to localStorage
-      const localContacts = this.loadFromLocalStorage();
-      const filteredContacts = localContacts.filter(
-        (contact) => contact.source === source,
-      );
-
-      return {
-        success: true,
-        data: filteredContacts,
-        fallbackUsed: true,
+        error: `Contact with ID '${contactId}' not found`,
         source: "localStorage",
       };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get contacts by source: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
+        error: `Failed to update contact: ${error instanceof Error ? error.message : "Unknown error"}`,
+        source: "localStorage",
       };
     }
   }
 
-  // Clear all contacts with confirmation
-  static async clearAllContacts(
-    confirmationToken: string,
-  ): Promise<ContactOperationResult<{ deleted: number }>> {
+  static async deleteContact(
+    contactId: string,
+  ): Promise<ContactOperationResult<{ deleted: boolean }>> {
     try {
-      const dbResponse = await DatabaseService.clearUserContacts(
-        undefined,
-        confirmationToken,
-      );
-
-      // Also clear localStorage
-      try {
-        localStorage.removeItem(CONTACTS_STORAGE_KEY);
-        localStorage.removeItem(LEGACY_CONTACTS_KEY);
-      } catch (localError) {
-        console.warn("Failed to clear localStorage:", localError);
-      }
-
-      if (dbResponse.success && dbResponse.data) {
+      const local = this.loadFromLocalStorage();
+      if (local.some((c) => this.matches(c, contactId))) {
+        this.saveToLocalStorage(
+          local.filter((c) => !this.matches(c, contactId)),
+        );
         return {
           success: true,
-          data: { deleted: dbResponse.data.deleted },
-          source: "database",
+          data: { deleted: true },
+          source: "localStorage",
         };
       }
-
+      if (SAMPLE_CONTACTS.find((c) => c.id === contactId)) {
+        // Built-in demo people are not stored; nothing to delete.
+        return {
+          success: true,
+          data: { deleted: true },
+          fallbackUsed: true,
+          source: "sample",
+        };
+      }
       return {
         success: false,
-        error: dbResponse.error?.message || "Failed to clear contacts",
-        source: "database",
+        error: `Contact with ID '${contactId}' not found`,
+        source: "localStorage",
       };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to clear contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
+        error: `Failed to delete contact: ${error instanceof Error ? error.message : "Unknown error"}`,
+        source: "localStorage",
       };
     }
   }
 
-  // Get user statistics
+  static async getContactsBySource(
+    source: "facebook" | "linkedin" | "manual",
+  ): Promise<ContactOperationResult<StoredContact[]>> {
+    return {
+      success: true,
+      data: this.loadFromLocalStorage().filter((c) => c.source === source),
+      source: "localStorage",
+    };
+  }
+
+  /** Delete every contact in this browser; the cloud copy follows. */
+  static async clearAllContacts(
+    confirmationToken: string,
+  ): Promise<ContactOperationResult<{ deleted: number }>> {
+    if (
+      confirmationToken !== "DELETE_ALL_CONTACTS" &&
+      confirmationToken !== "CLEAR_ALL_CONTACTS"
+    ) {
+      return {
+        success: false,
+        error: "Invalid confirmation token",
+        source: "localStorage",
+      };
+    }
+    try {
+      const deleted = this.loadFromLocalStorage().length;
+      localStorage.removeItem(CONTACTS_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_CONTACTS_KEY);
+      try {
+        sessionStorage.removeItem(CONTACTS_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      notifyLocalChange();
+      return { success: true, data: { deleted }, source: "localStorage" };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to clear contacts: ${error instanceof Error ? error.message : "Unknown error"}`,
+        source: "localStorage",
+      };
+    }
+  }
+
   static async getStats(): Promise<
     ContactOperationResult<{
       total: number;
@@ -598,54 +369,22 @@ export class EnhancedContactStorage {
       lastUpdated: Date;
     }>
   > {
-    try {
-      const dbResponse = await DatabaseService.getUserStats();
-
-      if (dbResponse.success && dbResponse.data) {
-        return {
-          success: true,
-          data: dbResponse.data,
-          source: "database",
-        };
-      }
-
-      // Fallback to calculating from loaded contacts
-      const contactsResult = await this.loadContacts();
-      if (contactsResult.success && contactsResult.data) {
-        const contacts = contactsResult.data;
-        const total = contacts.length;
-        const bySource: Record<string, number> = {};
-        const byLevel: Record<string, number> = {};
-        let lastUpdated = new Date(0);
-
-        contacts.forEach((contact) => {
-          bySource[contact.source] = (bySource[contact.source] || 0) + 1;
-          byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
-          if (contact.importDate > lastUpdated) {
-            lastUpdated = contact.importDate;
-          }
-        });
-
-        return {
-          success: true,
-          data: { total, bySource, byLevel, lastUpdated },
-          fallbackUsed: contactsResult.fallbackUsed,
-          source: contactsResult.source,
-        };
-      }
-
-      return {
-        success: false,
-        error: "Failed to calculate statistics",
-        source: "database",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Failed to get statistics: ${error instanceof Error ? error.message : "Unknown error"}`,
-        source: "database",
-      };
-    }
+    const contactsResult = await this.loadContacts();
+    const contacts = contactsResult.data ?? [];
+    const bySource: Record<string, number> = {};
+    const byLevel: Record<string, number> = {};
+    let lastUpdated = new Date(0);
+    contacts.forEach((contact) => {
+      bySource[contact.source] = (bySource[contact.source] || 0) + 1;
+      byLevel[contact.levelId] = (byLevel[contact.levelId] || 0) + 1;
+      if (contact.importDate > lastUpdated) lastUpdated = contact.importDate;
+    });
+    return {
+      success: true,
+      data: { total: contacts.length, bySource, byLevel, lastUpdated },
+      fallbackUsed: contactsResult.fallbackUsed,
+      source: contactsResult.source,
+    };
   }
 
   // Private localStorage methods (shared store with ContactStorageService)
@@ -718,6 +457,7 @@ export class EnhancedContactStorage {
         });
       localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(serialized));
       localStorage.removeItem(LEGACY_CONTACTS_KEY);
+      notifyLocalChange();
     } catch (error) {
       console.error("Failed to save to localStorage:", error);
       throw error;

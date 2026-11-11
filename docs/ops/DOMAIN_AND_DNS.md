@@ -9,11 +9,32 @@ Chosen: `dunbarscircles.com`. Shortlist and trademark check were not recorded wh
 ## Registrar security (WEB-007, WEB-008)
 
 - [ ] MFA (authenticator app or security key) on the registrar account
-- [ ] Registrar/transfer lock on
-- [ ] Auto-renew on, payment method valid; expiry date: **\_\_**
+- [x] Registrar/transfer lock on (WHOIS shows `clientTransferProhibited`, 2026-11-10)
+- [ ] Auto-renew on, payment method valid; expiry date: **2027-11-07** (Namecheap, WHOIS 2026-11-10)
 - [ ] WHOIS privacy on
 - [ ] Recovery email and backup codes stored in a password manager
 - [ ] Second trusted contact/delegate recorded
+
+## Current DNS (recorded 2026-11-10 with `dig +short`)
+
+Nameservers: `dns1.registrar-servers.com`, `dns2.registrar-servers.com` (Namecheap BasicDNS). DNSSEC: unsigned.
+
+| Host    | Type      | Value                                                                         | Purpose                            | Keep?                 |
+| ------- | --------- | ----------------------------------------------------------------------------- | ---------------------------------- | --------------------- |
+| @       | A         | `199.36.158.100`                                                              | Firebase Hosting                   | yes (Firebase-issued) |
+| @       | TXT       | `hosting-site=dunbarscircles`                                                 | Firebase domain verification       | yes, never delete     |
+| @       | TXT       | `v=spf1 include:spf.efwd.registrar-servers.com ~all`                          | SPF for Namecheap email forwarding | yes                   |
+| @       | MX        | `eforward1`–`eforward5.registrar-servers.com` (priorities 10, 10, 10, 15, 20) | Namecheap email forwarding         | yes                   |
+| www     | CNAME     | `dunbarscircles.web.app`                                                      | Firebase; redirects to apex        | yes                   |
+| \_dmarc | TXT       | none                                                                          | -                                  | add (below)           |
+| @       | AAAA, CAA | none                                                                          | -                                  | optional              |
+
+Recommended additions (owner, at the registrar):
+
+- `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:<your address>` to start monitoring spoofing; move to `p=quarantine` after a month of clean reports.
+- Optional CAA: `0 issue "pki.goog"` (Firebase certificates come from Google Trust Services). Only add it if you are sure no other CA is needed, or certificate renewal will fail.
+
+Verified live 2026-11-10: apex 200 over HTTPS, `http://` 301 to `https://`, `www` 301 to `https://dunbarscircles.com/`. Certificate issuer Google Trust Services WR3, valid to 2027-02-05 (auto-renewed).
 
 ## Before changing DNS: preserve email (WEB-010)
 
@@ -44,4 +65,10 @@ curl -sI https://www.dunbarscircles.com | head -3 # 301 to https://dunbarscircle
 bash scripts/smoke-test.sh https://dunbarscircles.com
 ```
 
-Canonical host is the apex `https://dunbarscircles.com` (WEB-009). Metadata, sitemap and robots already use it.
+## Canonical hostname decision record (WEB-009, #15)
+
+- **Status:** Accepted 2026-11-10.
+- **Decision:** The canonical host is the apex `https://dunbarscircles.com`. `www.dunbarscircles.com`, `dunbarscircles.web.app` and `dunbarscircles.firebaseapp.com` are secondary.
+- **Why apex:** shorter to say and type; Firebase supports apex A records, so no CNAME flattening is needed; the canonical tag, sitemap, robots, Open Graph URLs and JSON-LD already used the apex.
+- **How it is enforced:** `www` 301-redirects to the apex (Firebase domain setting). `web.app`/`firebaseapp.com` cannot redirect on Firebase, so every page sets `<link rel="canonical" href="https://dunbarscircles.com/...">` and preview channels set `noindex` (PREVIEW.md).
+- **Consequences:** Search Console uses a Domain property (covers all hosts). Firebase Auth must list `dunbarscircles.com` and `www.dunbarscircles.com` under Authorized domains.

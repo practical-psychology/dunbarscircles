@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { notifyContactSaved } from "@/lib/sample-data";
+import { CONTACTS_CHANGED_EVENT } from "../../components/sample-cleanup-prompt";
+import { MobileAddContactFab } from "../../components/mobile-add-contact-fab";
+import { SavedLocallyIndicator } from "../../components/saved-locally-indicator";
 import PageLayout from "../components/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Loader2, Upload } from "lucide-react";
@@ -150,6 +154,17 @@ export default function ContactsPage() {
     loadContacts();
   }, []);
 
+  // Reload when contacts change elsewhere (e.g. sample cleanup prompt).
+  useEffect(() => {
+    const reload = async () => {
+      const result = await contactStorage.readContacts();
+      if (result.success && result.data) setContacts(result.data);
+    };
+    const handler = () => void reload();
+    window.addEventListener(CONTACTS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(CONTACTS_CHANGED_EVENT, handler);
+  }, []);
+
   // Contact management handlers
   const handleContactCreate = async (data: ContactFormData) => {
     try {
@@ -170,6 +185,8 @@ export default function ContactsPage() {
       const result = await contactStorage.createContact(newContactData);
       if (result.success && result.data) {
         setContacts((prev) => [...prev, result.data!]);
+        trackEvent("add_contact");
+        notifyContactSaved(result.data);
       } else {
         console.error("Failed to create contact:", result.error);
         throw new Error(result.error || "Failed to create contact");
@@ -219,12 +236,18 @@ export default function ContactsPage() {
     try {
       const result = await contactStorage.deleteContact(contactId);
       if (result.success) {
+        const name = contacts.find((c) => c.id === contactId)?.name;
         setContacts((prev) => prev.filter((c) => c.id !== contactId));
+        toast.success("Contact deleted", {
+          description: name ? `${name} has been removed.` : undefined,
+        });
       } else {
         console.error("Failed to delete contact:", result.error);
+        toast.error("Could not delete the contact. Please try again.");
       }
     } catch (error) {
       console.error("Failed to delete contact:", error);
+      toast.error("Could not delete the contact. Please try again.");
     }
   };
 
@@ -237,6 +260,11 @@ export default function ContactsPage() {
       const failedDeletes = results.filter((r) => !r.success);
       if (failedDeletes.length > 0) {
         console.error(`Failed to delete ${failedDeletes.length} contacts`);
+        toast.error(`Could not delete ${failedDeletes.length} contacts`);
+      }
+      const okCount = contactIds.length - failedDeletes.length;
+      if (okCount > 0) {
+        toast.success(`Deleted ${okCount} contact${okCount === 1 ? "" : "s"}`);
       }
 
       // Remove successfully deleted contacts
@@ -262,6 +290,14 @@ export default function ContactsPage() {
       const failedUpdates = results.filter((r) => !r.success);
       if (failedUpdates.length > 0) {
         console.error(`Failed to move ${failedUpdates.length} contacts`);
+        toast.error(`Could not move ${failedUpdates.length} contacts`);
+      }
+      const movedCount = contactIds.length - failedUpdates.length;
+      const levelName = dunbarLevels.find((l) => l.id === levelId)?.name;
+      if (movedCount > 0) {
+        toast.success(
+          `Moved ${movedCount} contact${movedCount === 1 ? "" : "s"}${levelName ? ` to ${levelName}` : ""}`,
+        );
       }
 
       // Update successfully moved contacts
@@ -379,6 +415,7 @@ export default function ContactsPage() {
                     Import, organize, and manage your social network
                     relationships
                   </p>
+                  <SavedLocallyIndicator className="mt-1" />
                 </div>
               </div>
 
@@ -477,10 +514,14 @@ export default function ContactsPage() {
             onValueChange={setActiveTab}
             className="space-y-6"
           >
-            <div className="flex justify-between items-center w-full gap-4">
-              <TabsList className="grid grid-cols-2">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="list">All Contacts</TabsTrigger>
+            <div className="flex flex-wrap justify-between items-center w-full gap-4">
+              <TabsList className="grid h-auto grid-cols-2">
+                <TabsTrigger value="overview" className="min-h-[40px] px-4">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="list" className="min-h-[40px] px-4">
+                  All Contacts
+                </TabsTrigger>
               </TabsList>
               <Button
                 onClick={handleSaveToCloud}
@@ -512,7 +553,19 @@ export default function ContactsPage() {
               <ContactList
                 contacts={contacts}
                 levels={dunbarLevels}
-                onContactUpdate={handleContactUpdate}
+                onContactUpdate={(id, updates) => {
+                  void handleContactUpdate(id, updates)
+                    .then(() => {
+                      const lvl = updates.levelId
+                        ? dunbarLevels.find((l) => l.id === updates.levelId)
+                            ?.name
+                        : undefined;
+                      toast.success(
+                        lvl ? `Moved to ${lvl}` : "Contact updated",
+                      );
+                    })
+                    .catch(() => toast.error("Could not update the contact."));
+                }}
                 onContactDelete={handleContactDelete}
                 onBulkDelete={handleBulkDelete}
                 onBulkMove={handleBulkMove}
@@ -566,6 +619,7 @@ export default function ContactsPage() {
           </LiquidCard>
         </motion.div>
       </motion.div>
+      <MobileAddContactFab />
     </PageLayout>
   );
 }

@@ -118,6 +118,12 @@ export function NetworkDiagram({
       className="relative w-full h-[600px] bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-900/50 dark:to-blue-900/50 rounded-2xl border border-white/20 dark:border-gray-700/20 backdrop-blur-xl overflow-hidden"
       aria-label="Interactive network diagram showing relationship levels according to Dunbar's hierarchy"
     >
+      {/* Announce selection changes to screen readers (#33). */}
+      <p className="sr-only" aria-live="polite">
+        {selectedLevel
+          ? `${safeLevels.find((l) => l.id === selectedLevel)?.name ?? ""} selected.`
+          : ""}
+      </p>
       {/* Liquid background animation */}
       <div className="absolute inset-0 opacity-30">
         <motion.div
@@ -483,7 +489,7 @@ export function NetworkDiagram({
               transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
             />
             <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Social (150-1.5K)
+              Social (about 150-500)
             </span>
           </motion.div>
           <motion.div
@@ -497,7 +503,7 @@ export function NetworkDiagram({
               transition={{ duration: 2, repeat: Infinity, delay: 1 }}
             />
             <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              Extended (5K-50K)
+              Beyond 500 (tentative, not well evidenced)
             </span>
           </motion.div>
         </div>

@@ -1,116 +1,43 @@
-# Firebase Integration for Contact Storage
+# Firebase integration
 
-## Overview
+Current design (2026-11-10). Replaces the earlier two-collection design.
 
-The application supports saving imported contacts to Firebase Firestore, providing cloud-based storage and synchronization across devices.
+## Principle
 
-## Features
+The browser store is the source of truth. Firestore is an optional backup mirror for signed-in users.
 
-- **Hybrid Storage**: Contacts are saved to both Firebase Firestore and localStorage for redundancy
-- **Automatic Fallback**: If Firebase is unavailable, the app falls back to localStorage
-- **Real-time Sync**: Contacts are synchronized across devices when using the same Firebase project
-- **Status Indicators**: Visual feedback shows whether Firebase or localStorage is being used
+| Layer         | Where                                                      | Who uses it                                                                                                                                 |
+| ------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser store | `localStorage["yakw_contacts"]` (session storage fallback) | Every page, via `ContactStorageService` (`lib/contact-storage-service.ts`) and `EnhancedContactStorage` (`lib/contact-storage-enhanced.ts`) |
+| Cloud mirror  | Firestore collection `user_contacts`                       | Only `lib/cloud-sync.ts` / `lib/cloud-sync-core.ts`                                                                                         |
+| Sign-in       | Firebase Authentication, Google provider                   | `lib/auth-utils.ts`, loaded on demand by `PageLayout`                                                                                       |
+| Analytics     | Google Analytics for Firebase, after consent only          | `lib/analytics.ts`                                                                                                                          |
 
-## Implementation Details
+No other module may import `firebase/firestore` for contact data.
 
-### Contact Storage Class
+## Cloud document format
 
-The `ContactStorage` class in `lib/contact-storage.ts` provides both Firebase and localStorage methods:
+- Collection: `user_contacts` (the only contacts collection).
+- Document id: `<uid>_<contactId>` (`cloudDocId()`), so one contact is always one document and saves are idempotent.
+- Fields: the contact exactly as stored in the browser (dates as ISO strings), plus `userId` (owner uid) and `syncedAt` (server timestamp). Local-only fields (`firestoreId`, `syncStatus`, `lastSyncAt`, layout coordinates) are never uploaded.
+- Built-in demo people (ids starting `sample_`) are never uploaded.
 
-#### Firebase Methods
+## Sync behaviour
 
-- `saveContactsToFirebase()` - Save contacts to Firestore
-- `loadContactsFromFirebase()` - Load contacts from Firestore
-- `addContactsToFirebase()` - Add new contacts to Firestore
-- `clearContactsFromFirebase()` - Clear all contacts from Firestore
+1. **Sign-in** (`syncUser`): read the user's `user_contacts` documents and any documents in the retired `contacts` collection; merge with the browser store by contact id (newer `updatedAt` wins, local wins ties, duplicates collapse); write the merged list to the browser; make `user_contacts` equal to it; delete the retired documents.
+2. **After any local change** (`notifyLocalChange`, debounced 0.8 s): upsert every contact and delete cloud documents whose contact no longer exists (`pushUser`). Clearing all contacts therefore also clears the cloud copy.
+3. **Offline or failure**: contacts stay in the browser; the next change or reconnect retries. The dashboard shows the real state ("Local only", "Backing up…", "backed up", "failed; it will retry").
+4. **Sign-out**: syncing stops; the browser copy stays.
 
-#### Hybrid Methods (Recommended)
+## Security rules
 
-- `loadAllContacts()` - Try Firebase first, fallback to localStorage
-- `addAllContacts()` - Save to both Firebase and localStorage
-- `clearAllContacts()` - Clear from both Firebase and localStorage
-- `getAllContactStats()` - Get statistics from Firebase or localStorage
+`firestore.rules`: owner-only access; document id must start with the caller's uid; required fields `id`, `userId`, `name`, `levelId` with size limits; `userId` can never change; the retired `contacts` collection is read/delete only (for migration); everything else is closed.
 
-### Data Structure
+## Tests
 
-Contacts are stored in Firestore with the following structure:
-
-```typescript
-interface StoredContact {
-  id: string;
-  name: string;
-  levelId: string;
-  lastContact: Timestamp; // Firestore Timestamp
-  contactFrequency: number;
-  strength: number;
-  decayRate: number;
-  platform: string;
-  importDate: Timestamp; // Firestore Timestamp
-  source: "facebook" | "linkedin" | "manual";
-  firestoreId?: string; // Document ID in Firestore
-}
-```
-
-### Collection Structure
-
-- **Collection**: `contacts`
-- **Document ID**: Auto-generated by Firestore
-- **Fields**: All contact properties with Firestore Timestamps for dates
-
-## Usage
-
-### Dashboard
-
-- View all imported contacts with Firebase status indicator
-- Refresh contacts from Firebase
-- Test Firebase connectivity
-- Clear all contacts from both Firebase and localStorage
-
-### Import Process
-
-1. User imports Facebook/LinkedIn data
-2. Contacts are processed and categorized
-3. Contacts are saved to Firebase Firestore
-4. Contacts are also saved to localStorage as backup
-5. Success message indicates Firebase storage
-
-### Error Handling
-
-- Network errors fall back to localStorage
-- Permission errors show appropriate messages
-- Connection status is displayed to users
+- `src/test/lib/cloud-sync.test.ts`: document ids, field mapping, merge rules (Vitest).
+- `tests/firestore/rules.test.mjs`: rules plus end-to-end sync against the emulator, including legacy migration, de-duplication, idempotent pushes, deletions and a second device (`npm run test:rules`, Java 11+, Node 22.18+).
 
 ## Configuration
 
-Firebase configuration is handled through environment variables in `.env`:
-
-```
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
-
-## Testing
-
-Use the "Test Firebase" button in the dashboard to:
-
-1. Verify Firebase connectivity
-2. Add a test contact to Firestore
-3. Refresh the contact list to confirm storage
-
-## Security
-
-- Firestore security rules should be configured to restrict access
-- Authentication is handled through Firebase Auth
-- Data is scoped to authenticated users (when auth is implemented)
-
-## Future Enhancements
-
-- User-scoped data (contacts per authenticated user)
-- Real-time listeners for live updates
-- Offline support with Firebase offline persistence
-- Contact sharing between users
-- Advanced querying and filtering
+`.env.local` (copy `.env.example`): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, optional `VITE_FIREBASE_MEASUREMENT_ID`. Check with `npm run check-firebase`. The Realtime Database is not used; `VITE_FIREBASE_DATABASE_URL` was removed.
