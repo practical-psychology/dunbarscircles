@@ -26,13 +26,12 @@ Nameservers: `dns1.registrar-servers.com`, `dns2.registrar-servers.com` (Nameche
 | @       | TXT       | `v=spf1 include:spf.efwd.registrar-servers.com ~all`                          | SPF for Namecheap email forwarding | yes                   |
 | @       | MX        | `eforward1`–`eforward5.registrar-servers.com` (priorities 10, 10, 10, 15, 20) | Namecheap email forwarding         | yes                   |
 | www     | CNAME     | `dunbarscircles.web.app`                                                      | Firebase; redirects to apex        | yes                   |
-| \_dmarc | TXT       | none                                                                          | -                                  | add (below)           |
+| \_dmarc | TXT       | `v=DMARC1; p=reject; adkim=s; aspf=s`                                         | DMARC (domain sends no mail)       | yes, added 2026-11-10 |
 | @       | AAAA, CAA | none                                                                          | -                                  | optional              |
 
-Recommended additions (owner, at the registrar):
+DMARC (added 2026-11-10, verified with `dig` via Cloudflare 1.1.1.1, Google 8.8.8.8 and Namecheap's nameserver): `p=reject` with strict alignment and no report address, chosen because nothing sends mail as @dunbarscircles.com; inbound forwarding is unaffected. If you later send mail from this domain (for example Gmail "Send mail as" or a newsletter tool), first add that service's SPF include and DKIM record, then relax to `p=quarantine` while testing.
 
-- `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:<your address>` to start monitoring spoofing; move to `p=quarantine` after a month of clean reports.
-- Optional CAA: `0 issue "pki.goog"` (Firebase certificates come from Google Trust Services). Only add it if you are sure no other CA is needed, or certificate renewal will fail.
+Optional CAA: `0 issue "pki.goog"` (Firebase certificates come from Google Trust Services). Only add it if you are sure no other CA is needed, or certificate renewal will fail.
 
 Verified live 2026-11-10: apex 200 over HTTPS, `http://` 301 to `https://`, `www` 301 to `https://dunbarscircles.com/`. Certificate issuer Google Trust Services WR3, valid to 2027-02-05 (auto-renewed).
 
