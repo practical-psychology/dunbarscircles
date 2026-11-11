@@ -14,6 +14,7 @@ curl -s https://dunbarscircles.com/ | grep -o 'name="build-sha" content="[^"]*"'
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-11-10 | Not recorded. The live build predates the build-sha meta tag; its bundle is `index-DECLyc_s.js`, and `main` was at `393035c` | First deploy after this change records the SHA automatically                                                                   |
 | 2026-11-11 | `0dd141d` (main)                                                                                                             | `build-sha` meta on https://dunbarscircles.com/; deploy run 42937437181 released hosting and Firestore rules; smoke test 56/56 |
+| 2026-11-11 | `647e6ab` (tag `v2026.11.11`)                                                                                                | build-sha meta; deploy run 42944839185 + CI 42944839202 green; smoke test 56/56                                                |
 
 ## Release-tag procedure
 
