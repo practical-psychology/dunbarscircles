@@ -63,8 +63,8 @@ No,Phase,Task,Status,Can be automated,Notes,Ref
 62,6 Privacy & legal,Forms safety review; record not-applicable rationale if sign-in is the only form,Done,Yes,docs/ops/FORMS.md,WEB-037
 63,7 CI/CD & release,"Deploy workflow: live on merge to main, preview channel on pull requests",Done,Yes,Live on main; preview channel on PRs,WEB-012
 64,7 CI/CD & release,Keep previews away from production data and out of search (noindex),Done,Yes,Preview hosts noindex; no analytics on previews,WEB-018
-65,7 CI/CD & release,"Branch protection, required checks, CODEOWNERS",Not started,Partial,No CODEOWNERS file yet; applying branch protection is yours,WEB-011
-66,7 CI/CD & release,Release-tag procedure and record of the live git SHA,Partly done,Yes,Procedure in docs/ops/RELEASE.md; live SHA recorded (2fcc61f); no tag pushed yet,WEB-011
+65,7 CI/CD & release,"Branch protection, required checks, CODEOWNERS",Partly done,Partial,.github/CODEOWNERS added (@practical-psychology); protection settings + gh command in RELEASE.md; applying them needs repo admin (yours),WEB-011
+66,7 CI/CD & release,Release-tag procedure and record of the live git SHA,Done,Yes,Procedure in RELEASE.md; release tagged v2026.11.11 on the live commit,WEB-011
 67,7 CI/CD & release,Rollback runbook plus a dry run,Partly done,Yes,Runbook + dry-run steps in RUNBOOK.md; dry run not executed,WEB-023
 68,7 CI/CD & release,Release checklist for gates G0-G6,Done,Yes,docs/ops/RELEASE.md,G0-G6
 69,8 Analytics & monitoring,Choose analytics: GA4 (already initialised via Firebase) or Plausible/Umami,Owner action,No,GA4 wired behind consent; record your choice in ANALYTICS.md,WEB-032
@@ -80,7 +80,7 @@ No,Phase,Task,Status,Can be automated,Notes,Ref
 79,9 QA & go-live,Browser and device matrix including real Safari and iOS,Owner action,No,,WEB-039
 80,9 QA & go-live,Pilot with first-time users (first map in <= 5 minutes),Owner action,No,,
 81,9 QA & go-live,Signed go-live record (gate G6),Owner action,No,,"WEB-041, WEB-042"
-82,9 QA & go-live,Watch errors and metrics for 24-72 hours after launch,Not started,Yes,Not scheduled yet; checklist in RUNBOOK.md,WEB-043
+82,9 QA & go-live,Watch errors and metrics for 24-72 hours after launch,Done,Yes,".github/workflows/launch-watch.yml: every 6 h for 72 h after LAUNCH_AT; smoke test, live SHA, uptime results in job summary",WEB-043
 83,10 Promotion,Connect Instagram @practicalpsychadvice and X @psy_tips_advice to a scheduler (e.g. Postiz),Owner action,No,You authorise the accounts,
 84,10 Promotion,"Brand kit, templates, screenshots, app demo recordings",Not started,Yes,,
 85,10 Promotion,"Carousels, source cards, quote cards, banners",Not started,Yes,,ASSET-001 to 024
@@ -99,8 +99,8 @@ No,Phase,Task,Status,Can be automated,Notes,Ref
 98,12 Release 1+ relationship features,"Voluntary/obligatory/conflict interactions; desired vs actual contact; trust, reciprocity, support",Done,Yes,Interactions by type; desired vs voluntary contact; trust/support/reciprocity 0-100,
 99,12 Release 1+ relationship features,Circle stays user-assigned; overlay for negative relationships,Done,Yes,"Circle user-assigned; overlay + excluded/no-contact status, never automatic",
 100,12 Release 1+ relationship features,History timeline and export of ratings,Done,Yes,Append-only history on edit page; included in export v2,
-101,12 Release 1+ relationship features,Map coloured by valence with accessible legend,Not started,Yes,Feelings shown as counts/badges; map not coloured by feeling yet,
-102,12 Release 1+ relationship features,Attachment-vs-contact scatterplot and layer x valence matrix,Not started,Yes,Not built; mismatch list exists instead,
-103,12 Release 1+ relationship features,Dismissible trend prompts; mismatch metric skipped when data is too small,Partly done,Yes,Mismatch skipped under 8 people or zero variance; dismissible trend prompts not built,
+101,12 Release 1+ relationship features,Map coloured by valence with accessible legend,Done,Yes,"Circles-by-feeling map: colour + shape per feeling, counted legend, SVG title/desc, mark tooltips",
+102,12 Release 1+ relationship features,Attachment-vs-contact scatterplot and layer x valence matrix,Done,Yes,Importance vs voluntary-contact scatterplot (with table version) and circle x feeling matrix,
+103,12 Release 1+ relationship features,Dismissible trend prompts; mismatch metric skipped when data is too small,Done,Yes,"Dismissible prompts for feeling shifts, big importance changes, circle moves, below-desired contact; mismatch skipped on small data",
 104,12 Release 1+ relationship features,Russian localisation (optional),Not started,Partial,,
 105,12 Release 1+ relationship features,Opt-in research mode,Owner action,No,Consent and ethics are your decision,

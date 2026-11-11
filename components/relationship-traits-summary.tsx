@@ -5,11 +5,20 @@ import {
   dataCompleteness,
   overlayMembers,
   overlaySuggestions,
+  scatterPoints,
+  trendPrompts,
+  type ChangeRecord,
   type Interaction,
   type RelationshipProfile,
 } from "@/lib/relationship-model";
-import { readInteractions } from "@/lib/relationship-log";
+import {
+  dismissPrompt,
+  readDismissedPrompts,
+  readHistory,
+  readInteractions,
+} from "@/lib/relationship-log";
 import { CONTACTS_CHANGED_EVENT } from "@/lib/contact-events";
+import { ImportanceContactScatter } from "./relationship-visuals";
 
 type Person = {
   id: string;
@@ -24,14 +33,20 @@ interface Props {
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 /**
- * Relationship insights. Data completeness is always shown first; the
- * standardized comparison appears only when there is enough varied data.
- * Nothing here moves anyone between circles.
+ * Relationship insights. Data completeness is shown first; trend prompts
+ * are dismissible; the standardized comparison and the scatterplot appear
+ * only with enough varied data. Nothing here moves anyone between circles.
  */
 export function RelationshipTraitsSummary({ contacts }: Props) {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [history, setHistory] = useState<ChangeRecord[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   useEffect(() => {
-    const load = () => setInteractions(readInteractions());
+    const load = () => {
+      setInteractions(readInteractions());
+      setHistory(readHistory());
+      setDismissed(readDismissedPrompts());
+    };
     load();
     window.addEventListener(CONTACTS_CHANGED_EVENT, load);
     return () => window.removeEventListener(CONTACTS_CHANGED_EVENT, load);
@@ -41,21 +56,17 @@ export function RelationshipTraitsSummary({ contacts }: Props) {
     () => contacts.filter((c) => !String(c.id).startsWith("sample_")),
     [contacts],
   );
+  if (people.length === 0) return null;
+
   const completeness = dataCompleteness(people, interactions);
   const mismatch = attachmentContactMismatch(people, interactions);
   const overlay = overlayMembers([...people]);
   const suggestions = overlaySuggestions([...people]);
+  const prompts = trendPrompts(people, history, interactions).filter(
+    (p) => !dismissed.has(p.key),
+  );
+  const points = scatterPoints(people, interactions);
   const nameOf = (id: string) => people.find((p) => p.id === id)?.name ?? id;
-
-  if (people.length === 0) return null;
-
-  const rows: [string, number][] = [
-    ["Feelings set", completeness.stage],
-    ["Importance rated", completeness.attachment],
-    ["Trust, support or reciprocity rated", completeness.quality],
-    ["Desired contact set", completeness.desired],
-    ["At least one interaction logged", completeness.interactions],
-  ];
 
   return (
     <section
@@ -67,39 +78,47 @@ export function RelationshipTraitsSummary({ contacts }: Props) {
         Relationship insights
       </h2>
 
-      <div>
-        <h3 className="mb-2 text-sm font-semibold">
-          Data completeness ({completeness.people}{" "}
-          {completeness.people === 1 ? "person" : "people"})
-        </h3>
-        <ul className="space-y-2 text-sm">
-          {rows.map(([label, share]) => (
-            <li key={label}>
-              <div className="flex justify-between">
-                <span>{label}</span>
-                <span className="tabular-nums">{pct(share)}</span>
-              </div>
-              <div
-                className="h-1.5 rounded-full bg-gray-200 dark:bg-gray-700"
-                role="progressbar"
-                aria-label={`${label}: ${pct(share)}`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(share * 100)}
+      <p className="text-sm" data-testid="completeness-summary">
+        <strong>Data completeness</strong> ({completeness.people}{" "}
+        {completeness.people === 1 ? "person" : "people"}): feelings{" "}
+        {pct(completeness.stage)}, importance {pct(completeness.attachment)},
+        trust/support/reciprocity {pct(completeness.quality)}, desired contact{" "}
+        {pct(completeness.desired)}, interactions{" "}
+        {pct(completeness.interactions)}. Details under Overview → Data
+        validity. Insights use only what you entered.
+      </p>
+
+      {prompts.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">Recent changes</h3>
+          <ul className="space-y-2" aria-label="Trend prompts">
+            {prompts.slice(0, 6).map((p) => (
+              <li
+                key={p.key}
+                className="flex items-start justify-between gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm dark:border-blue-800 dark:bg-blue-950"
               >
-                <div
-                  className="h-1.5 rounded-full bg-blue-600"
-                  style={{ width: pct(share) }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          Insights below use only what you entered. More complete data makes
-          them more meaningful; none of them is a verdict on a relationship.
-        </p>
-      </div>
+                <span>
+                  {p.text}{" "}
+                  <Link
+                    to={`/contacts/edit/${encodeURIComponent(p.personId)}`}
+                    className="underline"
+                  >
+                    Open
+                  </Link>
+                </span>
+                <button
+                  type="button"
+                  className="min-h-[36px] shrink-0 text-gray-700 underline dark:text-gray-300"
+                  onClick={() => dismissPrompt(p.key)}
+                  aria-label={`Dismiss: ${p.text}`}
+                >
+                  Dismiss
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {(overlay.length > 0 || suggestions.length > 0) && (
         <div>
@@ -134,8 +153,15 @@ export function RelationshipTraitsSummary({ contacts }: Props) {
       )}
 
       <div>
+        <h3 className="mb-2 text-sm font-semibold">
+          Importance and voluntary contact
+        </h3>
+        <ImportanceContactScatter points={points} nameOf={nameOf} />
+      </div>
+
+      <div>
         <h3 className="mb-1 text-sm font-semibold">
-          Importance compared with voluntary contact
+          Largest gaps between importance and contact
         </h3>
         {!mismatch.available ? (
           <p className="text-sm text-gray-700 dark:text-gray-300">

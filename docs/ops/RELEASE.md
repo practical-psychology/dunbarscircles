@@ -37,6 +37,27 @@ Tags mark what went live, so a rollback target is always one command away.
 
 Rollback: see RUNBOOK.md. After a rollback, the last good tag tells you which commit to redeploy or revert to.
 
+## Branch protection (WEB-011, owner applies)
+
+`.github/CODEOWNERS` names `@practical-psychology` for everything and, explicitly, for rules, workflows, sync, consent, analytics and the privacy page. Apply in GitHub, Settings, Branches, rule for `main`:
+
+- Require a pull request before merging; require 1 approval; require review from Code Owners
+- Require status checks: `checks`, `firestore rules`, `build_and_deploy` (the deploy workflow's build job)
+- Require branches to be up to date; block force pushes and deletion
+
+The same settings with the GitHub CLI (needs admin on the repo):
+
+```bash
+gh api -X PUT repos/practical-psychology/dunbarscircles/branches/main/protection \
+  -F 'required_status_checks[strict]=true' \
+  -f 'required_status_checks[contexts][]=checks' \
+  -f 'required_status_checks[contexts][]=firestore rules' \
+  -F 'enforce_admins=false' \
+  -F 'required_pull_request_reviews[required_approving_review_count]=1' \
+  -F 'required_pull_request_reviews[require_code_owner_reviews]=true' \
+  -F 'restrictions=null' -F 'allow_force_pushes=false' -F 'allow_deletions=false'
+```
+
 ## Launch gates G0–G6
 
 Each gate needs every box ticked, with a name and date, before the next gate starts.

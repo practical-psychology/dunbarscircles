@@ -370,3 +370,158 @@ export function attachmentContactMismatch(
     .sort((x, y) => Math.abs(y.z) - Math.abs(x.z));
   return { available: true, eligible, items };
 }
+
+// ------------------------------------------------- layer x feeling matrix
+
+export type FeelingKey = Stage | "unset";
+export const FEELING_KEYS: readonly FeelingKey[] = [...STAGES, "unset"];
+
+/** Counts per (layer, feeling). Only people counted in circles. */
+export function layerFeelingMatrix(
+  people: ReadonlyArray<{ levelId: string } & RelationshipProfile>,
+  levelIds: readonly string[],
+): Record<string, Record<FeelingKey, number>> {
+  const out: Record<string, Record<FeelingKey, number>> = {};
+  for (const id of levelIds) {
+    out[id] = Object.fromEntries(FEELING_KEYS.map((k) => [k, 0])) as Record<
+      FeelingKey,
+      number
+    >;
+  }
+  for (const p of people) {
+    if (!countsInCircles(p) || !out[p.levelId]) continue;
+    out[p.levelId][p.stage ?? "unset"] += 1;
+  }
+  return out;
+}
+
+// -------------------------------------------- importance vs contact points
+
+export interface ScatterPoint {
+  id: string;
+  importance: number;
+  voluntaryPerMonth: number;
+  stage?: Stage;
+}
+
+/** People with an importance rating and at least one logged interaction. */
+export function scatterPoints(
+  people: ReadonlyArray<{ id: string } & RelationshipProfile>,
+  interactions: readonly Interaction[],
+  now: Date = new Date(),
+): ScatterPoint[] {
+  const logged = new Set(interactions.map((i) => i.person_id));
+  return people
+    .filter((p) => p.attachmentScore !== undefined && logged.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      importance: p.attachmentScore as number,
+      voluntaryPerMonth: contactRhythm(p.id, interactions, undefined, now)
+        .voluntaryPerMonth,
+      stage: p.stage,
+    }));
+}
+
+// ------------------------------------------------------ T: trend prompts
+
+export interface TrendPrompt {
+  /** Stable key, used to dismiss this exact prompt. */
+  key: string;
+  personId: string;
+  kind: "feeling" | "importance" | "circle" | "below-desired";
+  text: string;
+}
+
+const NEGATIVE: readonly Stage[] = ["dislike", "hate"];
+const POSITIVE: readonly Stage[] = ["love", "like"];
+
+/**
+ * Gentle, dismissible prompts from observed change (T) and the user's own
+ * contact wish. Never a verdict; nothing is changed automatically.
+ */
+export function trendPrompts(
+  people: ReadonlyArray<{ id: string; name: string } & RelationshipProfile>,
+  history: readonly ChangeRecord[],
+  interactions: readonly Interaction[],
+  now: Date = new Date(),
+  windowDays = 90,
+): TrendPrompt[] {
+  const since = now.getTime() - windowDays * DAY;
+  const byId = new Map(people.map((p) => [p.id, p]));
+  const out: TrendPrompt[] = [];
+  const recent = history
+    .filter((h) => Date.parse(h.timestamp) >= since && byId.has(h.person_id))
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  // Net change per person/field over the window (first "from" -> last "to").
+  const net = new Map<string, { from: unknown; to: unknown; at: string }>();
+  for (const h of recent) {
+    for (const [field, c] of Object.entries(h.changed_fields)) {
+      if (field.startsWith("_")) continue;
+      const k = `${h.person_id}|${field}`;
+      const prev = net.get(k);
+      net.set(k, {
+        from: prev ? prev.from : c.from,
+        to: c.to,
+        at: h.timestamp,
+      });
+    }
+  }
+  for (const [k, c] of net) {
+    const [personId, field] = k.split("|");
+    const name = byId.get(personId)!.name;
+    if (
+      field === "stage" &&
+      typeof c.from === "string" &&
+      typeof c.to === "string"
+    ) {
+      const from = c.from as Stage;
+      const to = c.to as Stage;
+      const shifted =
+        (POSITIVE.includes(from) && NEGATIVE.includes(to)) ||
+        (NEGATIVE.includes(from) && POSITIVE.includes(to));
+      if (shifted) {
+        out.push({
+          key: `${k}|${c.at}`,
+          personId,
+          kind: "feeling",
+          text: `Your feelings about ${name} changed from "${from}" to "${to}" recently. Worth a moment of reflection?`,
+        });
+      }
+    }
+    if (
+      field === "attachmentScore" &&
+      typeof c.from === "number" &&
+      typeof c.to === "number" &&
+      Math.abs(c.to - c.from) >= 20
+    ) {
+      out.push({
+        key: `${k}|${c.at}`,
+        personId,
+        kind: "importance",
+        text: `${name}'s importance to you went from ${c.from} to ${c.to}.`,
+      });
+    }
+    if (field === "levelId" && c.from && c.to && c.from !== c.to) {
+      out.push({
+        key: `${k}|${c.at}`,
+        personId,
+        kind: "circle",
+        text: `You moved ${name} between circles recently. Does the new place still feel right?`,
+      });
+    }
+  }
+  for (const p of people) {
+    if (p.desiredContactPerMonth === undefined || !countsInCircles(p)) continue;
+    const r = contactRhythm(p.id, interactions, p.desiredContactPerMonth, now);
+    if (r.status === "below-desired") {
+      const month = now.toISOString().slice(0, 7);
+      out.push({
+        key: `${p.id}|below-desired|${month}`,
+        personId: p.id,
+        kind: "below-desired",
+        text: `You said you'd like contact with ${p.name} about ${p.desiredContactPerMonth} times a month; voluntary contact has been lower lately.`,
+      });
+    }
+  }
+  return out;
+}

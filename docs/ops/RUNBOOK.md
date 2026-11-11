@@ -56,6 +56,8 @@ Recommendation: B, once the analytics decision (ANALYTICS.md) is made. Do not ad
 
 ## 24-72 hour observation log (WEB-043)
 
+Automated: `.github/workflows/launch-watch.yml` runs every 6 hours for 72 hours after `LAUNCH_AT` (currently 2026-11-11 02:15 UTC). Each run executes the smoke test, records the live build SHA, response time and the last 12 uptime results in its job summary, and fails (emailing watchers) on any failed check. For a new release, update `LAUNCH_AT` in the same pull request. The manual rows below still need a person.
+
 Run at each checkpoint: `npm run smoke -- https://dunbarscircles.com`, look at the last uptime runs (`gh run list --workflow uptime.yml -L 10`), open the site with DevTools console open on `/`, `/contacts`, `/dashboard`, and check Firebase Hosting usage.
 
 | Time  | Check                                      | Result | Action |

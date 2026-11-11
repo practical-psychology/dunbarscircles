@@ -1,0 +1,88 @@
+name: Launch watch (24-72 h)
+
+# WEB-043 / task 82: observe the site for 72 hours after a release.
+# Every 6 hours inside the window: run the full smoke test, record the live
+# build SHA, recent uptime-check results and response time in the job
+# summary. A failing check turns the run red (GitHub emails watchers).
+# Outside the window the job exits quickly. To watch a new release, set
+# LAUNCH_AT to its deploy time (UTC) in the same pull request.
+on:
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  LAUNCH_AT: "2026-11-11T02:15:00Z"
+  WINDOW_HOURS: "72"
+  SITE: https://dunbarscircles.com
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inside the watch window?
+        id: window
+        run: |
+          now=$(date -u +%s)
+          start=$(date -u -d "$LAUNCH_AT" +%s)
+          end=$(( start + WINDOW_HOURS * 3600 ))
+          hours=$(( (now - start) / 3600 ))
+          if [ "$now" -lt "$start" ] || [ "$now" -gt "$end" ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Outside the launch window (launch $LAUNCH_AT, +$WINDOW_HOURS h)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "active=true" >> "$GITHUB_OUTPUT"
+            echo "hours=$hours" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.window.outputs.active == 'true'
+
+      - name: Smoke test
+        if: steps.window.outputs.active == 'true'
+        run: |
+          {
+            echo "## Launch watch: T+${{ steps.window.outputs.hours }} h"
+            echo
+            echo '```'
+            bash scripts/smoke-test.sh "$SITE" | grep -vE '^ok' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          bash scripts/smoke-test.sh "$SITE" > /dev/null
+
+      - name: Response time and live build
+        if: steps.window.outputs.active == 'true'
+        run: |
+          t=$(curl -s -o /dev/null -w '%{time_total}' "$SITE/")
+          sha=$(curl -s "$SITE/" | grep -o 'name="build-sha" content="[^"]*"' | sed 's/.*content="//;s/"$//')
+          echo "- Home page response: ${t}s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Live build: \`${sha}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Recent uptime checks
+        if: steps.window.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "- Last 12 uptime checks:" >> "$GITHUB_STEP_SUMMARY"
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow uptime.yml -L 12 \
+            --json conclusion,createdAt \
+            -q '.[] | "  - \(.createdAt): \(.conclusion)"' >> "$GITHUB_STEP_SUMMARY"
+          failures=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow uptime.yml -L 12 --json conclusion -q '[.[] | select(.conclusion=="failure")] | length')
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures of the last 12 uptime checks failed"
+            exit 1
+          fi
+
+      - name: Manual checks reminder
+        if: steps.window.outputs.active == 'true'
+        run: |
+          {
+            echo
+            echo "Manual (owner): open $SITE with DevTools console on /, /contacts, /dashboard;"
+            echo "check Firebase Hosting usage and, if enabled, Analytics events. Log results in docs/ops/RUNBOOK.md."
+          } >> "$GITHUB_STEP_SUMMARY"
